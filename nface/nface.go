@@ -4,15 +4,16 @@ package nface
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 )
 
 type ReqAction int
+
 const (
-	GET = iota
+	GET  = iota
 	POST = iota
 )
 

@@ -21,7 +21,7 @@ func (c closer) Close() error {
 func TestHttpRequest(t *testing.T) {
 	req := &Request{
 		Action: POST,
-		OAuth: "token",
+		OAuth:  "token",
 		Values: &url.Values{},
 	}
 
@@ -39,10 +39,10 @@ func TestHttpRequest(t *testing.T) {
 
 func TestHttpRequestBasicAuth(t *testing.T) {
 	req := &Request{
-		Action: POST,
+		Action:        POST,
 		BasicAuthUser: "Robert",
 		BasicAuthPass: "1234",
-		Values: &url.Values{},
+		Values:        &url.Values{},
 	}
 
 	httpReq, err := req.httpRequest()
@@ -62,8 +62,8 @@ func TestHttpRequestBasicAuth(t *testing.T) {
 
 func TestHttpRequestPostValues(t *testing.T) {
 	vals := &url.Values{
-			"food": []string{"pancake"},
-			"animal": []string{"lynx"},
+		"food":   []string{"pancake"},
+		"animal": []string{"lynx"},
 	}
 	req := &Request{
 		Action: POST,
@@ -95,8 +95,8 @@ func TestHttpRequestPostValues(t *testing.T) {
 
 func TestHttpRequestGetValues(t *testing.T) {
 	vals := &url.Values{
-			"food": []string{"pancake"},
-			"animal": []string{"lynx"},
+		"food":   []string{"pancake"},
+		"animal": []string{"lynx"},
 	}
 	req := &Request{
 		Action: GET,
@@ -120,8 +120,8 @@ func TestHttpRequestGetValues(t *testing.T) {
 func TestParseResponse(t *testing.T) {
 	body := closer{bytes.NewBufferString(`{"id":"manning", "age":18}`)}
 	dummy := struct {
-		ID string `json:"id"`
-		Age int `json:"age"`
+		ID  string `json:"id"`
+		Age int    `json:"age"`
 	}{"jacob", 29}
 	resp := &http.Response{Body: body}
 	if err := parseResponse(resp, &dummy); err != nil {

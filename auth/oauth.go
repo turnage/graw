@@ -10,6 +10,7 @@ import (
 
 // mode describes OAuth modes.
 type mode int
+
 const (
 	// APP is the app-only OAuth mode.
 	APP = iota
@@ -70,9 +71,9 @@ type oauthGrant struct {
 // association to a user account).
 func NewAppOAuth(id, secret, device string) *OAuth {
 	return &OAuth{
-		appID: id,
+		appID:     id,
 		appSecret: secret,
-		device: device,
+		device:    device,
 		oauthMode: APP,
 	}
 }
@@ -81,10 +82,10 @@ func NewAppOAuth(id, secret, device string) *OAuth {
 // account.
 func NewUserOAuth(id, secret, user, pass string) *OAuth {
 	return &OAuth{
-		appID: id,
+		appID:     id,
 		appSecret: secret,
-		acctUser: user,
-		acctPass: pass,
+		acctUser:  user,
+		acctPass:  pass,
 		oauthMode: USER,
 	}
 }
@@ -113,21 +114,21 @@ func (o *OAuth) Token() (string, error) {
 func (o *OAuth) updateGrant(resp *oauthGrant) {
 	o.token = resp.AccessToken
 	o.expiry = time.Now().Add(
-		time.Duration(resp.ExpiresIn - timeBuffer) * time.Second)
+		time.Duration(resp.ExpiresIn-timeBuffer) * time.Second)
 	o.scope = resp.Scope
 }
 
 // newApp requests a new app-only OAuth token.
 func (o *OAuth) newApp() error {
 	resp, err := oauthRequest(&nface.Request{
-			Action: nface.POST,
-			BasicAuthUser: o.appID,
-			BasicAuthPass: o.appSecret,
-			BaseUrl: baseUrl,
-			Values: &url.Values{
-				"grant_type": []string{appGrantType},
-				"device_id": []string{o.device},
-			}})
+		Action:        nface.POST,
+		BasicAuthUser: o.appID,
+		BasicAuthPass: o.appSecret,
+		BaseUrl:       baseUrl,
+		Values: &url.Values{
+			"grant_type": []string{appGrantType},
+			"device_id":  []string{o.device},
+		}})
 	if err != nil {
 		return err
 	}
@@ -140,15 +141,15 @@ func (o *OAuth) newApp() error {
 // newUser requests a new user-based OAuth token.
 func (o *OAuth) newUser() error {
 	resp, err := oauthRequest(&nface.Request{
-			Action: nface.POST,
-			BasicAuthUser: o.appID,
-			BasicAuthPass: o.appSecret,
-			BaseUrl: baseUrl,
-			Values: &url.Values{
-				"grant_type": []string{userGrantType},
-				"username": []string{o.acctUser},
-				"password": []string{o.acctPass},
-			}})
+		Action:        nface.POST,
+		BasicAuthUser: o.appID,
+		BasicAuthPass: o.appSecret,
+		BaseUrl:       baseUrl,
+		Values: &url.Values{
+			"grant_type": []string{userGrantType},
+			"username":   []string{o.acctUser},
+			"password":   []string{o.acctPass},
+		}})
 	if err != nil {
 		return err
 	}
@@ -166,17 +167,17 @@ func (o *OAuth) refreshUser() error {
 	}
 
 	resp, err := oauthRequest(&nface.Request{
-			Action: nface.POST,
-			BasicAuthUser: o.appID,
-			BasicAuthPass: o.appSecret,
-			BaseUrl: baseUrl,
-			Values: &url.Values{
-				"grant_type": []string{userRefreshType},
-				"username": []string{o.acctUser},
-				"password": []string{o.acctPass},
-				"duration": []string{"permanent"},
-				"refresh_token": []string{o.token},
-			}})
+		Action:        nface.POST,
+		BasicAuthUser: o.appID,
+		BasicAuthPass: o.appSecret,
+		BaseUrl:       baseUrl,
+		Values: &url.Values{
+			"grant_type":    []string{userRefreshType},
+			"username":      []string{o.acctUser},
+			"password":      []string{o.acctPass},
+			"duration":      []string{"permanent"},
+			"refresh_token": []string{o.token},
+		}})
 	if err != nil {
 		return err
 	}
