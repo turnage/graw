@@ -1,4 +1,4 @@
-package rface
+package nface
 
 import (
 	"bytes"
@@ -19,6 +19,25 @@ func (c closer) Close() error {
 }
 
 func TestHttpRequest(t *testing.T) {
+	req := &Request{
+		Action: POST,
+		OAuth: "token",
+		Values: &url.Values{},
+	}
+
+	httpReq, err := req.httpRequest()
+	if err != nil {
+		t.Errorf("failed to generate http request: %v", err)
+	}
+
+	if httpReq.Header.Get("Authorization") != "bearer token" {
+		t.Errorf(
+			"setting auth failed; expected bearer token, got %s",
+			httpReq.Header.Get("Authorization"))
+	}
+}
+
+func TestHttpRequestBasicAuth(t *testing.T) {
 	req := &Request{
 		Action: POST,
 		BasicAuthUser: "Robert",
@@ -42,10 +61,10 @@ func TestHttpRequest(t *testing.T) {
 }
 
 func TestHttpRequestPostValues(t *testing.T) {
-	vals := &url.Values{}
-	vals.Add("food", "pancake")
-	vals.Add("animal", "lynx")
-
+	vals := &url.Values{
+			"food": []string{"pancake"},
+			"animal": []string{"lynx"},
+	}
 	req := &Request{
 		Action: POST,
 		Values: vals,
@@ -75,14 +94,13 @@ func TestHttpRequestPostValues(t *testing.T) {
 }
 
 func TestHttpRequestGetValues(t *testing.T) {
-	vals := &url.Values{}
-	vals.Add("food", "pancake")
-	vals.Add("animal", "lynx")
-
+	vals := &url.Values{
+			"food": []string{"pancake"},
+			"animal": []string{"lynx"},
+	}
 	req := &Request{
 		Action: GET,
 		Values: vals,
-		OAuth: "token",
 	}
 
 	httpReq, err := req.httpRequest()
@@ -96,12 +114,6 @@ func TestHttpRequestGetValues(t *testing.T) {
 
 	if !strings.Contains(httpReq.URL.String(), vals.Encode()) {
 		t.Error("GET values not written to url")
-	}
-
-	if httpReq.Header.Get("Authorization") != "bearer token" {
-		t.Errorf(
-			"http oauth wrong; expected bearer token, got %s",
-			httpReq.Header.Get("Authorization"))
 	}
 }
 

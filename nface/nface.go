@@ -1,20 +1,24 @@
-package rface
+// Pacakge nface handles all communication between Go code and the Reddit api.
+package nface
 
 import (
 	"bytes"
+	"encoding/json"
+	"io/ioutil"
 	"fmt"
 	"net/http"
 	"net/url"
 )
 
 type ReqAction int
-
 const (
 	GET = iota
 	POST = iota
 )
 
 const (
+	// contentType is a header flag for POST requests so the reddit api
+	// knows how to read the request body.
 	contentType = "application/x-www-form-urlencoded"
 )
 
@@ -34,21 +38,21 @@ type Request struct {
 	Values *url.Values
 }
 
-// Do executes the request and writes the JSON response to the val interface.
-// See the godoc on json.Unmarshal for information on what to provide as val
-// and how to set it up for parsing.
-func (r *Request) Do(val interface{}) error {
-	req, err := r.httpRequest()
+// Exec executes a Request r and unmarshals the JSON response into resp.
+// See godoc encoding/json Unmarshal for information on what to provide as resp.
+// BasicAuth will override OAuth if those fields are set.
+func Exec(r *Request, resp interface{}) error {
+	httpReq, err := r.httpRequest()
 	if err != nil {
 		return err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	httpResp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
 		return err
 	}
 
-	return parseResponse(resp, val)
+	return parseResponse(httpResp, resp)
 }
 
 // httpRequest generates an http.Request from a Request struct.
@@ -75,6 +79,19 @@ func (r *Request) httpRequest() (*http.Request, error) {
 	return req, nil
 }
 
+// parseResponse parses the JSON body of an http.Response into a type.
+func parseResponse(resp *http.Response, val interface{}) error {
+	defer resp.Body.Close()
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(buf, val)
+}
+
+// postRequest returns a template http.Request with the given url and POST form
+// values set.
 func postRequest(url string, vals *url.Values) (*http.Request, error) {
 	reqBody := bytes.NewBufferString(vals.Encode())
 	req, err := http.NewRequest("POST", url, reqBody)
@@ -86,6 +103,8 @@ func postRequest(url string, vals *url.Values) (*http.Request, error) {
 	return req, nil
 }
 
+// getRequest returns a template http.Request with the given url and GET form
+// values set.
 func getRequest(url string, vals *url.Values) (*http.Request, error) {
 	reqUrl := fmt.Sprintf("%s?%s", url, vals.Encode())
 	return http.NewRequest("GET", reqUrl, nil)

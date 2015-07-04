@@ -1,14 +1,15 @@
-package rface
+package auth
 
 import (
 	"errors"
 	"net/url"
 	"time"
+
+	"github.com/paytonturnage/graw/nface"
 )
 
 // mode describes OAuth modes.
 type mode int
-
 const (
 	// APP is the app-only OAuth mode.
 	APP = iota
@@ -118,8 +119,8 @@ func (o *OAuth) updateGrant(resp *oauthGrant) {
 
 // newApp requests a new app-only OAuth token.
 func (o *OAuth) newApp() error {
-	resp, err := oauthRequest(&Request{
-			Action: POST,
+	resp, err := oauthRequest(&nface.Request{
+			Action: nface.POST,
 			BasicAuthUser: o.appID,
 			BasicAuthPass: o.appSecret,
 			BaseUrl: baseUrl,
@@ -138,8 +139,8 @@ func (o *OAuth) newApp() error {
 
 // newUser requests a new user-based OAuth token.
 func (o *OAuth) newUser() error {
-	resp, err := oauthRequest(&Request{
-			Action: POST,
+	resp, err := oauthRequest(&nface.Request{
+			Action: nface.POST,
 			BasicAuthUser: o.appID,
 			BasicAuthPass: o.appSecret,
 			BaseUrl: baseUrl,
@@ -164,8 +165,8 @@ func (o *OAuth) refreshUser() error {
 		return o.newUser()
 	}
 
-	resp, err := oauthRequest(&Request{
-			Action: POST,
+	resp, err := oauthRequest(&nface.Request{
+			Action: nface.POST,
 			BasicAuthUser: o.appID,
 			BasicAuthPass: o.appSecret,
 			BaseUrl: baseUrl,
@@ -186,9 +187,9 @@ func (o *OAuth) refreshUser() error {
 }
 
 // oauthRequest executes a Request and parses the response into an oauthGrant.
-func oauthRequest(req *Request) (*oauthGrant, error) {
+func oauthRequest(req *nface.Request) (*oauthGrant, error) {
 	resp := &oauthGrant{}
-	if err := req.Do(resp); err != nil {
+	if err := nface.Exec(req, resp); err != nil {
 		return nil, err
 	}
 
