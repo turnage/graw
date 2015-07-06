@@ -1,0 +1,4 @@
+# TODO
+
+* Redditor and future json structs -> Protobuffers
+* Test request constructions for API calls.
