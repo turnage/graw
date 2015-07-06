@@ -4,6 +4,7 @@ package nface
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -27,14 +28,8 @@ const (
 type Request struct {
 	// Action is the request type (e.g. "POST" or "GET").
 	Action ReqAction
-	// BasicAuthUser is the username to provide to basic auth prompts.
-	BasicAuthUser string
-	// BasicAuthPass is the password to provide to basic auth prompts.
-	BasicAuthPass string
 	// BaseUrl is the url of the api call, which values will be appended to.
 	BaseUrl string
-	// OAuth is the requests' oauth access token, which goes in the header.
-	OAuth string
 	// Values holds any parameters for the api call; encoded in url.
 	Values *url.Values
 }
@@ -42,15 +37,20 @@ type Request struct {
 // Exec executes a Request r and unmarshals the JSON response into resp.
 // See godoc encoding/json Unmarshal for information on what to provide as resp.
 // BasicAuth will override OAuth if those fields are set.
-func Exec(r *Request, resp interface{}) error {
+func Exec(client *http.Client, agent string, r *Request, resp interface{}) error {
 	httpReq, err := r.httpRequest()
 	if err != nil {
 		return err
 	}
+	httpReq.Header.Add("user-agent", agent)
 
-	httpResp, err := http.DefaultClient.Do(httpReq)
+	httpResp, err := client.Do(httpReq)
 	if err != nil {
 		return err
+	}
+
+	if resp == nil {
+		return nil
 	}
 
 	return parseResponse(httpResp, resp)
@@ -65,19 +65,8 @@ func (r *Request) httpRequest() (*http.Request, error) {
 	} else if r.Action == POST {
 		req, err = postRequest(r.BaseUrl, r.Values)
 	}
-	if err != nil {
-		return nil, err
-	}
 
-	if r.BasicAuthUser != "" && r.BasicAuthPass != "" {
-		req.SetBasicAuth(r.BasicAuthUser, r.BasicAuthPass)
-	} else if r.OAuth != "" {
-		req.Header.Add(
-			"Authorization",
-			fmt.Sprintf("bearer %s", r.OAuth))
-	}
-
-	return req, nil
+	return req, err
 }
 
 // parseResponse parses the JSON body of an http.Response into a type.
@@ -94,6 +83,10 @@ func parseResponse(resp *http.Response, val interface{}) error {
 // postRequest returns a template http.Request with the given url and POST form
 // values set.
 func postRequest(url string, vals *url.Values) (*http.Request, error) {
+	if vals == nil {
+		return nil, errors.New("no values for POST body")
+	}
+
 	reqBody := bytes.NewBufferString(vals.Encode())
 	req, err := http.NewRequest("POST", url, reqBody)
 	if err != nil {
@@ -107,6 +100,9 @@ func postRequest(url string, vals *url.Values) (*http.Request, error) {
 // getRequest returns a template http.Request with the given url and GET form
 // values set.
 func getRequest(url string, vals *url.Values) (*http.Request, error) {
-	reqUrl := fmt.Sprintf("%s?%s", url, vals.Encode())
-	return http.NewRequest("GET", reqUrl, nil)
+	reqURL := url
+	if vals != nil {
+		reqURL = fmt.Sprintf("%s?%s", reqURL, vals.Encode())
+	}
+	return http.NewRequest("GET", reqURL, nil)
 }

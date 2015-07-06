@@ -21,42 +21,12 @@ func (c closer) Close() error {
 func TestHttpRequest(t *testing.T) {
 	req := &Request{
 		Action: POST,
-		OAuth:  "token",
 		Values: &url.Values{},
 	}
 
 	httpReq, err := req.httpRequest()
-	if err != nil {
+	if err != nil || httpReq == nil {
 		t.Errorf("failed to generate http request: %v", err)
-	}
-
-	if httpReq.Header.Get("Authorization") != "bearer token" {
-		t.Errorf(
-			"setting auth failed; expected bearer token, got %s",
-			httpReq.Header.Get("Authorization"))
-	}
-}
-
-func TestHttpRequestBasicAuth(t *testing.T) {
-	req := &Request{
-		Action:        POST,
-		BasicAuthUser: "Robert",
-		BasicAuthPass: "1234",
-		Values:        &url.Values{},
-	}
-
-	httpReq, err := req.httpRequest()
-	if err != nil {
-		t.Errorf("failed to generate http request: %v", err)
-	}
-
-	user, pass, ok := httpReq.BasicAuth()
-	if !ok {
-		t.Error("basic auth not set")
-	}
-
-	if user != "Robert" || pass != "1234" {
-		t.Error("basic auth set incorrectly")
 	}
 }
 
