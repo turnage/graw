@@ -1,0 +1,24 @@
+syntax = "proto2";
+package graw;
+
+// Redditor describes a reddit account. Some of these fields are never filled
+// for accounts other than the authenticated one. (You can't count someone
+// else's messages.)
+message Redditor {
+  optional string name = 1;
+  optional string id = 2;
+  optional int32 link_karma = 3;
+  optional int32 comment_karma = 4;
+  optional bool is_mod = 5;
+  optional bool has_mod_mail = 6;
+  optional bool has_mail = 7;
+  optional int32 inbox_count = 8;
+  optional double created = 9;
+  optional double created_utc = 10;
+  optional bool is_gold = 11;
+  optional int32 gold_credits = 12;
+  optional double gold_expiration = 13;
+  optional bool over_18 = 14;
+  optional bool has_verified_email = 15;
+  optional bool hide_from_robots = 16;
+}
