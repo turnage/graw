@@ -4,7 +4,6 @@ package graw
 import (
 	"errors"
 	"net/http"
-	"net/url"
 
 	"github.com/paytonturnage/graw/nface"
 	"golang.org/x/oauth2"
@@ -22,6 +21,7 @@ const (
 	meURL = "/v1/me"
 )
 
+// Agent wraps the reddit api; all api calls go through Agent.
 type Agent struct {
 	// client manages the Agent's oauth Authorization.
 	client *http.Client
@@ -57,6 +57,7 @@ func NewAgent(userAgent, id, secret, user, pass string) (*Agent, error) {
 	}, nil
 }
 
+// Me wraps /v1/me. See https://www.reddit.com/dev/api#GET_api_v1_me
 func (a *Agent) Me() (*Redditor, error) {
 	resp := &redditorResponse{}
 	err := nface.Exec(
