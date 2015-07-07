@@ -1,6 +1,16 @@
 syntax = "proto2";
 package graw;
 
+// UserAgent describes a non-user entity controlling a reddit account. This
+// information is REQUIRED according the reddit api rules.
+message UserAgent {
+  required string user_agent = 1;
+  required string client_id = 2;
+  required string client_secret = 3;
+  required string username = 4;
+  required string password = 5;
+}
+
 // Redditor describes a reddit account. Some of these fields are never filled
 // for accounts other than the authenticated one. (You can't count someone
 // else's messages.)

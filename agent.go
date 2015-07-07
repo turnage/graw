@@ -2,9 +2,12 @@
 package graw
 
 import (
+	"bytes"
 	"errors"
+	"io/ioutil"
 	"net/http"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/paytonturnage/graw/nface"
 	"golang.org/x/oauth2"
 )
@@ -55,6 +58,29 @@ func NewAgent(userAgent, id, secret, user, pass string) (*Agent, error) {
 		client:    conf.Client(oauth2.NoContext, token),
 		userAgent: userAgent,
 	}, nil
+}
+
+// NewAgentFromFile returns an agent with auth information read from a
+// protobuffer file. See the UserAgent message type in graw.proto for what
+// fields to provide in the file.
+func NewAgentFromFile(filename string) (*Agent, error) {
+	agentBytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	agentText := bytes.NewBuffer(agentBytes)
+	agent := &UserAgent{}
+	if err := proto.UnmarshalText(agentText.String(), agent); err != nil {
+		return nil, err
+	}
+
+	return NewAgent(
+		agent.GetUserAgent(),
+		agent.GetClientId(),
+		agent.GetClientSecret(),
+		agent.GetUsername(),
+		agent.GetPassword())
 }
 
 // Me wraps /v1/me. See https://www.reddit.com/dev/api#GET_api_v1_me
