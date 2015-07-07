@@ -35,7 +35,7 @@ type Agent struct {
 // See https://github.com/reddit/reddit/wiki/OAuth2 for more information.
 func NewAgent(userAgent, id, secret, user, pass string) (*Agent, error) {
 	conf := &oauth2.Config{
-		ClientID: id,
+		ClientID:     id,
 		ClientSecret: secret,
 		Endpoint: oauth2.Endpoint{
 			TokenURL: authURL,
@@ -52,7 +52,7 @@ func NewAgent(userAgent, id, secret, user, pass string) (*Agent, error) {
 	}
 
 	return &Agent{
-		client: conf.Client(oauth2.NoContext, token),
+		client:    conf.Client(oauth2.NoContext, token),
 		userAgent: userAgent,
 	}, nil
 }
@@ -63,7 +63,7 @@ func (a *Agent) Me() (*Redditor, error) {
 		a.client,
 		a.userAgent,
 		&nface.Request{
-			Action: nface.GET,
+			Action:  nface.GET,
 			BaseUrl: baseURL + meURL,
 		},
 		resp)
