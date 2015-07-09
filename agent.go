@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
-	"net/http"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/paytonturnage/graw/nface"
@@ -26,10 +25,8 @@ const (
 
 // Agent wraps the reddit api; all api calls go through Agent.
 type Agent struct {
-	// client manages the Agent's oauth Authorization.
-	client *http.Client
-	// userAgent is written the http header of all requests.
-	userAgent string
+	// client manages the Agent's connection to reddit.
+	client *nface.Client
 }
 
 // NewAgent returns an agent ready to use with reddit. An error is returned
@@ -54,10 +51,8 @@ func NewAgent(userAgent, id, secret, user, pass string) (*Agent, error) {
 		return nil, errors.New("received invalid token")
 	}
 
-	return &Agent{
-		client:    conf.Client(oauth2.NoContext, token),
-		userAgent: userAgent,
-	}, nil
+	return &Agent{client: nface.NewClient(
+		conf.Client(oauth2.NoContext, token), userAgent)}, nil
 }
 
 // NewAgentFromFile returns an agent with auth information read from a
@@ -85,14 +80,10 @@ func NewAgentFromFile(filename string) (*Agent, error) {
 
 // Me wraps /v1/me. See https://www.reddit.com/dev/api#GET_api_v1_me
 func (a *Agent) Me() (*Redditor, error) {
-	resp := &redditorResponse{}
-	err := nface.Exec(
-		a.client,
-		a.userAgent,
-		&nface.Request{
+	resp := &Redditor{}
+	err := a.client.Do(&nface.Request{
 			Action:  nface.GET,
 			BaseUrl: baseURL + meURL,
-		},
-		resp)
-	return &resp.Redditor, err
+	}, resp)
+	return resp, err
 }

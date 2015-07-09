@@ -4,7 +4,6 @@ package nface
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 )
 
 type ReqAction int
-
 const (
 	GET  = iota
 	POST = iota
@@ -24,6 +22,14 @@ const (
 	contentType = "application/x-www-form-urlencoded"
 )
 
+type Client struct {
+	// client holds an http.Transport that automatically handles OAuth.
+	client *http.Client
+	// user is a string attached to all request headers that describes
+	// the program to the reddit API. (user-agent)
+	user string
+}
+
 // Request describes how to build an http.Request for the reddit api.
 type Request struct {
 	// Action is the request type (e.g. "POST" or "GET").
@@ -34,30 +40,29 @@ type Request struct {
 	Values *url.Values
 }
 
-// Exec executes a Request r and unmarshals the JSON response into resp.
-// See godoc encoding/json Unmarshal for information on what to provide as resp.
-// BasicAuth will override OAuth if those fields are set.
-func Exec(client *http.Client, agent string, r *Request, resp interface{}) error {
-	httpReq, err := r.httpRequest()
-	if err != nil {
-		return err
-	}
-	httpReq.Header.Add("user-agent", agent)
-
-	httpResp, err := client.Do(httpReq)
-	if err != nil {
-		return err
-	}
-
-	if resp == nil {
-		return nil
-	}
-
-	return parseResponse(httpResp, resp)
+// NewClient returns a new Client struct.
+func NewClient(client *http.Client, userAgent string) (*Client) {
+	return &Client{client: client, user: userAgent}
 }
 
-// httpRequest generates an http.Request from a Request struct.
-func (r *Request) httpRequest() (*http.Request, error) {
+// Do executes a request using Client's auth and user agent. The result is
+// Unmarshal()ed into response.
+func (c *Client) Do(r *Request, response interface{}) error {
+	req, err := c.buildRequest(r)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.doRequest(req)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(resp, response)
+}
+
+// buildRequest builds an http.Request from a Request struct.
+func (c *Client) buildRequest(r *Request) (*http.Request, error) {
 	var req *http.Request
 	var err error
 	if r.Action == GET {
@@ -66,25 +71,45 @@ func (r *Request) httpRequest() (*http.Request, error) {
 		req, err = postRequest(r.BaseUrl, r.Values)
 	}
 
-	return req, err
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("user-agent", c.user)
+
+	return req, nil
 }
 
-// parseResponse parses the JSON body of an http.Response into a type.
-func parseResponse(resp *http.Response, val interface{}) error {
+// doRequest sends a request to the servers and returns the body of the response
+// a byte slice.
+func (c *Client) doRequest(r *http.Request) ([]byte, error) {
+	resp, err := c.client.Do(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Body == nil {
+		return nil, fmt.Errorf("empty response body")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad status: %v\n", resp.StatusCode)
+	}
+
 	defer resp.Body.Close()
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("reading response body failed: %v", err)
 	}
 
-	return json.Unmarshal(buf, val)
+	return buf, nil
 }
 
 // postRequest returns a template http.Request with the given url and POST form
 // values set.
 func postRequest(url string, vals *url.Values) (*http.Request, error) {
 	if vals == nil {
-		return nil, errors.New("no values for POST body")
+		return nil, fmt.Errorf("no values for POST body")
 	}
 
 	reqBody := bytes.NewBufferString(vals.Encode())

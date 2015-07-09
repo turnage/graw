@@ -2,103 +2,163 @@ package nface
 
 import (
 	"bytes"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 )
 
-type closer struct {
-	io.Reader
-}
-
-func (c closer) Close() error {
-	return nil
-}
-
-func TestHttpRequest(t *testing.T) {
-	req := &Request{
-		Action: POST,
-		Values: &url.Values{},
-	}
-
-	httpReq, err := req.httpRequest()
-	if err != nil || httpReq == nil {
-		t.Errorf("failed to generate http request: %v", err)
-	}
-}
-
-func TestHttpRequestPostValues(t *testing.T) {
+func TestBuildPost(t *testing.T) {
+	expectedUserAgent := "test"
+	client := &Client{userAgent: expectedUserAgent}
 	vals := &url.Values{
-		"food":   []string{"pancake"},
-		"animal": []string{"lynx"},
+			"food":   []string{"pancake"},
+			"animal": []string{"lynx"},
 	}
-	req := &Request{
+	req, err := client.buildRequest(&Request{
 		Action: POST,
 		Values: vals,
-	}
+	})
 
-	httpReq, err := req.httpRequest()
 	if err != nil {
-		t.Error("failed to generate http request: %v", err)
+		t.Errorf("failed to build http request: %v", err)
 	}
 
-	body, err := ioutil.ReadAll(httpReq.Body)
+	if req == nil {
+		t.Fatal("returned http.Request is nil")
+	}
+
+	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		t.Error("request body not readable")
 	}
 
-	buf := bytes.NewBuffer(body)
-	if buf.String() != vals.Encode() {
-		t.Error(
-			"POST data incorrect; expected %s, got %s",
-			vals.Encode(),
-			buf.String())
+	expectedBody := vals.Encode()
+	actualBody := bytes.NewBuffer(body).String()
+	if actualBody != expectedBody {
+		t.Error("bad POST body; expected %s, got %s", expectedBody, actualBody)
 	}
 
-	if httpReq.Header.Get("content-type") != contentType {
-		t.Error("content type incorrect or unset")
+	actualContentType := req.Header.Get("content-type")
+	if req.Header.Get("content-type") != contentType {
+		t.Error(
+			"bad content-type; expected %s, got %s",
+			contentType,
+			actualContentType)
+	}
+
+	actualUserAgent := req.Header.Get("user-agent")
+	if actualUserAgent != expectedUserAgent {
+		t.Error(
+			"bad user-agent; expected %s, got %s",
+			expectedUserAgent,
+			actualUserAgent)
 	}
 }
 
-func TestHttpRequestGetValues(t *testing.T) {
+func TestBuildGet(t *testing.T) {
+	expectedUserAgent := "test"
+	client := &Client{userAgent: expectedUserAgent}
 	vals := &url.Values{
-		"food":   []string{"pancake"},
-		"animal": []string{"lynx"},
+			"food":   []string{"pancake"},
+			"animal": []string{"lynx"},
 	}
-	req := &Request{
+	req, err := client.buildRequest(&Request{
 		Action: GET,
 		Values: vals,
-	}
+	})
 
-	httpReq, err := req.httpRequest()
 	if err != nil {
-		t.Error("failed to generate http request: %v", err)
+		t.Errorf("failed to build http request: %v", err)
 	}
 
-	if httpReq.Body != nil {
-		t.Error("body set in GET request")
+	if req == nil {
+		t.Fatal("returned http.Request is nil")
 	}
 
-	if !strings.Contains(httpReq.URL.String(), vals.Encode()) {
-		t.Error("GET values not written to url")
+	if req.Body != nil {
+		t.Error("GET request has body")
+	}
+
+	if !strings.Contains(req.URL.String(), vals.Encode()) {
+		t.Errorf("GET values not written to url: %s", req.URL.String())
 	}
 }
 
-func TestParseResponse(t *testing.T) {
-	body := closer{bytes.NewBufferString(`{"id":"manning", "age":18}`)}
-	dummy := struct {
-		ID  string `json:"id"`
-		Age int    `json:"age"`
-	}{"jacob", 29}
-	resp := &http.Response{Body: body}
-	if err := parseResponse(resp, &dummy); err != nil {
-		t.Errorf("parsing response failed: %v\n", err)
+func TestBuildPostNilValues(t *testing.T) {
+	client := &Client{}
+	req, err := client.buildRequest(&Request{Action: POST})
+	if err == nil {
+		t.Error("no error on nil values in POST request")
+	}
+	if req != nil {
+		t.Error("returned http.Request is not nil")
+	}
+}
+
+func TestBuildGetNilValues(t *testing.T) {
+	client := &Client{}
+	req, err := client.buildRequest(&Request{Action: GET})
+	if err != nil {
+		t.Error("error on nil values in GET request")
+	}
+	if req == nil {
+		t.Error("returned http.Request is nil")
+	}
+}
+
+func TestSend(t *testing.T) {
+	expectedResponse := "sample response"
+	writeResponse := func (w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, expectedResponse)
+	}
+	serv := httptest.NewServer(http.HandlerFunc(writeResponse))
+	client := &Client{client: http.DefaultClient}
+
+	url, err := url.Parse(serv.URL)
+	if err != nil {
+		t.Errorf("failed to parse test server url: %v", err)
 	}
 
-	if dummy.ID != "manning" || dummy.Age != 18 {
-		t.Error("field incorrectly unmarshaled")
+	buf, err := client.doRequest(&http.Request{URL: url})
+	if err != nil {
+		t.Errorf("failed to send request: %v", err)
+	}
+
+	if buf == nil {
+		t.Error("failed to extract response; body is nil")
+	}
+
+	actualResponse := bytes.NewBuffer(buf).String()
+	if actualResponse != expectedResponse {
+		t.Errorf(
+			"bad response; expected %s, got %s",
+			expectedResponse,
+			actualResponse)
+	}
+}
+
+func TestSendError(t *testing.T) {
+	makeError := func (w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "an error", http.StatusInternalServerError)
+	}
+	serv := httptest.NewServer(http.HandlerFunc(makeError))
+	client := &Client{client: http.DefaultClient}
+
+	url, err := url.Parse(serv.URL)
+	if err != nil {
+		t.Errorf("failed to parse test server url: %v", err)
+	}
+
+	actualResponse, err := client.doRequest(&http.Request{URL: url})
+	if err == nil {
+		t.Error("no error on server error")
+	}
+
+	if actualResponse != nil {
+		t.Errorf("error from unexpected path; response: %s", actualResponse)
 	}
 }
