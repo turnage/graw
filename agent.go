@@ -82,8 +82,8 @@ func NewAgentFromFile(filename string) (*Agent, error) {
 func (a *Agent) Me() (*Redditor, error) {
 	resp := &Redditor{}
 	err := a.client.Do(&nface.Request{
-			Action:  nface.GET,
-			BaseUrl: baseURL + meURL,
+		Action:  nface.GET,
+		BaseUrl: baseURL + meURL,
 	}, resp)
 	return resp, err
 }

@@ -11,6 +11,7 @@ import (
 )
 
 type ReqAction int
+
 const (
 	GET  = iota
 	POST = iota
@@ -22,6 +23,7 @@ const (
 	contentType = "application/x-www-form-urlencoded"
 )
 
+// Client manages a connection with the reddit api.
 type Client struct {
 	// client holds an http.Transport that automatically handles OAuth.
 	client *http.Client
@@ -41,7 +43,7 @@ type Request struct {
 }
 
 // NewClient returns a new Client struct.
-func NewClient(client *http.Client, userAgent string) (*Client) {
+func NewClient(client *http.Client, userAgent string) *Client {
 	return &Client{client: client, user: userAgent}
 }
 

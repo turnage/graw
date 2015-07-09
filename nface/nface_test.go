@@ -15,8 +15,8 @@ func TestBuildPost(t *testing.T) {
 	expectedUserAgent := "test"
 	client := &Client{userAgent: expectedUserAgent}
 	vals := &url.Values{
-			"food":   []string{"pancake"},
-			"animal": []string{"lynx"},
+		"food":   []string{"pancake"},
+		"animal": []string{"lynx"},
 	}
 	req, err := client.buildRequest(&Request{
 		Action: POST,
@@ -63,8 +63,8 @@ func TestBuildGet(t *testing.T) {
 	expectedUserAgent := "test"
 	client := &Client{userAgent: expectedUserAgent}
 	vals := &url.Values{
-			"food":   []string{"pancake"},
-			"animal": []string{"lynx"},
+		"food":   []string{"pancake"},
+		"animal": []string{"lynx"},
 	}
 	req, err := client.buildRequest(&Request{
 		Action: GET,
@@ -112,7 +112,7 @@ func TestBuildGetNilValues(t *testing.T) {
 
 func TestSend(t *testing.T) {
 	expectedResponse := "sample response"
-	writeResponse := func (w http.ResponseWriter, r *http.Request) {
+	writeResponse := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, expectedResponse)
 	}
 	serv := httptest.NewServer(http.HandlerFunc(writeResponse))
@@ -142,7 +142,7 @@ func TestSend(t *testing.T) {
 }
 
 func TestSendError(t *testing.T) {
-	makeError := func (w http.ResponseWriter, r *http.Request) {
+	makeError := func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "an error", http.StatusInternalServerError)
 	}
 	serv := httptest.NewServer(http.HandlerFunc(makeError))
