@@ -16,6 +16,8 @@ import (
 const (
 	// authURL is the url for authorization requests.
 	authURL = "https://www.reddit.com/api/v1/access_token"
+	// baseURL is the base url for all api calls.
+	baseURL = "https://oauth.reddit.com/api"
 )
 
 // Agent wraps the reddit api; all api calls go through Agent.
@@ -46,8 +48,12 @@ func NewAgent(userAgent, id, secret, user, pass string) (*Agent, error) {
 		return nil, errors.New("received invalid token")
 	}
 
-	return &Agent{client: nface.NewClient(
-		conf.Client(oauth2.NoContext, token), userAgent)}, nil
+	return &Agent{
+		client: nface.NewClient(
+			conf.Client(oauth2.NoContext, token),
+			userAgent,
+			baseURL),
+		}, nil
 }
 
 // NewAgentFromFile calls NewAgent with auth information read from a

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/paytonturnage/graw/nface"
@@ -13,9 +12,8 @@ func TestMeRequest(t *testing.T) {
 		t.Errorf("action incorrect; expected %v, got %v", nface.GET, req.Action)
 	}
 
-	expectedURL := fmt.Sprintf("%s%s", baseURL, meURL)
-	if req.BaseURL != expectedURL {
-		t.Errorf("url incorrect; expected %s, got %s", expectedURL, req.BaseURL)
+	if req.URL != meURL {
+		t.Errorf("url incorrect; expected %s, got %s", meURL, req.URL)
 	}
 }
 
@@ -25,8 +23,7 @@ func TestMeKarmaRequest(t *testing.T) {
 		t.Errorf("action incorrect; expected %v, got %v", nface.GET, req.Action)
 	}
 
-	expectedURL := fmt.Sprintf("%s%s", baseURL, meKarmaURL)
-	if req.BaseURL != expectedURL {
-		t.Errorf("url incorrect; expected %s, got %s", expectedURL, req.BaseURL)
+	if req.URL != meKarmaURL {
+		t.Errorf("url incorrect; expected %s, got %s", meKarmaURL, req.URL)
 	}
 }
