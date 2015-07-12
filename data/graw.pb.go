@@ -11,6 +11,7 @@ It is generated from these files:
 It has these top-level messages:
 	UserAgent
 	Redditor
+	SubredditKarma
 	KarmaList
 */
 package data
@@ -211,62 +212,53 @@ func (m *Redditor) GetHideFromRobots() bool {
 	return false
 }
 
-// KarmaList describes a karma breakdown by subreddit.
-type KarmaList struct {
-	// kind stores the type annotation reddit's api provides.
-	Kind *string `protobuf:"bytes,1,opt,name=kind" json:"kind,omitempty"`
-	// data contains the list of subreddits with their karma breakdown.
-	Data             []*KarmaList_SubredditKarma `protobuf:"bytes,2,rep,name=data" json:"data,omitempty"`
-	XXX_unrecognized []byte                      `json:"-"`
-}
-
-func (m *KarmaList) Reset()         { *m = KarmaList{} }
-func (m *KarmaList) String() string { return proto.CompactTextString(m) }
-func (*KarmaList) ProtoMessage()    {}
-
-func (m *KarmaList) GetKind() string {
-	if m != nil && m.Kind != nil {
-		return *m.Kind
-	}
-	return ""
-}
-
-func (m *KarmaList) GetData() []*KarmaList_SubredditKarma {
-	if m != nil {
-		return m.Data
-	}
-	return nil
-}
-
 // SubredditKarma describes karma for a given subreddit
-type KarmaList_SubredditKarma struct {
+type SubredditKarma struct {
 	Sr               *string `protobuf:"bytes,1,opt,name=sr" json:"sr,omitempty"`
 	LinkKarma        *int32  `protobuf:"varint,2,opt,name=link_karma" json:"link_karma,omitempty"`
 	CommentKarma     *int32  `protobuf:"varint,3,opt,name=comment_karma" json:"comment_karma,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (m *KarmaList_SubredditKarma) Reset()         { *m = KarmaList_SubredditKarma{} }
-func (m *KarmaList_SubredditKarma) String() string { return proto.CompactTextString(m) }
-func (*KarmaList_SubredditKarma) ProtoMessage()    {}
+func (m *SubredditKarma) Reset()         { *m = SubredditKarma{} }
+func (m *SubredditKarma) String() string { return proto.CompactTextString(m) }
+func (*SubredditKarma) ProtoMessage()    {}
 
-func (m *KarmaList_SubredditKarma) GetSr() string {
+func (m *SubredditKarma) GetSr() string {
 	if m != nil && m.Sr != nil {
 		return *m.Sr
 	}
 	return ""
 }
 
-func (m *KarmaList_SubredditKarma) GetLinkKarma() int32 {
+func (m *SubredditKarma) GetLinkKarma() int32 {
 	if m != nil && m.LinkKarma != nil {
 		return *m.LinkKarma
 	}
 	return 0
 }
 
-func (m *KarmaList_SubredditKarma) GetCommentKarma() int32 {
+func (m *SubredditKarma) GetCommentKarma() int32 {
 	if m != nil && m.CommentKarma != nil {
 		return *m.CommentKarma
 	}
 	return 0
+}
+
+// KarmaList describes a karma breakdown by subreddit.
+type KarmaList struct {
+	// data contains the list of subreddits with their karma breakdown.
+	Data             []*SubredditKarma `protobuf:"bytes,2,rep,name=data" json:"data,omitempty"`
+	XXX_unrecognized []byte            `json:"-"`
+}
+
+func (m *KarmaList) Reset()         { *m = KarmaList{} }
+func (m *KarmaList) String() string { return proto.CompactTextString(m) }
+func (*KarmaList) ProtoMessage()    {}
+
+func (m *KarmaList) GetData() []*SubredditKarma {
+	if m != nil {
+		return m.Data
+	}
+	return nil
 }

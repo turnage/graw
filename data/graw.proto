@@ -33,16 +33,15 @@ message Redditor {
   optional bool hide_from_robots = 16;
 }
 
+// SubredditKarma describes karma for a given subreddit
+message SubredditKarma {
+  optional string sr = 1;
+  optional int32 link_karma = 2;
+  optional int32 comment_karma = 3;
+}
+
 // KarmaList describes a karma breakdown by subreddit.
 message KarmaList {
-  // SubredditKarma describes karma for a given subreddit
-  message SubredditKarma {
-    optional string sr = 1;
-    optional int32 link_karma = 2;
-    optional int32 comment_karma = 3;
-  }
-  // kind stores the type annotation reddit's api provides.
-  optional string kind = 1;
   // data contains the list of subreddits with their karma breakdown.
   repeated SubredditKarma data = 2;
 }

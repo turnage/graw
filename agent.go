@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/paytonturnage/graw/api"
 	"github.com/paytonturnage/graw/data"
 	"github.com/paytonturnage/graw/nface"
 	"golang.org/x/oauth2"
@@ -18,6 +17,14 @@ const (
 	authURL = "https://www.reddit.com/api/v1/access_token"
 	// baseURL is the base url for all api calls.
 	baseURL = "https://oauth.reddit.com/api"
+)
+
+// Reddit api call urls.
+const (
+	// meURL is the url exension for the /v1/me api call.
+	meURL = "/v1/me"
+	// meKarmaURL is the url extension /v1/me/karma api call.
+	meKarmaURL = "/v1/me/karma"
 )
 
 // Agent wraps the reddit api; all api calls go through Agent.
@@ -53,7 +60,7 @@ func NewAgent(userAgent, id, secret, user, pass string) (*Agent, error) {
 			conf.Client(oauth2.NoContext, token),
 			userAgent,
 			baseURL),
-		}, nil
+	}, nil
 }
 
 // NewAgentFromFile calls NewAgent with auth information read from a
@@ -81,14 +88,20 @@ func NewAgentFromFile(filename string) (*Agent, error) {
 // Me wraps /v1/me. See https://www.reddit.com/dev/api#GET_api_v1_me
 func (a *Agent) Me() (*data.Redditor, error) {
 	resp := &data.Redditor{}
-	err := a.client.Do(api.MeRequest(), resp)
+	err := a.client.Do(&nface.Request{
+		Action: nface.GET,
+		URL:    meURL,
+	}, resp)
 	return resp, err
 }
 
 // MeKarma wraps /v1/me/karma. See
 // https://www.reddit.com/dev/api#GET_api_v1_me_karma
-func (a *Agent) MeKarma() (*data.KarmaList, error) {
+func (a *Agent) MeKarma() ([]*data.SubredditKarma, error) {
 	resp := &data.KarmaList{}
-	err := a.client.Do(api.MeKarmaRequest(), resp)
-	return resp, err
+	err := a.client.Do(&nface.Request{
+		Action: nface.GET,
+		URL:    meKarmaURL,
+	}, resp)
+	return resp.GetData(), err
 }

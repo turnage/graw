@@ -49,8 +49,8 @@ type Request struct {
 // NewClient returns a new Client struct.
 func NewClient(client *http.Client, userAgent, baseURL string) *Client {
 	return &Client{
-		baseURL: baseURL,
-		client: client,
+		baseURL:   baseURL,
+		client:    client,
 		userAgent: userAgent,
 	}
 }
