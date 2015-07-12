@@ -2,6 +2,6 @@
 
 Golang Reddit API Wrapper
 
----
+![](https://travis-ci.org/PaytonTurnage/graw.svg)
 
-WIP
+    go get github.com/paytonturnage/graw
