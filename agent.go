@@ -9,6 +9,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/paytonturnage/graw/api"
 	"github.com/paytonturnage/graw/nface"
+	"github.com/paytonturnage/graw/data"
 	"golang.org/x/oauth2"
 )
 
@@ -58,7 +59,7 @@ func NewAgentFromFile(filename string) (*Agent, error) {
 	}
 
 	agentText := bytes.NewBuffer(agentBytes)
-	agent := &UserAgent{}
+	agent := &data.UserAgent{}
 	if err := proto.UnmarshalText(agentText.String(), agent); err != nil {
 		return nil, err
 	}
@@ -72,16 +73,16 @@ func NewAgentFromFile(filename string) (*Agent, error) {
 }
 
 // Me wraps /v1/me. See https://www.reddit.com/dev/api#GET_api_v1_me
-func (a *Agent) Me() (*Redditor, error) {
-	resp := &Redditor{}
+func (a *Agent) Me() (*data.Redditor, error) {
+	resp := &data.Redditor{}
 	err := a.client.Do(api.MeRequest(), resp)
 	return resp, err
 }
 
 // MeKarma wraps /v1/me/karma. See
 // https://www.reddit.com/dev/api#GET_api_v1_me_karma 
-func (a *Agent) MeKarma() (*KarmaList, error) {
-	resp := &KarmaList{}
+func (a *Agent) MeKarma() (*data.KarmaList, error) {
+	resp := &data.KarmaList{}
 	err := a.client.Do(api.MeKarmaRequest(), resp)
 	return resp, err
 }

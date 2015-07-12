@@ -1,5 +1,5 @@
 syntax = "proto2";
-package graw;
+package data;
 
 // UserAgent describes a non-user entity controlling a reddit account. This
 // information is REQUIRED according the reddit api rules.
