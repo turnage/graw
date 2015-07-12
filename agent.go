@@ -8,8 +8,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/paytonturnage/graw/api"
-	"github.com/paytonturnage/graw/nface"
 	"github.com/paytonturnage/graw/data"
+	"github.com/paytonturnage/graw/nface"
 	"golang.org/x/oauth2"
 )
 
@@ -80,7 +80,7 @@ func (a *Agent) Me() (*data.Redditor, error) {
 }
 
 // MeKarma wraps /v1/me/karma. See
-// https://www.reddit.com/dev/api#GET_api_v1_me_karma 
+// https://www.reddit.com/dev/api#GET_api_v1_me_karma
 func (a *Agent) MeKarma() (*data.KarmaList, error) {
 	resp := &data.KarmaList{}
 	err := a.client.Do(api.MeKarmaRequest(), resp)

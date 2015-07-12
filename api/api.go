@@ -26,7 +26,7 @@ func MeRequest() *nface.Request {
 // MeKarmaRequest returns an nface.Request representing a /v1/me/karma call.
 func MeKarmaRequest() *nface.Request {
 	return &nface.Request{
-		Action: nface.GET,
+		Action:  nface.GET,
 		BaseURL: fmt.Sprintf("%s%s", baseURL, meKarmaURL),
 	}
 }

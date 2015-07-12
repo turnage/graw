@@ -1,4 +1,4 @@
-// Pacakge nface handles all communication between Go code and the Reddit api.
+// Package nface handles all communication between Go code and the Reddit api.
 package nface
 
 import (
@@ -10,10 +10,12 @@ import (
 	"net/url"
 )
 
-type ReqAction int
+type reqAction int
 
 const (
-	GET  = iota
+	// GET describes an http GET request.
+	GET = iota
+	// POST describes an http POST request.
 	POST = iota
 )
 
@@ -35,7 +37,7 @@ type Client struct {
 // Request describes how to build an http.Request for the reddit api.
 type Request struct {
 	// Action is the request type (e.g. "POST" or "GET").
-	Action ReqAction
+	Action reqAction
 	// BaseURL is the url of the api call, which values will be appended to.
 	BaseURL string
 	// Values holds any parameters for the api call; encoded in url.

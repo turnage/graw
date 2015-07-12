@@ -39,12 +39,12 @@ func TestBuildPost(t *testing.T) {
 	expectedBody := vals.Encode()
 	actualBody := bytes.NewBuffer(body).String()
 	if actualBody != expectedBody {
-		t.Error("bad POST body; expected %s, got %s", expectedBody, actualBody)
+		t.Errorf("bad POST body; expected %s, got %s", expectedBody, actualBody)
 	}
 
 	actualContentType := req.Header.Get("content-type")
 	if req.Header.Get("content-type") != contentType {
-		t.Error(
+		t.Errorf(
 			"bad content-type; expected %s, got %s",
 			contentType,
 			actualContentType)
@@ -52,7 +52,7 @@ func TestBuildPost(t *testing.T) {
 
 	actualUserAgent := req.Header.Get("user-agent")
 	if actualUserAgent != expectedUserAgent {
-		t.Error(
+		t.Errorf(
 			"bad user-agent; expected %s, got %s",
 			expectedUserAgent,
 			actualUserAgent)
