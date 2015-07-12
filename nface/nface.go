@@ -27,24 +27,24 @@ const (
 type Client struct {
 	// client holds an http.Transport that automatically handles OAuth.
 	client *http.Client
-	// user is a string attached to all request headers that describes
+	// userAgent is a string attached to all request headers that describes
 	// the program to the reddit API. (user-agent)
-	user string
+	userAgent string
 }
 
 // Request describes how to build an http.Request for the reddit api.
 type Request struct {
 	// Action is the request type (e.g. "POST" or "GET").
 	Action ReqAction
-	// BaseUrl is the url of the api call, which values will be appended to.
-	BaseUrl string
+	// BaseURL is the url of the api call, which values will be appended to.
+	BaseURL string
 	// Values holds any parameters for the api call; encoded in url.
 	Values *url.Values
 }
 
 // NewClient returns a new Client struct.
 func NewClient(client *http.Client, userAgent string) *Client {
-	return &Client{client: client, user: userAgent}
+	return &Client{client: client, userAgent: userAgent}
 }
 
 // Do executes a request using Client's auth and user agent. The result is
@@ -68,16 +68,16 @@ func (c *Client) buildRequest(r *Request) (*http.Request, error) {
 	var req *http.Request
 	var err error
 	if r.Action == GET {
-		req, err = getRequest(r.BaseUrl, r.Values)
+		req, err = getRequest(r.BaseURL, r.Values)
 	} else if r.Action == POST {
-		req, err = postRequest(r.BaseUrl, r.Values)
+		req, err = postRequest(r.BaseURL, r.Values)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("user-agent", c.user)
+	req.Header.Add("user-agent", c.userAgent)
 
 	return req, nil
 }
