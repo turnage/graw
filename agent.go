@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/paytonturnage/graw/api"
 	"github.com/paytonturnage/graw/nface"
 	"golang.org/x/oauth2"
 )
@@ -14,13 +15,6 @@ import (
 const (
 	// authURL is the url for authorization requests.
 	authURL = "https://www.reddit.com/api/v1/access_token"
-	// baseURL is the base url for all api calls.
-	baseURL = "https://oauth.reddit.com/api"
-)
-
-// api urls must be defined such that baseURL + apiURL makes the full api call.
-const (
-	meURL = "/v1/me"
 )
 
 // Agent wraps the reddit api; all api calls go through Agent.
@@ -55,9 +49,8 @@ func NewAgent(userAgent, id, secret, user, pass string) (*Agent, error) {
 		conf.Client(oauth2.NoContext, token), userAgent)}, nil
 }
 
-// NewAgentFromFile returns an agent with auth information read from a
-// protobuffer file. See the UserAgent message type in graw.proto for what
-// fields to provide in the file.
+// NewAgentFromFile calls NewAgent with auth information read from a
+// protobuffer file. See useragent.protobuf.example.
 func NewAgentFromFile(filename string) (*Agent, error) {
 	agentBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -81,9 +74,6 @@ func NewAgentFromFile(filename string) (*Agent, error) {
 // Me wraps /v1/me. See https://www.reddit.com/dev/api#GET_api_v1_me
 func (a *Agent) Me() (*Redditor, error) {
 	resp := &Redditor{}
-	err := a.client.Do(&nface.Request{
-		Action:  nface.GET,
-		BaseUrl: baseURL + meURL,
-	}, resp)
+	err := a.client.Do(api.MeRequest(), resp)
 	return resp, err
 }
