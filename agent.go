@@ -77,3 +77,11 @@ func (a *Agent) Me() (*Redditor, error) {
 	err := a.client.Do(api.MeRequest(), resp)
 	return resp, err
 }
+
+// MeKarma wraps /v1/me/karma. See
+// https://www.reddit.com/dev/api#GET_api_v1_me_karma 
+func (a *Agent) MeKarma() (*KarmaList, error) {
+	resp := &KarmaList{}
+	err := a.client.Do(api.MeKarmaRequest(), resp)
+	return resp, err
+}

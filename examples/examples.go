@@ -19,6 +19,12 @@ func main() {
 		fmt.Printf("Failed to get own account: %v", err)
 		os.Exit(-1)
 	}
+	fmt.Printf("Account:\n%s", redditor.String())
 
-	fmt.Printf("Account: \n%s", redditor.String())
+	karmaList, err := agent.MeKarma()
+	if err != nil {
+		fmt.Printf("Failed to get own account: %v", err)
+		os.Exit(-1)
+	}
+	fmt.Printf("Karma breakdown:\n%v", karmaList)
 }
