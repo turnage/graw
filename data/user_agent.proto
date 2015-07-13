@@ -1,0 +1,12 @@
+syntax = "proto2";
+package data;
+
+// UserAgent describes a non-user entity controlling a reddit account. This
+// information is REQUIRED according the reddit api rules.
+message UserAgent {
+  required string user_agent = 1;
+  required string client_id = 2;
+  required string client_secret = 3;
+  required string username = 4;
+  required string password = 5;
+}

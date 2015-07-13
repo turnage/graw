@@ -86,8 +86,8 @@ func NewAgentFromFile(filename string) (*Agent, error) {
 }
 
 // Me wraps /v1/me. See https://www.reddit.com/dev/api#GET_api_v1_me
-func (a *Agent) Me() (*data.Redditor, error) {
-	resp := &data.Redditor{}
+func (a *Agent) Me() (*data.Account, error) {
+	resp := &data.Account{}
 	err := a.client.Do(&nface.Request{
 		Action: nface.GET,
 		URL:    meURL,
