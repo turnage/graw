@@ -8,20 +8,20 @@ import (
 )
 
 func main() {
-	agent, err := graw.NewAgentFromFile("useragent.protobuf")
+	graw, err := graw.NewGrawFromFile("useragent.protobuf")
 	if err != nil {
-		fmt.Printf("Failed to make agent: %v", err)
+		fmt.Printf("Failed to make graw: %v", err)
 		os.Exit(-1)
 	}
 
-	redditor, err := agent.Me()
+	redditor, err := graw.Me()
 	if err != nil {
 		fmt.Printf("Failed to get own account: %v", err)
 		os.Exit(-1)
 	}
 	fmt.Printf("Account:\n%s", redditor.String())
 
-	karmaList, err := agent.MeKarma()
+	karmaList, err := graw.MeKarma()
 	if err != nil {
 		fmt.Printf("Failed to get own account: %v", err)
 		os.Exit(-1)
