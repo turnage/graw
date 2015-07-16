@@ -8,7 +8,7 @@ Package data is a generated protocol buffer package.
 It is generated from these files:
 	account.proto
 	karma.proto
-	user_agent.proto
+	useragent.proto
 
 It has these top-level messages:
 	Account
