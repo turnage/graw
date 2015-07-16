@@ -25,6 +25,8 @@ const (
 const (
 	// authURL is the url for authorization requests.
 	authURL = "https://www.reddit.com/api/v1/access_token"
+	// baseURL is the default base url for all api calls.
+	baseURL = "https://oauth.reddit.com/api"
 	// contentType is a header flag for POST requests so the reddit api
 	// knows how to read the request body.
 	contentType = "application/x-www-form-urlencoded"
@@ -32,7 +34,7 @@ const (
 
 // Client manages a connection with the reddit api.
 type Client struct {
-	// baseURL is the base url of all reddit api calls.
+	// baseURL is the base url for all api calls.
 	baseURL string
 	// client holds an http.Transport that automatically handles OAuth.
 	client *http.Client
@@ -51,9 +53,15 @@ type Request struct {
 }
 
 // NewClient returns a new Client struct.
-func NewClient(userAgent *data.UserAgent, baseURL string) (*Client, error) {
+func NewClient(userAgent *data.UserAgent) (*Client, error) {
 	client := &Client{baseURL: baseURL, userAgent: userAgent}
 	return client, client.oauth(authURL)
+}
+
+// TestClient returns an nface.Client which uses the provided http.Client for
+// network actions.
+func TestClient(c *http.Client, baseURL string) *Client {
+	return &Client{baseURL: baseURL, client: c}
 }
 
 // Do executes a request using Client's auth and user agent. The result is
