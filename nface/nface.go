@@ -8,6 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/paytonturnage/graw/data"
+	"golang.org/x/oauth2"
 )
 
 type reqAction int
@@ -20,6 +23,8 @@ const (
 )
 
 const (
+	// authURL is the url for authorization requests.
+	authURL = "https://www.reddit.com/api/v1/access_token"
 	// contentType is a header flag for POST requests so the reddit api
 	// knows how to read the request body.
 	contentType = "application/x-www-form-urlencoded"
@@ -31,9 +36,8 @@ type Client struct {
 	baseURL string
 	// client holds an http.Transport that automatically handles OAuth.
 	client *http.Client
-	// userAgent is a string attached to all request headers that describes
-	// the program to the reddit API. (user-agent)
-	userAgent string
+	// userAgent is information identifying the graw program to reddit.
+	userAgent *data.UserAgent
 }
 
 // Request describes how to build an http.Request for the reddit api.
@@ -47,12 +51,9 @@ type Request struct {
 }
 
 // NewClient returns a new Client struct.
-func NewClient(client *http.Client, userAgent, baseURL string) *Client {
-	return &Client{
-		baseURL:   baseURL,
-		client:    client,
-		userAgent: userAgent,
-	}
+func NewClient(userAgent *data.UserAgent, baseURL string) (*Client, error) {
+	client := &Client{baseURL: baseURL, userAgent: userAgent}
+	return client, client.oauth(authURL)
 }
 
 // Do executes a request using Client's auth and user agent. The result is
@@ -87,7 +88,7 @@ func (c *Client) buildRequest(r *Request) (*http.Request, error) {
 		return nil, err
 	}
 
-	req.Header.Add("user-agent", c.userAgent)
+	req.Header.Add("user-agent", c.userAgent.GetUserAgent())
 
 	return req, nil
 }
@@ -115,6 +116,29 @@ func (c *Client) doRequest(r *http.Request) ([]byte, error) {
 	}
 
 	return buf, nil
+}
+
+// oauth attempts to authenticate with reddit using OAuth2 and the nface's
+// user agent.
+func (c *Client) oauth(auth string) error {
+	conf := &oauth2.Config{
+		ClientID:     c.userAgent.GetClientId(),
+		ClientSecret: c.userAgent.GetClientSecret(),
+		Endpoint: oauth2.Endpoint{
+			TokenURL: auth,
+		},
+	}
+
+	token, err := conf.PasswordCredentialsToken(
+		oauth2.NoContext,
+		c.userAgent.GetUsername(),
+		c.userAgent.GetPassword())
+	if err != nil {
+		return err
+	}
+
+	c.client = conf.Client(oauth2.NoContext, token)
+	return nil
 }
 
 // postRequest returns a template http.Request with the given url and POST form

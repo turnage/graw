@@ -2,18 +2,23 @@ package nface
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/paytonturnage/graw/data"
+	"github.com/paytonturnage/graw/testutil"
 )
 
 func TestBuildPost(t *testing.T) {
-	expectedUserAgent := "test"
-	client := &Client{userAgent: expectedUserAgent}
+	expectedAgent := "test"
+	userAgent := &data.UserAgent{UserAgent: &expectedAgent}
+	client := &Client{userAgent: userAgent}
 	vals := &url.Values{
 		"food":   []string{"pancake"},
 		"animal": []string{"lynx"},
@@ -51,17 +56,16 @@ func TestBuildPost(t *testing.T) {
 	}
 
 	actualUserAgent := req.Header.Get("user-agent")
-	if actualUserAgent != expectedUserAgent {
+	if actualUserAgent != expectedAgent {
 		t.Errorf(
 			"bad user-agent; expected %s, got %s",
-			expectedUserAgent,
+			expectedAgent,
 			actualUserAgent)
 	}
 }
 
 func TestBuildGet(t *testing.T) {
-	expectedUserAgent := "test"
-	client := &Client{userAgent: expectedUserAgent}
+	client := &Client{}
 	vals := &url.Values{
 		"food":   []string{"pancake"},
 		"animal": []string{"lynx"},
@@ -110,12 +114,58 @@ func TestBuildGetNilValues(t *testing.T) {
 	}
 }
 
-func TestSend(t *testing.T) {
-	expectedResponse := "sample response"
-	writeResponse := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, expectedResponse)
+func TestDo(t *testing.T) {
+	expected := &data.UserAgent{}
+	if err := proto.UnmarshalText(`
+		user_agent: "agent"
+		client_id: "id"
+		client_secret: "secret"
+		username: "username"
+		password: "password"
+	`, expected); err != nil {
+		t.Fatalf("failed to build expectation proto: %v", err)
 	}
-	serv := httptest.NewServer(http.HandlerFunc(writeResponse))
+	server := testutil.NewServerFromResponse(200, []byte(`{
+		"user_agent": "agent",
+		"client_id": "id",
+		"client_secret": "secret",
+		"username": "username",
+		"password": "password"
+	}`))
+
+	actual := &data.UserAgent{}
+	client := &Client{client: http.DefaultClient}
+	if err := client.Do(&Request{URL: server.URL}, actual); err != nil {
+		t.Errorf("executing request failed: %v", err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("expected %v, got %v", actual, expected)
+	}
+}
+
+func TestOAuth(t *testing.T) {
+	server := testutil.NewServerFromResponse(200, []byte(`{
+			"access_token": "sjkhefwhf383nfjkf",
+			"token_type": "bearer",
+			"expires_in": 3600
+			"scope": "*",
+			"refresh_token": "akjfbkfjhksdjhf"
+	}`))
+	userAgent := data.NewUserAgent("test", "id", "secret", "user", "pass")
+	client := &Client{userAgent: userAgent}
+	if err := client.oauth(server.URL); err != nil {
+		t.Errorf("failed to make oauth client: %v", err)
+	}
+
+	if client == nil {
+		t.Error("client not returned")
+	}
+}
+
+func TestSend(t *testing.T) {
+	expected := []byte("sample response")
+	serv := testutil.NewServerFromResponse(200, expected)
 	client := &Client{client: http.DefaultClient}
 
 	url, err := url.Parse(serv.URL)
@@ -123,21 +173,17 @@ func TestSend(t *testing.T) {
 		t.Errorf("failed to parse test server url: %v", err)
 	}
 
-	buf, err := client.doRequest(&http.Request{URL: url})
+	actual, err := client.doRequest(&http.Request{URL: url})
 	if err != nil {
 		t.Errorf("failed to send request: %v", err)
 	}
 
-	if buf == nil {
+	if actual == nil {
 		t.Error("failed to extract response; body is nil")
 	}
 
-	actualResponse := bytes.NewBuffer(buf).String()
-	if actualResponse != expectedResponse {
-		t.Errorf(
-			"bad response; expected %s, got %s",
-			expectedResponse,
-			actualResponse)
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("bad response; expected %s, got %s", expected, actual)
 	}
 }
 
