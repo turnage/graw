@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -21,6 +22,8 @@ const (
 	// maxQueriesPerWindow is the amount of queries allowed per minute according
 	// to the rules of the reddit api.
 	maxQueriesPerWindow = 60
+	// holdSymbol is the symbol in api urls to be replaced with values.
+	holdSymbol = "#"
 )
 
 // Reddit api call urls.
@@ -29,6 +32,8 @@ const (
 	meURL = "/v1/me"
 	// meKarmaURL is the url extension /v1/me/karma api call.
 	meKarmaURL = "/v1/me/karma"
+	// userURL is the url for fetching user info.
+	userURL = "/user/#/about"
 )
 
 // Graw wraps the reddit api; all api calls go through Graw.
@@ -73,6 +78,17 @@ func (g *Graw) MeKarma() ([]*data.SubredditKarma, error) {
 	resp := &data.KarmaList{}
 	err := g.do(&nface.Request{Action: nface.GET, URL: meKarmaURL}, resp)
 	return resp.GetData(), err
+}
+
+// User wraps /user/username/about. See
+// https://www.reddit.com/dev/api#GET_user_{username}_about
+func (g *Graw) User(username string) (*data.Account, error) {
+	resp := &data.Account{}
+	err := g.do(&nface.Request{
+		Action: nface.GET,
+		URL:    strings.Replace(userURL, holdSymbol, username, 1),
+	}, resp)
+	return resp, err
 }
 
 // do executes a request using the Graw's client, and abides the query limit.
