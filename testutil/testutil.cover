@@ -1,0 +1,15 @@
+mode: set
+github.com/paytonturnage/graw/testutil/testutil.go:15.51,18.51 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:18.51,20.5 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:27.74,29.65 2 1
+github.com/paytonturnage/graw/testutil/testutil.go:34.2,34.61 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:29.65,33.3 3 1
+github.com/paytonturnage/graw/testutil/testutil.go:39.72,40.31 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:44.2,44.22 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:51.2,53.16 3 1
+github.com/paytonturnage/graw/testutil/testutil.go:57.2,57.44 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:40.31,42.3 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:44.22,45.22 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:48.3,48.15 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:45.22,47.4 1 1
+github.com/paytonturnage/graw/testutil/testutil.go:53.16,55.3 1 0
