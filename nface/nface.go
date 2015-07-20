@@ -25,8 +25,6 @@ const (
 const (
 	// authURL is the url for authorization requests.
 	authURL = "https://www.reddit.com/api/v1/access_token"
-	// baseURL is the default base url for all api calls.
-	baseURL = "https://oauth.reddit.com/api"
 	// contentType is a header flag for POST requests so the reddit api
 	// knows how to read the request body.
 	contentType = "application/x-www-form-urlencoded"
@@ -34,8 +32,6 @@ const (
 
 // Client manages a connection with the reddit api.
 type Client struct {
-	// baseURL is the base url for all api calls.
-	baseURL string
 	// client holds an http.Transport that automatically handles OAuth.
 	client *http.Client
 	// userAgent is information identifying the graw program to reddit.
@@ -54,14 +50,14 @@ type Request struct {
 
 // NewClient returns a new Client struct.
 func NewClient(userAgent *data.UserAgent) (*Client, error) {
-	client := &Client{baseURL: baseURL, userAgent: userAgent}
+	client := &Client{userAgent: userAgent}
 	return client, client.oauth(authURL)
 }
 
 // TestClient returns an nface.Client which uses the provided http.Client for
 // network actions.
-func TestClient(c *http.Client, baseURL string) *Client {
-	return &Client{baseURL: baseURL, client: c}
+func TestClient(c *http.Client) *Client {
+	return &Client{client: c}
 }
 
 // Do executes a request using Client's auth and user agent. The result is
@@ -80,16 +76,26 @@ func (c *Client) Do(r *Request, response interface{}) error {
 	return json.Unmarshal(resp, response)
 }
 
+// Raw sends a request to the reddit api server with no error checking, parsing
+// of the response, or query limits.
+func (c *Client) Raw(r *Request) ([]byte, error) {
+	req, err := c.buildRequest(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.doRequest(req)
+}
+
 // buildRequest builds an http.Request from a Request struct.
 func (c *Client) buildRequest(r *Request) (*http.Request, error) {
 	var req *http.Request
 	var err error
 
-	callURL := fmt.Sprintf("%s%s", c.baseURL, r.URL)
 	if r.Action == GET {
-		req, err = getRequest(callURL, r.Values)
+		req, err = getRequest(r.URL, r.Values)
 	} else if r.Action == POST {
-		req, err = postRequest(callURL, r.Values)
+		req, err = postRequest(r.URL, r.Values)
 	}
 
 	if err != nil {

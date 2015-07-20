@@ -10,28 +10,36 @@ import (
 	"reflect"
 )
 
+// TestRoundTripper redirects all requests to a test server.
+type TestRoundTripper struct {
+	URL *url.URL
+}
+
+func (t TestRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	r.URL = t.URL
+	return http.DefaultClient.Do(r)
+}
+
 // NewProxyClient returns an http.Client that redirects all requests to the
 // redirect url.
-func NewProxyClient(redirect string) *http.Client {
+func NewProxyClient(redirURL *url.URL) *http.Client {
 	return &http.Client{
-		Transport: &http.Transport{
-			Proxy: func(r *http.Request) (*url.URL, error) {
-				return url.Parse(redirect)
-			},
-		},
+		Transport: TestRoundTripper{URL: redirURL},
 	}
 }
 
 // NewServerFromResponse returns an httptest.Server that always responds with
 // response and status.
-func NewServerFromResponse(status int, response []byte) *httptest.Server {
-	responseString := bytes.NewBuffer(response).String()
+func NewServerFromResponse(stat int, resp []byte) (*httptest.Server, *url.URL) {
+	responseString := bytes.NewBuffer(resp).String()
 	responseWriter := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(status)
+		w.WriteHeader(stat)
 		w.Header().Set("content-type", "application/json")
 		fmt.Fprint(w, responseString)
 	}
-	return httptest.NewServer(http.HandlerFunc(responseWriter))
+	server := httptest.NewServer(http.HandlerFunc(responseWriter))
+	serverURL, _ := url.Parse(server.URL)
+	return server, serverURL
 }
 
 // RepsonseIs returns true iff the response status code and body are identical

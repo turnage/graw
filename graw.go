@@ -19,12 +19,12 @@ const (
 
 // Reddit api call urls.
 const (
-	// meURL is the url exension for the /v1/me api call.
-	meURL = "/v1/me"
-	// meKarmaURL is the url extension /v1/me/karma api call.
-	meKarmaURL = "/v1/me/karma"
-	// userURL is the url for fetching user info.
-	userURL = "/user/#/about"
+	// meURL is the url for the /v1/me api call.
+	meURL = "https://oauth.reddit.com/api/v1/me"
+	// meKarmaURL is the url for the /v1/me/karma api call.
+	meKarmaURL = "https://oauth.reddit.com/api/v1/me/karma"
+	// userURL is the url for the user/about api call.
+	userURL = "https://oauth.reddit.com/api/user/#/about"
 )
 
 // Graw wraps the reddit api; all api calls go through Graw.
@@ -46,7 +46,7 @@ func NewGraw(userAgent *data.UserAgent) (*Graw, error) {
 	}
 
 	return &Graw{
-		client: client,
+		client:      client,
 		windowStart: time.Now(),
 	}, nil
 }

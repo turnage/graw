@@ -14,12 +14,11 @@ func TestMe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("preparing response failed: %v", err)
 	}
-	server := testutil.NewServerFromResponse(200, resp)
+	server, serverURL := testutil.NewServerFromResponse(200, resp)
+	defer server.Close()
+
 	agent := &Graw{
-		client: nface.TestClient(
-			testutil.NewProxyClient(server.URL),
-			server.URL,
-		),
+		client: nface.TestClient(testutil.NewProxyClient(serverURL)),
 	}
 	if _, err := agent.Me(); err != nil {
 		t.Fatalf("failed to get self: %v", err)
@@ -31,12 +30,11 @@ func TestMeKarma(t *testing.T) {
 	if err != nil {
 		t.Fatalf("preparing response failed: %v", err)
 	}
-	server := testutil.NewServerFromResponse(200, resp)
+	server, serverURL := testutil.NewServerFromResponse(200, resp)
+	defer server.Close()
+
 	agent := &Graw{
-		client: nface.TestClient(
-			testutil.NewProxyClient(server.URL),
-			server.URL,
-		),
+		client: nface.TestClient(testutil.NewProxyClient(serverURL)),
 	}
 	if _, err := agent.MeKarma(); err != nil {
 		t.Fatalf("failed to get karma: %v", err)
@@ -48,12 +46,11 @@ func TestMeUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("preparing response failed: %v", err)
 	}
-	server := testutil.NewServerFromResponse(200, resp)
+	server, serverURL := testutil.NewServerFromResponse(200, resp)
+	defer server.Close()
+
 	agent := &Graw{
-		client: nface.TestClient(
-			testutil.NewProxyClient(server.URL),
-			server.URL,
-		),
+		client: nface.TestClient(testutil.NewProxyClient(serverURL)),
 	}
 	if _, err := agent.User("user"); err != nil {
 		t.Fatalf("failed to get user: %v", err)

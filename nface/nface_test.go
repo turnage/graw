@@ -125,7 +125,7 @@ func TestDo(t *testing.T) {
 	`, expected); err != nil {
 		t.Fatalf("failed to build expectation proto: %v", err)
 	}
-	server := testutil.NewServerFromResponse(200, []byte(`{
+	serv, _ := testutil.NewServerFromResponse(200, []byte(`{
 		"user_agent": "agent",
 		"client_id": "id",
 		"client_secret": "secret",
@@ -135,7 +135,7 @@ func TestDo(t *testing.T) {
 
 	actual := &data.UserAgent{}
 	client := &Client{client: http.DefaultClient}
-	if err := client.Do(&Request{URL: server.URL}, actual); err != nil {
+	if err := client.Do(&Request{URL: serv.URL}, actual); err != nil {
 		t.Errorf("executing request failed: %v", err)
 	}
 
@@ -145,7 +145,7 @@ func TestDo(t *testing.T) {
 }
 
 func TestOAuth(t *testing.T) {
-	server := testutil.NewServerFromResponse(200, []byte(`{
+	serv, _ := testutil.NewServerFromResponse(200, []byte(`{
 			"access_token": "sjkhefwhf383nfjkf",
 			"token_type": "bearer",
 			"expires_in": 3600
@@ -154,7 +154,7 @@ func TestOAuth(t *testing.T) {
 	}`))
 	userAgent := data.NewUserAgent("test", "id", "secret", "user", "pass")
 	client := &Client{userAgent: userAgent}
-	if err := client.oauth(server.URL); err != nil {
+	if err := client.oauth(serv.URL); err != nil {
 		t.Errorf("failed to make oauth client: %v", err)
 	}
 
@@ -165,7 +165,7 @@ func TestOAuth(t *testing.T) {
 
 func TestSend(t *testing.T) {
 	expected := []byte("sample response")
-	serv := testutil.NewServerFromResponse(200, expected)
+	serv, _ := testutil.NewServerFromResponse(200, expected)
 	client := &Client{client: http.DefaultClient}
 
 	url, err := url.Parse(serv.URL)
