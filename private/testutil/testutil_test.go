@@ -5,53 +5,29 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
-	"net/url"
 	"reflect"
 	"testing"
 )
 
-// bytesCloser implements io.ReadCloser around bytes.Buffer. This makes it
-// easier to inject expected body content into http.Response structs.
-type bytesCloser struct {
-	*bytes.Buffer
-}
-
-func (b bytesCloser) Close() error {
-	return nil
-}
-
-func TestNewProxyClient(t *testing.T) {
-	expectedString := "sample response"
-	writeResponse := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, expectedString)
-	}
-	server := httptest.NewServer(http.HandlerFunc(writeResponse))
-	client := NewProxyClient(server.URL)
-
-	dummyURL, err := url.Parse("http://www.google.com")
+func TestNewReadCloser(t *testing.T) {
+	expected := "internet"
+	resp := &http.Response{Body: NewReadCloser(expected, nil)}
+	buffer, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		t.Fatalf("failed to create url: %v", err)
+		t.Errorf("failed to read body: %v", err)
 	}
 
-	resp, err := client.Do(&http.Request{URL: dummyURL})
-	if err != nil {
-		t.Fatalf("failed request to proxy server: %v", err)
+	actual := bytes.NewBuffer(buffer).String()
+	if actual != expected {
+		t.Errorf(
+			"content not correct; got %v, wanted %v",
+			actual,
+			expected)
 	}
 
-	if resp.StatusCode != 200 {
-		t.Errorf("request returned bad status: %d", resp.StatusCode)
-	}
-
-	if resp.Body == nil {
-		t.Fatalf("no body in response")
-	}
-
-	defer resp.Body.Close()
-	respBytes, err := ioutil.ReadAll(resp.Body)
-	expected := []byte(expectedString)
-	if !reflect.DeepEqual(respBytes, expected) {
-		t.Errorf("response incorrect; expected %s, got %s", respBytes, expected)
+	resp.Body = NewReadCloser(expected, fmt.Errorf("an error"))
+	if _, err := ioutil.ReadAll(resp.Body); err == nil {
+		t.Error("requested error not returned by Read() calls")
 	}
 }
 
@@ -91,21 +67,31 @@ func TestResponseIs(t *testing.T) {
 
 	if ResponseIs(&http.Response{
 		StatusCode: 201,
-		Body:       bytesCloser{Buffer: bytes.NewBuffer(expected)},
+		Body:       bytesCloser{buffer: bytes.NewBuffer(expected)},
 	}, 200, expected) {
 		t.Error("failed to identify status code difference")
 	}
 
 	if ResponseIs(&http.Response{
 		StatusCode: 200,
-		Body:       bytesCloser{Buffer: bytes.NewBuffer(expected)},
+		Body: bytesCloser{
+			buffer: bytes.NewBuffer(expected),
+			err:    fmt.Errorf("AN ERROR"),
+		},
+	}, 200, expected) {
+		t.Error("faulty read of response body did not become a diff")
+	}
+
+	if ResponseIs(&http.Response{
+		StatusCode: 200,
+		Body:       bytesCloser{buffer: bytes.NewBuffer(expected)},
 	}, 200, []byte("sdfsdj")) {
 		t.Error("body comparison failed; should have returned false")
 	}
 
 	if !ResponseIs(&http.Response{
 		StatusCode: 200,
-		Body:       bytesCloser{Buffer: bytes.NewBuffer(expected)},
+		Body:       bytesCloser{buffer: bytes.NewBuffer(expected)},
 	}, 200, expected) {
 		t.Error("body comparison failed; should have returned true")
 	}

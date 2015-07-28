@@ -3,43 +3,50 @@ package testutil
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"reflect"
 )
 
-// TestRoundTripper redirects all requests to a test server.
-type TestRoundTripper struct {
-	URL *url.URL
+type bytesCloser struct {
+	buffer *bytes.Buffer
+	err    error
 }
 
-func (t TestRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	r.URL = t.URL
-	return http.DefaultClient.Do(r)
+func (b bytesCloser) Read(p []byte) (int, error) {
+	if b.err != nil {
+		return 0, b.err
+	}
+
+	return b.buffer.Read(p)
 }
 
-// NewProxyClient returns an http.Client that redirects all requests to the
-// redirect url.
-func NewProxyClient(redirURL *url.URL) *http.Client {
-	return &http.Client{
-		Transport: TestRoundTripper{URL: redirURL},
+func (b bytesCloser) Close() error {
+	return nil
+}
+
+// NewReadCloser returns a an io.ReadCloser with the content provided, which
+// will return the err provided on calls to Read(). If err is nil, the error
+// from bytes.Buffer will propogate up unadultered.
+func NewReadCloser(content string, err error) io.ReadCloser {
+	return &bytesCloser{
+		buffer: bytes.NewBufferString(content),
+		err:    err,
 	}
 }
 
 // NewServerFromResponse returns an httptest.Server that always responds with
 // response and status.
-func NewServerFromResponse(stat int, resp []byte) (*httptest.Server, *url.URL) {
+func NewServerFromResponse(stat int, resp []byte) *httptest.Server {
 	responseString := bytes.NewBuffer(resp).String()
 	responseWriter := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(stat)
 		w.Header().Set("content-type", "application/json")
 		fmt.Fprint(w, responseString)
 	}
-	server := httptest.NewServer(http.HandlerFunc(responseWriter))
-	serverURL, _ := url.Parse(server.URL)
-	return server, serverURL
+	return httptest.NewServer(http.HandlerFunc(responseWriter))
 }
 
 // RepsonseIs returns true iff the response status code and body are identical

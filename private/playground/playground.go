@@ -12,10 +12,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/paytonturnage/graw/data"
-	"github.com/paytonturnage/graw/nface"
+	"github.com/paytonturnage/graw/private/request"
+	"github.com/paytonturnage/graw/private/user"
 )
 
 var (
@@ -39,33 +41,41 @@ func main() {
 		os.Exit(-1)
 	}
 
-	client, err := nface.NewClient(agent)
-	if err != nil {
-		fmt.Printf("Failed to create Graw entity: %v\n", err)
+	pilot := user.New(agent)
+	if err := pilot.Auth(); err != nil {
+		fmt.Printf("Failed to log user in: %v\n", err)
 		os.Exit(-1)
 	}
 
+	method := ""
 	if *get {
-		raw, err := client.Raw(&nface.Request{
-			Action: nface.GET,
-			URL:    *requestURL,
-		})
-		if err != nil {
-			fmt.Printf("GET request failed: %v\n", err)
-		} else {
-			fmt.Printf("GET response:\n\n%s\n", raw)
-		}
+		method = "GET"
+	} else if *post {
+		method = "POST"
 	}
 
-	if *post {
-		raw, err := client.Raw(&nface.Request{
-			Action: nface.POST,
-			URL:    *requestURL,
-		})
-		if err != nil {
-			fmt.Printf("POST request failed: %v\n", err)
-		} else {
-			fmt.Printf("POST response:\n\n%s\n", raw)
-		}
+	req, err := request.New(method, *requestURL, nil)
+	if err != nil {
+		fmt.Printf("Failed to create request: %v\n", err)
+		os.Exit(-1)
 	}
+
+	resp, err := pilot.ExecRaw(req)
+	if err != nil {
+		fmt.Printf("Failed to execute request: %v\n", err)
+		os.Exit(-1)
+	}
+
+	if resp.Body == nil {
+		fmt.Printf("Response body was empty.\n")
+		os.Exit(-1)
+	}
+
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("There was an error reading the response: %v\n", err)
+	}
+
+	fmt.Printf("Status: %d\n", resp.StatusCode)
+	fmt.Printf("Body: %s\n", buf)
 }
