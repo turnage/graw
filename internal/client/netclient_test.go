@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/paytonturnage/graw/private/user/internal/testutil"
+	"github.com/paytonturnage/graw/internal/testutil"
 )
 
 func TestNewNetClient(t *testing.T) {

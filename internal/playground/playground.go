@@ -16,8 +16,8 @@ import (
 	"os"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/paytonturnage/graw/private/request"
-	"github.com/paytonturnage/graw/private/user"
+	"github.com/paytonturnage/graw"
+	"github.com/paytonturnage/graw/internal/request"
 	"github.com/paytonturnage/redditproto"
 )
 
@@ -49,7 +49,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	pilot := user.New(agent)
+	pilot := graw.New(agent)
 	if err := pilot.Auth(); err != nil {
 		fmt.Printf("Failed to log user in: %v\n", err)
 		os.Exit(-1)

@@ -1,4 +1,4 @@
-package user
+package graw
 
 import (
 	"fmt"
@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/paytonturnage/graw/private/user/internal/auth"
-	"github.com/paytonturnage/graw/private/user/internal/client"
-	"github.com/paytonturnage/graw/private/user/internal/testutil"
+	"github.com/paytonturnage/graw/internal/auth"
+	"github.com/paytonturnage/graw/internal/client"
+	"github.com/paytonturnage/graw/internal/testutil"
 	"github.com/paytonturnage/redditproto"
 )
 
@@ -91,7 +91,7 @@ func TestExec(t *testing.T) {
 		nil,
 	)
 	if err := user.Exec(req, actual); err == nil {
-		t.Error("corrupt actualonse body did not return an error")
+		t.Error("corrupt body did not return an error")
 	}
 
 	user.client = client.NewMockClient(
@@ -132,5 +132,24 @@ func TestExec(t *testing.T) {
 			"response incorrect; got %v, wanted %v",
 			actual,
 			expected)
+	}
+}
+
+func TestMe(t *testing.T) {
+	acct := `{"name":"Rob"}`
+	user := &User{}
+	user.client = client.NewMockClient(
+		&http.Response{
+			StatusCode: 200,
+			Body:       testutil.NewReadCloser(acct, nil),
+		},
+		nil,
+	)
+	actual, err := user.Me()
+	if err != nil {
+		t.Fatalf("getting self failed: %v", err)
+	}
+	if actual.GetName() != "Rob" {
+		t.Error("name not extracted from response")
 	}
 }
