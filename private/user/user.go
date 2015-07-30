@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/paytonturnage/graw/private/auth"
-	"github.com/paytonturnage/graw/private/client"
+	"github.com/paytonturnage/graw/private/user/internal/auth"
+	"github.com/paytonturnage/graw/private/user/internal/client"
 	"github.com/paytonturnage/redditproto"
 )
 

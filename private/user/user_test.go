@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/paytonturnage/graw/private/auth"
-	"github.com/paytonturnage/graw/private/client"
-	"github.com/paytonturnage/graw/private/testutil"
+	"github.com/paytonturnage/graw/private/user/internal/auth"
+	"github.com/paytonturnage/graw/private/user/internal/client"
+	"github.com/paytonturnage/graw/private/user/internal/testutil"
 	"github.com/paytonturnage/redditproto"
 )
 
