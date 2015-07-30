@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/paytonturnage/graw/private/testutil"
+	"github.com/paytonturnage/graw/private/user/internal/testutil"
 )
 
 func TestNewOAuth2Authorizer(t *testing.T) {
