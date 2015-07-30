@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/paytonturnage/graw/data"
 	"github.com/paytonturnage/graw/private/auth"
 	"github.com/paytonturnage/graw/private/client"
+	"github.com/paytonturnage/redditproto"
 )
 
 const (
@@ -28,7 +28,7 @@ type User struct {
 
 // New returns an authenticated reddit user which can be controlled to make
 // requests and interact with reddit.
-func New(agent *data.UserAgent) *User {
+func New(agent *redditproto.UserAgent) *User {
 	return &User{
 		agent: agent.GetUserAgent(),
 		authorizer: auth.NewOAuth2Authorizer(

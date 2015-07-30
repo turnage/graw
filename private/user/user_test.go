@@ -7,14 +7,14 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/paytonturnage/graw/data"
 	"github.com/paytonturnage/graw/private/auth"
 	"github.com/paytonturnage/graw/private/client"
 	"github.com/paytonturnage/graw/private/testutil"
+	"github.com/paytonturnage/redditproto"
 )
 
 func TestNew(t *testing.T) {
-	agent := &data.UserAgent{}
+	agent := &redditproto.UserAgent{}
 	if err := proto.UnmarshalText(`
 		user_agent: "agent"
 		client_id: "id"
