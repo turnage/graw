@@ -1,11 +1,13 @@
 package graw
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/paytonturnage/graw/internal/auth"
 	"github.com/paytonturnage/graw/internal/client"
 	"github.com/paytonturnage/graw/internal/request"
@@ -27,9 +29,9 @@ type User struct {
 	client client.Client
 }
 
-// New returns an authenticated reddit user which can be controlled to make
+// NewUser returns an authenticated reddit user which can be controlled to make
 // requests and interact with reddit.
-func New(agent *redditproto.UserAgent) *User {
+func NewUser(agent *redditproto.UserAgent) *User {
 	return &User{
 		agent: agent.GetUserAgent(),
 		authorizer: auth.NewOAuth2Authorizer(
@@ -37,7 +39,26 @@ func New(agent *redditproto.UserAgent) *User {
 			agent.GetClientSecret(),
 			agent.GetUsername(),
 			agent.GetPassword(),
-		)}
+		),
+	}
+}
+
+// NewUserFromFile returns an authenticated reddit user which can be controlled
+// to make requests and interact with reddit from a user agent protobuf file.
+func NewUserFromFile(filename string) (*User, error) {
+	buffer, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	agent := &redditproto.UserAgent{}
+	if err := proto.UnmarshalText(
+		bytes.NewBuffer(buffer).String(),
+		agent,
+	); err != nil {
+		return nil, err
+	}
+	return NewUser(agent), err
 }
 
 // Auth identifies as the user to the Reddit servers.

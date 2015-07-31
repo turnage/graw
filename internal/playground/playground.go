@@ -49,7 +49,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	pilot := graw.New(agent)
+	pilot := graw.NewUser(agent)
 	if err := pilot.Auth(); err != nil {
 		fmt.Printf("Failed to log user in: %v\n", err)
 		os.Exit(-1)
