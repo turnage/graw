@@ -2,6 +2,7 @@ package graw
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
@@ -13,7 +14,7 @@ import (
 	"github.com/paytonturnage/redditproto"
 )
 
-func TestNew(t *testing.T) {
+func TestNewUser(t *testing.T) {
 	agent := &redditproto.UserAgent{}
 	if err := proto.UnmarshalText(`
 		user_agent: "agent"
@@ -33,7 +34,7 @@ func TestNew(t *testing.T) {
 			"password"),
 		client: nil,
 	}
-	actual := New(agent)
+	actual := NewUser(agent)
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf(
 			"user built incorrectly; got %v, wanted %v",
@@ -41,6 +42,63 @@ func TestNew(t *testing.T) {
 			expected)
 	}
 
+}
+
+func TestNewUserFromFile(t *testing.T) {
+	if _, err := NewUserFromFile("not_a_real_file"); err == nil {
+		t.Error("bad filename did not return error")
+	}
+
+	emptyFile, err := ioutil.TempFile("", "empty_user_agent")
+	if err != nil {
+		t.Fatalf("could not create temporary file: %v", err)
+	}
+
+	if _, err := NewUserFromFile(emptyFile.Name()); err == nil {
+		t.Error("failed to err with bad user agent file")
+	}
+
+	expectedAgent := &redditproto.UserAgent{}
+	if err := proto.UnmarshalText(`
+		user_agent: "agent"
+		client_id: "id"
+		client_secret: "secret"
+		username: "username"
+		password: "password"
+	`, expectedAgent); err != nil {
+		t.Errorf("failed to build expectation proto: %v", err)
+	}
+	expected := &User{
+		agent: "agent",
+		authorizer: auth.NewOAuth2Authorizer(
+			"id",
+			"secret",
+			"username",
+			"password"),
+		client: nil,
+	}
+
+	agentFile, err := ioutil.TempFile("", "user_agent")
+	if err != nil {
+		t.Fatalf("could not create temporary file: %v", err)
+	}
+
+	_, err = agentFile.WriteString(proto.MarshalTextString(expectedAgent))
+	if err != nil {
+		t.Errorf("could not write to user_agent file: %v", err)
+	}
+
+	actual, err := NewUserFromFile(agentFile.Name())
+	if err != nil {
+		t.Errorf("could not build user from file: %v", err)
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf(
+			"user agent incorrect; expected %v, got %v",
+			expected,
+			actual)
+	}
 }
 
 func TestAuth(t *testing.T) {
