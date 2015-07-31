@@ -15,10 +15,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/paytonturnage/graw"
 	"github.com/paytonturnage/graw/internal/request"
-	"github.com/paytonturnage/redditproto"
 )
 
 var (
@@ -36,20 +34,11 @@ func main() {
 		os.Exit(-1)
 	}
 
-	agentBuffer, err := ioutil.ReadFile(*userAgent)
+	pilot, err := graw.NewUserFromFile(*userAgent)
 	if err != nil {
-		fmt.Printf("Failed to load user agent file: %v", err)
-		os.Exit(-1)
+		fmt.Printf("Failed to load user: %v\n", err)
 	}
 
-	agent := &redditproto.UserAgent{}
-	err = proto.Unmarshal(agentBuffer, agent)
-	if err != nil {
-		fmt.Printf("Failed to load user agent: %v\n", err)
-		os.Exit(-1)
-	}
-
-	pilot := graw.NewUser(agent)
 	if err := pilot.Auth(); err != nil {
 		fmt.Printf("Failed to log user in: %v\n", err)
 		os.Exit(-1)
