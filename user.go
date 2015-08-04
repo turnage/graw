@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/paytonturnage/graw/internal/auth"
 	"github.com/paytonturnage/graw/internal/client"
+	"github.com/paytonturnage/graw/internal/ratelimiter"
 	"github.com/paytonturnage/graw/internal/request"
 	"github.com/paytonturnage/redditproto"
 )
@@ -19,6 +21,8 @@ import (
 const (
 	// authURL is the url for authorization requests.
 	authURL = "https://www.reddit.com/api/v1/access_token"
+	// maxQueriesPerMinute
+	maxQueriesPerMinute = 60
 )
 
 // User is a reddit user.
@@ -29,6 +33,8 @@ type User struct {
 	authorizer auth.Authorizer
 	// client executes all network requests.
 	client client.Client
+	// limiter limits the queries made per api window.
+	limiter ratelimiter.RateLimiter
 }
 
 // NewUser returns an authenticated reddit user which can be controlled to make
@@ -41,6 +47,10 @@ func NewUser(agent *redditproto.UserAgent) *User {
 			agent.GetClientSecret(),
 			agent.GetUsername(),
 			agent.GetPassword(),
+		),
+		limiter: ratelimiter.NewTimeRateLimiter(
+			time.Minute,
+			maxQueriesPerMinute,
 		),
 	}
 }
@@ -94,6 +104,9 @@ func (u *User) Exec(req *http.Request, resp interface{}) error {
 }
 
 func (u *User) ExecRaw(r *http.Request) (*http.Response, error) {
+	if u.limiter != nil {
+		u.limiter.Request(true)
+	}
 	return u.client.Do(r)
 }
 
