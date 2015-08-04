@@ -211,3 +211,41 @@ func TestMe(t *testing.T) {
 		t.Error("name not extracted from response")
 	}
 }
+
+func TestScrape(t *testing.T) {
+	listing := `{
+		"data": {
+			"children": [
+				{"data": {"title": "1"}},
+				{"data": {"title": "2"}}
+			]
+		}
+	}`
+	user := &User{}
+	user.client = client.NewMockClient(
+		&http.Response{
+			StatusCode: 200,
+			Body:       testutil.NewReadCloser(listing, nil),
+		},
+		nil,
+	)
+
+	actualListing, err := user.Scrape("relationships", "hot", "", "", 3)
+	if err != nil {
+		t.Fatalf("failed to scrape: %v", err)
+	}
+
+	if len(actualListing) != 2 {
+		t.Errorf(
+			"unexpected listing length; got %d, wanted 2",
+			len(actualListing))
+	}
+
+	if actualListing[0].GetTitle() != "1" {
+		t.Errorf("first title incorrect; link: %v", actualListing[0])
+	}
+
+	if actualListing[1].GetTitle() != "2" {
+		t.Errorf("second title incorrect; link: %v", actualListing[0])
+	}
+}

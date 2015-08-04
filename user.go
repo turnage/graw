@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/paytonturnage/graw/internal/auth"
@@ -108,4 +110,39 @@ func (u *User) Me() (*redditproto.Account, error) {
 	}
 
 	return account, u.Exec(req, account)
+}
+
+func (u *User) Scrape(sub, sort, after, before string,
+	lim int) ([]*redditproto.Link, error) {
+	response := &struct {
+		Data struct {
+			Children []struct {
+				Data *redditproto.Link
+			}
+		}
+	}{}
+	req, err := request.New(
+		"GET",
+		fmt.Sprintf("https://oauth.reddit.com/r/%s/%s.json", sub, sort),
+		&url.Values{
+			"limit":  []string{strconv.Itoa(lim)},
+			"after":  []string{after},
+			"before": []string{before},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.Exec(req, response)
+	if err != nil {
+		return nil, err
+	}
+
+	links := make([]*redditproto.Link, len(response.Data.Children))
+	for i, child := range response.Data.Children {
+		links[i] = child.Data
+	}
+
+	return links, nil
 }
