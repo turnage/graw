@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/paytonturnage/graw/internal/auth"
 	"github.com/paytonturnage/graw/internal/client"
+	"github.com/paytonturnage/graw/internal/ratelimiter"
 	"github.com/paytonturnage/graw/internal/testutil"
 	"github.com/paytonturnage/redditproto"
 )
@@ -33,6 +35,10 @@ func TestNewUser(t *testing.T) {
 			"username",
 			"password"),
 		client: nil,
+		limiter: ratelimiter.NewTimeRateLimiter(
+			time.Minute,
+			maxQueriesPerMinute,
+		),
 	}
 	actual := NewUser(agent)
 	if !reflect.DeepEqual(actual, expected) {
@@ -76,6 +82,10 @@ func TestNewUserFromFile(t *testing.T) {
 			"username",
 			"password"),
 		client: nil,
+		limiter: ratelimiter.NewTimeRateLimiter(
+			time.Minute,
+			maxQueriesPerMinute,
+		),
 	}
 
 	agentFile, err := ioutil.TempFile("", "user_agent")
@@ -95,7 +105,7 @@ func TestNewUserFromFile(t *testing.T) {
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf(
-			"user agent incorrect; expected %v, got %v",
+			"user incorrect; expected %v, got %v",
 			expected,
 			actual)
 	}
