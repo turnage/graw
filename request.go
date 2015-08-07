@@ -1,5 +1,4 @@
-// Package request builds http.Requests in the way the Reddit API expects them.
-package request
+package graw
 
 import (
 	"bytes"
@@ -8,8 +7,8 @@ import (
 	"net/url"
 )
 
-// New returns an http.Request with the method, url, and values specified.
-func New(method, url string, vals *url.Values) (*http.Request, error) {
+// newRequest returns an http.Request with the method, url, and values specified.
+func newRequest(method, url string, vals *url.Values) (*http.Request, error) {
 	if method == "GET" {
 		return buildGetRequest(url, vals)
 	} else if method == "POST" {

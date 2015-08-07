@@ -1,9 +1,8 @@
-package testutil
+package graw
 
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -27,19 +26,9 @@ func (b bytesCloser) Close() error {
 	return nil
 }
 
-// NewReadCloser returns a an io.ReadCloser with the content provided, which
-// will return the err provided on calls to Read(). If err is nil, the error
-// from bytes.Buffer will propogate up unadultered.
-func NewReadCloser(content string, err error) io.ReadCloser {
-	return &bytesCloser{
-		buffer: bytes.NewBufferString(content),
-		err:    err,
-	}
-}
-
-// NewServerFromResponse returns an httptest.Server that always responds with
+// newServerFromResponse returns an httptest.Server that always responds with
 // response and status.
-func NewServerFromResponse(stat int, resp []byte) *httptest.Server {
+func newServerFromResponse(stat int, resp []byte) *httptest.Server {
 	responseString := bytes.NewBuffer(resp).String()
 	responseWriter := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(stat)
@@ -49,9 +38,9 @@ func NewServerFromResponse(stat int, resp []byte) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(responseWriter))
 }
 
-// RepsonseIs returns true iff the response status code and body are identical
+// responseIs returns true iff the response status code and body are identical
 // to the provided expectations.
-func ResponseIs(resp *http.Response, status int, expected []byte) bool {
+func responseIs(resp *http.Response, status int, expected []byte) bool {
 	if resp.StatusCode != status {
 		return false
 	}
