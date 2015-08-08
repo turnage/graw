@@ -85,3 +85,41 @@ func TestExec(t *testing.T) {
 			expected)
 	}
 }
+
+func TestScrape(t *testing.T) {
+	listingJSON := `{
+		"data": {
+			"children": [
+				{"data": {"title": "1"}},
+				{"data": {"title": "2"}}
+			]
+		}
+	}`
+	listing, err := scrape(&mockClient{
+		&http.Response{
+			StatusCode: 200,
+			Body: &bytesCloser{
+				bytes.NewBufferString(listingJSON),
+				nil,
+			},
+		},
+		nil,
+	}, "relationships", "hot", "", "", 3)
+	if err != nil {
+		t.Fatalf("failed to scrape: %v", err)
+	}
+
+	if len(listing) != 2 {
+		t.Errorf(
+			"unexpected listing length; got %d, wanted 2",
+			len(listing))
+	}
+
+	if listing[0].GetTitle() != "1" {
+		t.Errorf("first title incorrect; link: %v", listing[0])
+	}
+
+	if listing[1].GetTitle() != "2" {
+		t.Errorf("second title incorrect; link: %v", listing[0])
+	}
+}
