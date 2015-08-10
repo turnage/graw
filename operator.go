@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/paytonturnage/redditproto"
+	"github.com/turnage/redditproto"
 )
 
 // exec Executes a reddit api call and parses the returned json into the out
