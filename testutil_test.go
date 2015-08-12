@@ -33,7 +33,7 @@ func TestNewServerFromResponse(t *testing.T) {
 	}
 }
 
-func TestresponseIs(t *testing.T) {
+func TestResponseIs(t *testing.T) {
 	expected := []byte("ksjdnksbf")
 	if responseIs(&http.Response{StatusCode: 200, Body: nil}, 200, expected) {
 		t.Error("failed to identify nil body")
