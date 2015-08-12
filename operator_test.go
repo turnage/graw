@@ -26,20 +26,7 @@ func TestExec(t *testing.T) {
 		},
 		fmt.Errorf("A BAD THING HAPPENED"),
 	}, &http.Request{}, actual); err == nil {
-		t.Error("failed &http.Request{}uest did not return an error")
-	}
-
-	if err := exec(&mockClient{
-		&http.Response{
-			StatusCode: 200,
-			Body: &bytesCloser{
-				buffer: bytes.NewBufferString(jsonAgent),
-				err:    fmt.Errorf("misbehavior bad stuff"),
-			},
-		},
-		nil,
-	}, &http.Request{}, actual); err == nil {
-		t.Error("corrupt body did not return an error")
+		t.Error("error in request did not return an error")
 	}
 
 	if err := exec(&mockClient{
@@ -53,16 +40,6 @@ func TestExec(t *testing.T) {
 		nil,
 	}, &http.Request{}, actual); err == nil {
 		t.Error("bad status code did not return an error")
-	}
-
-	if err := exec(&mockClient{
-		&http.Response{
-			StatusCode: 200,
-			Body:       nil,
-		},
-		nil,
-	}, &http.Request{}, actual); err == nil {
-		t.Error("nil body did not return an error")
 	}
 
 	err := exec(&mockClient{
