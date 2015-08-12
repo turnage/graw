@@ -3,7 +3,6 @@ package graw
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -23,17 +22,14 @@ func exec(c client, r *http.Request, out interface{}) error {
 		return fmt.Errorf("bad status code in response")
 	}
 
-	if rawResp.Body == nil {
-		return fmt.Errorf("no body in response")
-	}
-	defer rawResp.Body.Close()
+	defer func() {
+		if rawResp.Body != nil {
+			rawResp.Body.Close()
+		}
+	}()
 
-	buffer, err := ioutil.ReadAll(rawResp.Body)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(buffer, out)
+	decoder := json.NewDecoder(rawResp.Body)
+	return decoder.Decode(out)
 }
 
 func scrape(cli client, sub, sort, after, before string,
