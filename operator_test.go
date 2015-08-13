@@ -20,8 +20,8 @@ func TestExec(t *testing.T) {
 		&http.Response{
 			StatusCode: 200,
 			Body: &bytesCloser{
-				buffer: bytes.NewBufferString(jsonAgent),
-				err:    nil,
+				bytes.NewBufferString(jsonAgent),
+				nil,
 			},
 		},
 		fmt.Errorf("A BAD THING HAPPENED"),
@@ -33,8 +33,8 @@ func TestExec(t *testing.T) {
 		&http.Response{
 			StatusCode: 201,
 			Body: &bytesCloser{
-				buffer: bytes.NewBufferString(jsonAgent),
-				err:    nil,
+				bytes.NewBufferString(jsonAgent),
+				nil,
 			},
 		},
 		nil,
@@ -46,8 +46,8 @@ func TestExec(t *testing.T) {
 		&http.Response{
 			StatusCode: 200,
 			Body: &bytesCloser{
-				buffer: bytes.NewBufferString(jsonAgent),
-				err:    nil,
+				bytes.NewBufferString(jsonAgent),
+				nil,
 			},
 		},
 		nil,

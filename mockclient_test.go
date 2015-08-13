@@ -9,8 +9,8 @@ import (
 func TestMockDo(t *testing.T) {
 	expectedResp := &http.Response{StatusCode: 200}
 	expectedErr := fmt.Errorf("BAD THING")
-	mock := &mockClient{response: expectedResp, err: expectedErr}
-	actualResp, actualErr := mock.do(nil)
+	mock := &mockClient{Response: expectedResp, Err: expectedErr}
+	actualResp, actualErr := mock.Do(nil)
 
 	if actualErr != expectedErr {
 		t.Errorf(

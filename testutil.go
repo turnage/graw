@@ -10,16 +10,16 @@ import (
 )
 
 type bytesCloser struct {
-	buffer *bytes.Buffer
-	err    error
+	Buffer *bytes.Buffer
+	Err    error
 }
 
 func (b bytesCloser) Read(p []byte) (int, error) {
-	if b.err != nil {
-		return 0, b.err
+	if b.Err != nil {
+		return 0, b.Err
 	}
 
-	return b.buffer.Read(p)
+	return b.Buffer.Read(p)
 }
 
 func (b bytesCloser) Close() error {

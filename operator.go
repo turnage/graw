@@ -13,7 +13,7 @@ import (
 // exec Executes a reddit api call and parses the returned json into the out
 // interface.
 func exec(c client, r *http.Request, out interface{}) error {
-	rawResp, err := c.do(r)
+	rawResp, err := c.Do(r)
 	if err != nil {
 		return err
 	}
@@ -32,6 +32,13 @@ func exec(c client, r *http.Request, out interface{}) error {
 	return decoder.Decode(out)
 }
 
+// scrape scrapes a subreddit for its top posts, according to the sorting method
+// specified, using cli. It returns a slice of posts. lim is only meaningful up
+// to 100, because Reddit will not return more than that. To get more posts in
+// order, use the "before" and "after" fields; they take fullnames of posts for
+// reference. "after" gets posts posted before the provided post, and "before"
+// gets posts posted after the provided post (Reddit implements and names them
+// this way because generally scraping is done working backward in time.)
 func scrape(cli client, sub, sort, after, before string,
 	lim int) ([]*redditproto.Link, error) {
 	response := &struct {

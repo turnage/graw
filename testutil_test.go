@@ -45,7 +45,7 @@ func TestResponseIs(t *testing.T) {
 
 	if responseIs(&http.Response{
 		StatusCode: 201,
-		Body:       bytesCloser{buffer: bytes.NewBuffer(expected)},
+		Body:       bytesCloser{bytes.NewBuffer(expected), nil},
 	}, 200, expected) {
 		t.Error("failed to identify status code difference")
 	}
@@ -53,8 +53,8 @@ func TestResponseIs(t *testing.T) {
 	if responseIs(&http.Response{
 		StatusCode: 200,
 		Body: bytesCloser{
-			buffer: bytes.NewBuffer(expected),
-			err:    fmt.Errorf("AN ERROR"),
+			bytes.NewBuffer(expected),
+			fmt.Errorf("AN ERROR"),
 		},
 	}, 200, expected) {
 		t.Error("faulty read of response body did not become a diff")
@@ -62,14 +62,14 @@ func TestResponseIs(t *testing.T) {
 
 	if responseIs(&http.Response{
 		StatusCode: 200,
-		Body:       bytesCloser{buffer: bytes.NewBuffer(expected)},
+		Body:       bytesCloser{bytes.NewBuffer(expected), nil},
 	}, 200, []byte("sdfsdj")) {
 		t.Error("body comparison failed; should have returned false")
 	}
 
 	if !responseIs(&http.Response{
 		StatusCode: 200,
-		Body:       bytesCloser{buffer: bytes.NewBuffer(expected)},
+		Body:       bytesCloser{bytes.NewBuffer(expected), nil},
 	}, 200, expected) {
 		t.Error("body comparison failed; should have returned true")
 	}
