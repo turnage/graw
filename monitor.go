@@ -1,8 +1,8 @@
 package graw
 
 import (
-	"time"
 	"strings"
+	"time"
 
 	"github.com/turnage/redditproto"
 )
@@ -11,41 +11,42 @@ import (
 // finds through the posts channel.
 type subredditMonitor struct {
 	// cli is used for executing network requests to reddit.
-	cli client
+	Cli client
 	// posts is the channel new posts are fed through.
-	posts chan *redditproto.Link
+	Posts chan *redditproto.Link
 	// errors is the channel errors are fed through before the
 	// subredditMonitor stops, so its controller knows why it failed.
-	errors chan error
+	Errors chan error
 	// subreddits is the list of subreddits the monitor monitors.
-	subreddits []string
+	Subreddits []string
 	// kill is a channel the subredditMonitor's controller can use to kill
 	// it.
-	kill chan bool
+	Kill chan bool
+
 	// last is the fullname of the freshest post as the last check
 	last string
 }
 
-// run continuously polls monitored subreddits for new posts.
-func (s *subredditMonitor) run() {
+// Run continuously polls monitored subreddits for new posts.
+func (s *subredditMonitor) Run() {
 	_, err := s.tip(1)
 	if err != nil {
-		s.errors <- err
+		s.Errors <- err
 		return
 	}
 
 	for true {
 		select {
-		case <- time.After(3 * time.Second):
+		case <-time.After(3 * time.Second):
 			posts, err := s.tip(100)
 			if err != nil {
-				s.errors <- err
+				s.Errors <- err
 				return
 			}
 			for _, post := range posts {
-				s.posts <- post
+				s.Posts <- post
 			}
-		case <- s.kill:
+		case <-s.Kill:
 			return
 		}
 	}
@@ -55,8 +56,8 @@ func (s *subredditMonitor) run() {
 // lim.
 func (s *subredditMonitor) tip(lim int) ([]*redditproto.Link, error) {
 	posts, err := scrape(
-		s.cli,
-		strings.Join(s.subreddits, "+"),
+		s.Cli,
+		strings.Join(s.Subreddits, "+"),
 		"new",
 		"",
 		s.last,
@@ -66,7 +67,7 @@ func (s *subredditMonitor) tip(lim int) ([]*redditproto.Link, error) {
 	}
 
 	if len(posts) > 0 {
-		s.last = posts[len(posts) - 1].GetName()
+		s.last = posts[len(posts)-1].GetName()
 	}
 
 	return posts, nil

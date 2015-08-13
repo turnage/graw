@@ -7,9 +7,9 @@ import (
 // netClient implements Client and provides http.Client and OAuth functionality.
 type netClient struct {
 	// client is the network client.
-	client *http.Client
+	Client *http.Client
 }
 
-func (n *netClient) do(r *http.Request) (*http.Response, error) {
-	return n.client.Do(r)
+func (n *netClient) Do(r *http.Request) (*http.Response, error) {
+	return n.Client.Do(r)
 }

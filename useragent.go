@@ -34,4 +34,3 @@ func NewUserAgentFromFile(filename string) (*redditproto.UserAgent, error) {
 
 	return agent, nil
 }
-

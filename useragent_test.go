@@ -20,7 +20,7 @@ func TestNewUserAgent(t *testing.T) {
 		t.Errorf("could not build expectation proto: %v", err)
 	}
 
-	actual := NewUserAgent("test", "id", "secret", "user", "1234");
+	actual := NewUserAgent("test", "id", "secret", "user", "1234")
 	if !proto.Equal(expected, actual) {
 		t.Errorf(
 			"user agent incorrect; expected %v, got %v",

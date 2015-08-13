@@ -34,24 +34,24 @@ func Run(agent *redditproto.UserAgent, bot Bot, subreddits ...string) error {
 		agent.GetUsername(),
 		agent.GetPassword(),
 		oauthURL)
-	if err != nil  {
+	if err != nil {
 		return err
 	}
 
 	monitor := &subredditMonitor{
-		cli: &netClient{client: httpCli},
-		posts: make(chan *redditproto.Link),
-		errors: make(chan error),
-		subreddits: subreddits,
-		kill: make(chan bool),
+		Cli:        &netClient{Client: httpCli},
+		Posts:      make(chan *redditproto.Link),
+		Errors:     make(chan error),
+		Subreddits: subreddits,
+		Kill:       make(chan bool),
 	}
-	go monitor.run()
+	go monitor.Run()
 
 	for true {
 		select {
-		case post := <-monitor.posts:
+		case post := <-monitor.Posts:
 			bot.NewPost(nil, post)
-		case err := <-monitor.errors:
+		case err := <-monitor.Errors:
 			fmt.Printf("error: %v.\n", err)
 			os.Exit(-1)
 		}
