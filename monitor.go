@@ -1,6 +1,7 @@
 package graw
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -10,8 +11,6 @@ import (
 // subredditMonitor monitors subreddits for new posts, and feeds the posts it
 // finds through the posts channel.
 type subredditMonitor struct {
-	// cli is used for executing network requests to reddit.
-	Cli client
 	// posts is the channel new posts are fed through.
 	Posts chan *redditproto.Link
 	// errors is the channel errors are fed through before the
@@ -22,14 +21,19 @@ type subredditMonitor struct {
 	// kill is a channel the subredditMonitor's controller can use to kill
 	// it.
 	Kill chan bool
+	// RefreshRate is the amount of times per minute the monitor will check
+	// for new posts.
+	RefreshRate int
 
-	// last is the fullname of the freshest post as the last check
+	// last is the fullname of the freshest post at the last check
 	last string
+	// lastURL is the url of the freshest post at the last check
+	lastURL string
 }
 
 // Run continuously polls monitored subreddits for new posts.
-func (s *subredditMonitor) Run() {
-	_, err := s.tip(1)
+func (s *subredditMonitor) Run(cli client) {
+	_, err := s.tip(cli, 1)
 	if err != nil {
 		s.Errors <- err
 		return
@@ -37,12 +41,13 @@ func (s *subredditMonitor) Run() {
 
 	for true {
 		select {
-		case <-time.After(3 * time.Second):
-			posts, err := s.tip(100)
+		case <-time.After(time.Minute / time.Duration(s.RefreshRate)):
+			posts, err := s.tip(cli, 100)
 			if err != nil {
 				s.Errors <- err
 				return
 			}
+			fmt.Printf("Found %d posts since %s.\n", len(posts), s.lastURL)
 			for _, post := range posts {
 				s.Posts <- post
 			}
@@ -54,9 +59,9 @@ func (s *subredditMonitor) Run() {
 
 // tip returns the posts made since the last check, from the previous tip up to
 // lim.
-func (s *subredditMonitor) tip(lim int) ([]*redditproto.Link, error) {
+func (s *subredditMonitor) tip(cli client, lim int) ([]*redditproto.Link, error) {
 	posts, err := scrape(
-		s.Cli,
+		cli,
 		strings.Join(s.Subreddits, "+"),
 		"new",
 		"",
@@ -68,6 +73,7 @@ func (s *subredditMonitor) tip(lim int) ([]*redditproto.Link, error) {
 
 	if len(posts) > 0 {
 		s.last = posts[len(posts)-1].GetName()
+		s.lastURL = posts[len(posts)-1].GetPermalink()
 	}
 
 	return posts, nil
