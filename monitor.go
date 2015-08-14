@@ -1,11 +1,17 @@
 package graw
 
 import (
-	"fmt"
+	"container/list"
 	"strings"
 	"time"
 
 	"github.com/turnage/redditproto"
+)
+
+const (
+	// The amount of fallback threads to remember in case a reference
+	// thread is deleted while it is in use.
+	fallbackCount = 10
 )
 
 // subredditMonitor monitors subreddits for new posts, and feeds the posts it
@@ -18,41 +24,57 @@ type subredditMonitor struct {
 	Errors chan error
 	// subreddits is the list of subreddits the monitor monitors.
 	Subreddits []string
-	// kill is a channel the subredditMonitor's controller can use to kill
-	// it.
-	Kill chan bool
 	// RefreshRate is the amount of times per minute the monitor will check
 	// for new posts.
 	RefreshRate int
 
-	// last is the fullname of the freshest post at the last check
-	last string
-	// lastURL is the url of the freshest post at the last check
-	lastURL string
+	// last holds fullnames of the freshest posts at the last check. These
+	// are used to differentiate new from old posts.
+	last *list.List
 }
 
 // Run continuously polls monitored subreddits for new posts.
 func (s *subredditMonitor) Run(cli client) {
-	_, err := s.tip(cli, 1)
+	s.last = list.New()
+	s.last.PushFront("")
+	skipUpdate := false
+
+	_, err := s.tip(cli, fallbackCount)
 	if err != nil {
 		s.Errors <- err
 		return
 	}
 
 	for true {
-		select {
-		case <-time.After(time.Minute / time.Duration(s.RefreshRate)):
-			posts, err := s.tip(cli, 100)
+		time.Sleep(time.Minute / time.Duration(s.RefreshRate))
+		if skipUpdate {
+			skipUpdate = false
+			continue
+		}
+
+		posts, err := s.tip(cli, 100)
+		if err != nil {
+			s.Errors <- err
+			return
+		}
+
+		if len(posts) == 0 {
+			skipUpdate = true
+			valid, err := s.validTip(cli)
 			if err != nil {
 				s.Errors <- err
 				return
 			}
-			fmt.Printf("Found %d posts since %s.\n", len(posts), s.lastURL)
+			if !valid {
+				s.last.Remove(s.last.Front())
+				if s.last.Len() < 1 {
+					s.last.PushFront("")
+				}
+			}
+		} else {
 			for _, post := range posts {
 				s.Posts <- post
 			}
-		case <-s.Kill:
-			return
 		}
 	}
 }
@@ -65,16 +87,38 @@ func (s *subredditMonitor) tip(cli client, lim int) ([]*redditproto.Link, error)
 		strings.Join(s.Subreddits, "+"),
 		"new",
 		"",
-		s.last,
+		s.last.Front().Value.(string),
 		lim)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(posts) > 0 {
-		s.last = posts[len(posts)-1].GetName()
-		s.lastURL = posts[len(posts)-1].GetPermalink()
+	for i := range posts {
+		s.last.PushFront(posts[len(posts)-i-1].GetName())
+		if s.last.Len() > fallbackCount {
+			toRemove := s.last.Len() - fallbackCount
+			for i := 0; i < toRemove; i++ {
+				s.last.Remove(s.last.Back())
+			}
+		}
 	}
 
 	return posts, nil
+}
+
+// validTip checks that the post the monitor is using as the "latest" (a
+// reference point from which to choose new threads) is still valid. If it has
+// been deleted, requesting "newer" posts than the deleted thread will not work,
+// and the monitor will think there are no new posts.
+func (s *subredditMonitor) validTip(cli client) (bool, error) {
+	link, err := threads(cli, s.last.Front().Value.(string))
+	if err != nil {
+		return false, err
+	}
+
+	if len(link) == 1 && link[0].GetAuthor() != "[deleted]" {
+		return true, nil
+	}
+
+	return false, nil
 }

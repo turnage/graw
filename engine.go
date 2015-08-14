@@ -64,7 +64,6 @@ func makeEngine(agent *redditproto.UserAgent, bot Bot, subreddits []string) (*en
 			Posts:       make(chan *redditproto.Link),
 			Errors:      errors,
 			Subreddits:  subreddits,
-			Kill:        make(chan bool),
 			RefreshRate: newPostRefreshRate,
 		},
 	}, nil
@@ -78,7 +77,6 @@ func (e *engine) Run() error {
 		case post := <-e.monitor.Posts:
 			e.bot.NewPost(e, post)
 		case err := <-e.errors:
-			e.monitor.Kill <- true
 			return err
 		}
 	}
