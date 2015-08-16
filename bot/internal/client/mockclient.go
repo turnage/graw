@@ -1,15 +1,15 @@
 package client
 
 import (
+	"encoding/json"
 	"net/http"
 )
 
 type mockClient struct {
-	resp *http.Response
-	err  error
+	response []byte
 }
 
-// Do returns the preconfigured response and error in the mock client.
-func (m *mockClient) Do(r *http.Request) (*http.Response, error) {
-	return m.resp, m.err
+// Do returns the preconfigured response in the mock client.
+func (m *mockClient) Do(r *http.Request, out interface{}) error {
+	return json.Unmarshal(m.response, out)
 }

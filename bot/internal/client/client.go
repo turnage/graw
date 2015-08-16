@@ -8,9 +8,8 @@ import (
 
 // Client implementations make requests.
 type Client interface {
-	// Do executes a request and manages authenticating with and identifying
-	// to the server.
-	Do(r *http.Request) (*http.Response, error)
+	// Do executes a request to reddit and interprets the response into out.
+	Do(r *http.Request, out interface{}) error
 }
 
 // New returns a new Client from a user agent file. This user agent file is
@@ -32,7 +31,8 @@ func New(filename string) (Client, error) {
 	)}, nil
 }
 
-// NewMock returns a mock client that returns canned values for calls to Do().
-func NewMock(r *http.Response, err error) Client {
-	return &mockClient{r, err}
+// NewMock returns a mock client that will parse the canned response string into
+// the output interface for all calls to Do().
+func NewMock(response string) Client {
+	return &mockClient{response: []byte(response)}
 }
