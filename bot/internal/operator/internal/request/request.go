@@ -1,4 +1,4 @@
-package graw
+package request
 
 import (
 	"bytes"
@@ -7,8 +7,8 @@ import (
 	"net/url"
 )
 
-// newRequest returns an http.Request with the method, url, and values specified.
-func newRequest(method, url string, vals *url.Values) (*http.Request, error) {
+// New returns an http.Request with the method, url, and values specified.
+func New(method, url string, vals *url.Values) (*http.Request, error) {
 	if method == "GET" {
 		return buildGetRequest(url, vals)
 	} else if method == "POST" {
