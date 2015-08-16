@@ -1,4 +1,4 @@
-package graw
+package request
 
 import (
 	"net/url"
@@ -13,7 +13,7 @@ func TestNewGet(t *testing.T) {
 			"value2",
 		},
 	}
-	req, err := newRequest("GET", "http://web.com", expectedValues)
+	req, err := New("GET", "http://web.com", expectedValues)
 	if err != nil {
 		t.Errorf("failed to build request: %v", err)
 	}
@@ -31,7 +31,7 @@ func TestNewGet(t *testing.T) {
 }
 
 func TestNewPost(t *testing.T) {
-	if _, err := newRequest("POST", "http://web.com", nil); err == nil {
+	if _, err := New("POST", "http://web.com", nil); err == nil {
 		t.Error("nil values for post did not return an error")
 	}
 
@@ -41,7 +41,7 @@ func TestNewPost(t *testing.T) {
 			"value2",
 		},
 	}
-	req, err := newRequest("POST", "http://web.com", expectedValues)
+	req, err := New("POST", "http://web.com", expectedValues)
 	if err != nil {
 		t.Error("failed to build request: %v", err)
 	}
@@ -55,13 +55,13 @@ func TestNewPost(t *testing.T) {
 			*expectedValues)
 	}
 
-	if _, err := newRequest("POST", ":badurl", expectedValues); err == nil {
+	if _, err := New("POST", ":badurl", expectedValues); err == nil {
 		t.Error("bad url did not return error")
 	}
 }
 
 func TestNewUnsupported(t *testing.T) {
-	if _, err := newRequest("NOT", "http://web.com", nil); err == nil {
+	if _, err := New("NOT", "http://web.com", nil); err == nil {
 		t.Error("unsupported method did not return an error")
 	}
 }
