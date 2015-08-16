@@ -9,6 +9,58 @@ import (
 )
 
 func TestDo(t *testing.T) {
+	expected := &struct {
+		Key string
+	}{Key: "value"}
+	actual := &struct {
+		Key string `"json:"key,omitempty"`
+	}{}
+	cli := &client{cli: http.DefaultClient}
+	responseCode := 200
+	responseBody := `{"key": "value"}`
+
+	serv := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(responseCode)
+				fmt.Fprintf(w, responseBody)
+			},
+		),
+	)
+	addr, err := url.Parse(serv.URL)
+	if err != nil {
+		t.Fatalf("failed to parse test server url")
+	}
+	req := &http.Request{URL: addr}
+
+	if err := cli.Do(req, actual); err != nil {
+		t.Errorf("exec failed: %v", err)
+	}
+	if actual.Key != expected.Key {
+		t.Errorf(
+			"response incorrect; got %v, wanted %v",
+			actual,
+			expected)
+	}
+
+	responseCode = 404
+	if err := cli.Do(req, actual); err == nil {
+		t.Error("bad status code did not return an error")
+	}
+
+	addr, err = url.Parse("http://notarealurl")
+	if err != nil {
+		t.Fatalf("failed to parse test server url")
+	}
+
+	responseCode = 200
+	req = &http.Request{URL: addr}
+	if err := cli.Do(req, actual); err == nil {
+		t.Error("error in request did not return an error")
+	}
+}
+
+func TestDoRaw(t *testing.T) {
 	expected := "expected"
 	actual := ""
 	serv := httptest.NewServer(
@@ -28,7 +80,7 @@ func TestDo(t *testing.T) {
 		t.Fatalf("failed to parse test url: %v", err)
 	}
 
-	resp, err := cli.Do(&http.Request{URL: url})
+	resp, err := cli.doRaw(&http.Request{URL: url})
 	if err != nil {
 		t.Fatalf("failed to execute request: %v")
 	}
