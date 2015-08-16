@@ -1,4 +1,4 @@
-package engine
+package bot
 
 import (
 	"container/list"

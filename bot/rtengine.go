@@ -1,4 +1,4 @@
-package engine
+package bot
 
 import (
 	"container/list"
@@ -23,10 +23,32 @@ const (
 // rtEngine is a real time engine that runs bots against live reddit and feeds
 // it new content as it is posted.
 type rtEngine struct {
+	// bot is the bot this engine will run.
+	bot Bot
 	// op is the rtEngine's operator for making reddit api callr.
 	op *operator.Operator
+	// subreddits is the slice of subreddits that this engine will run its
+	// bot against.
+	subreddits []string
 	// stop is a switch bots can set to signal the engine should stop.
 	stop bool
+}
+
+func (r *rtEngine) Run() error {
+	errors := make(chan error)
+	postStream := make(chan *redditproto.Link)
+	go r.postMonitor(errors, postStream, 30)
+	for !r.stop {
+		select {
+		case post := <-postStream:
+			if err := r.bot.Post(&Controller{}, post); err != nil {
+				return err
+			}
+		case err := <-errors:
+			return err
+		}
+	}
+	return nil
 }
 
 // postMonitor runs continuously, polling the requested subreddits for new posts
@@ -36,7 +58,6 @@ func (r *rtEngine) postMonitor(
 	errors chan<- error,
 	postStream chan<- *redditproto.Link,
 	queriesPerMinute int,
-	subreddits ...string,
 ) {
 	tips := list.New()
 	tips.PushFront("")
@@ -44,7 +65,7 @@ func (r *rtEngine) postMonitor(
 	fixRound := true
 	emptyRounds := 0
 	emptyRoundTolerance := 1
-	query := strings.Join(subreddits, "+")
+	query := strings.Join(r.subreddits, "+")
 	for true {
 		time.Sleep(time.Minute / time.Duration(queriesPerMinute))
 		if fixRound {
