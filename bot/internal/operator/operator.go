@@ -18,6 +18,11 @@ type Operator struct {
 	cli client.Client
 }
 
+// New returns a new operator which uses cli as its client.
+func New(cli client.Client) *Operator {
+	return &Operator{cli: cli}
+}
+
 // Scrape returns posts from a subreddit, in the specified sort order, with the
 // specified reference points for direction, up to lim. lims above 100 are
 // ineffective because Reddit will return only 100 posts per query.
