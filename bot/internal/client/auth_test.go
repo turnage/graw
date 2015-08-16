@@ -5,7 +5,7 @@ import (
 )
 
 func TestBuild(t *testing.T) {
-	if client := build("id", "secret", "refresh"); client == nil {
+	if cli := build("id", "secret", "refresh"); cli == nil {
 		t.Errorf("did not return client")
 	}
 }
