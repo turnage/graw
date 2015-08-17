@@ -41,7 +41,7 @@ func (r *rtEngine) Run() error {
 	for !r.stop {
 		select {
 		case post := <-postStream:
-			if err := r.bot.Post(&Controller{}, post); err != nil {
+			if err := r.bot.Post(&controller{}, post); err != nil {
 				return err
 			}
 		case err := <-errors:
