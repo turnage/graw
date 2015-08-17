@@ -33,7 +33,7 @@ func TestDo(t *testing.T) {
 	}
 	req := &http.Request{URL: addr}
 
-	if err := cli.Do(req, actual); err != nil {
+	if err := cli.exec(req, actual); err != nil {
 		t.Errorf("exec failed: %v", err)
 	}
 	if actual.Key != expected.Key {
@@ -44,7 +44,7 @@ func TestDo(t *testing.T) {
 	}
 
 	responseCode = 404
-	if err := cli.Do(req, actual); err == nil {
+	if err := cli.exec(req, actual); err == nil {
 		t.Error("bad status code did not return an error")
 	}
 
@@ -55,7 +55,7 @@ func TestDo(t *testing.T) {
 
 	responseCode = 200
 	req = &http.Request{URL: addr}
-	if err := cli.Do(req, actual); err == nil {
+	if err := cli.exec(req, actual); err == nil {
 		t.Error("error in request did not return an error")
 	}
 }
@@ -72,8 +72,8 @@ func TestDoRaw(t *testing.T) {
 		),
 	)
 	cli := &client{
-		useragent: "expected",
-		cli:       http.DefaultClient,
+		agent: "expected",
+		cli:   http.DefaultClient,
 	}
 	url, err := url.Parse(serv.URL)
 	if err != nil {

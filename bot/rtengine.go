@@ -62,7 +62,7 @@ func (r *rtEngine) postMonitor(
 	tips := list.New()
 	tips.PushFront("")
 	tipSize := uint(1)
-	fixRound := true
+	fixRound := false
 	emptyRounds := 0
 	emptyRoundTolerance := 1
 	query := strings.Join(r.subreddits, "+")

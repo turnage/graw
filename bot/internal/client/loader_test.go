@@ -14,7 +14,8 @@ func TestLoad(t *testing.T) {
 		user_agent: "test"
 		client_id: "id"
 		client_secret: "secret"
-		refresh_token: "refreshing"
+		username: "user"
+		password: "pass"
 	`, expected); err != nil {
 		t.Errorf("failed to build test expectation proto: %v", err)
 	}
