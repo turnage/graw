@@ -18,6 +18,8 @@ func TestNew(t *testing.T) {
 		user_agent: "test"
 		client_id: "id"
 		client_secret: "secret"
+		username: "user"
+		password: "pass"
 	`, testInput); err != nil {
 		t.Errorf("failed to build test expectation proto: %v", err)
 	}
@@ -31,22 +33,8 @@ func TestNew(t *testing.T) {
 		t.Errorf("failed to write test input file: %v", err)
 	}
 
-	if _, err := New(testFile.Name()); err == nil {
-		t.Errorf("wanted error for missing refresh token")
-	}
-
-	refreshToken := "sldhfslkdjf"
-	testInput.RefreshToken = &refreshToken
-	testFile, err = ioutil.TempFile("", "user_agent")
-	if err != nil {
-		t.Errorf("failed to make test input file: %v", err)
-	}
-	if err := proto.MarshalText(testFile, testInput); err != nil {
-		t.Errorf("failed to update test input file: %v", err)
-	}
-
 	if _, err := New(testFile.Name()); err != nil {
-		t.Errorf("failed to build client: %v", err)
+		t.Errorf("error: %v", err)
 	}
 }
 
