@@ -14,7 +14,7 @@ import (
 type Bot interface {
 	// Post will be called to handle events that yield a post the Bot has
 	// not seen before.
-	Post(contr *Controller, post *redditproto.Link) error
+	Post(contr Controller, post *redditproto.Link) error
 }
 
 // Run runs a bot against live reddit. agent should be the filename of an
