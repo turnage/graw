@@ -4,21 +4,44 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"golang.org/x/oauth2"
 )
 
 type client struct {
-	agent  string
-	id     string
+	// agent is the client's User-Agent in http requests.
+	agent string
+	// id is the bot's OAuth2 client id.
+	id string
+	// secret is the bot's OAuth2 client secret.
 	secret string
-	user   string
-	pass   string
-	token  *oauth2.Token
-	cli    *http.Client
+	// user is the bot's username on reddit.
+	user string
+	// pass is the bot's password on reddit.
+	pass string
+
+	// authMu protects authentication fields.
+	authMu sync.Mutex
+	// cli is the authenticated client to execute requests with.
+	cli *http.Client
+	// token is the OAuth2 token cli uses to authenticate.
+	token *oauth2.Token
+
+	// rateMu protects rate limiting fields.
+	rateMu sync.Mutex
+	// nextReq is the time at which it is ok to make the next request.
+	nextReq time.Time
 }
 
+// Do wraps the execution of http requests. It updates authentications and rate
+// limits requests to Reddit to comply with the API rules.
 func (c *client) Do(r *http.Request, out interface{}) error {
+	if time.Now().Before(c.nextReq) {
+		<-time.After(c.nextReq.Sub(time.Now()))
+	}
+	c.nextReq = time.Now().Add(time.Second)
 	if !c.token.Valid() {
 		var err error
 		c.cli, c.token, err = build(c.id, c.secret, c.user, c.pass)
@@ -29,6 +52,8 @@ func (c *client) Do(r *http.Request, out interface{}) error {
 	return c.exec(r, out)
 }
 
+// exec executes an http request and parsest the http response into the out
+// interface.
 func (c *client) exec(r *http.Request, out interface{}) error {
 	rawResp, err := c.doRaw(r)
 	if err != nil {
