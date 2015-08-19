@@ -61,7 +61,7 @@ func (o *Operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
 // getLinkListing executes a request and returns the reddit posts in the
 // returned link listing.
 func (o *Operator) getLinkListing(r *http.Request) ([]*redditproto.Link, error) {
-	response := &linkListing{}
+	response := &redditproto.LinkListing{}
 	err := o.cli.Do(r, response)
-	return response.Links(), err
+	return getLinks(response), err
 }
