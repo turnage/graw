@@ -10,6 +10,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	// rateLimit is the wait time between queries.
+	rateLimit = 3 * time.Second
+)
+
 type client struct {
 	// agent is the client's User-Agent in http requests.
 	agent string
@@ -41,7 +46,7 @@ func (c *client) Do(r *http.Request, out interface{}) error {
 	if time.Now().Before(c.nextReq) {
 		<-time.After(c.nextReq.Sub(time.Now()))
 	}
-	c.nextReq = time.Now().Add(time.Second)
+	c.nextReq = time.Now().Add(rateLimit)
 	if !c.token.Valid() {
 		var err error
 		c.cli, c.token, err = build(c.id, c.secret, c.user, c.pass)
