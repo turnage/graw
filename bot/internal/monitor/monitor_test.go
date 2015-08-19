@@ -1,49 +1,149 @@
 package monitor
 
 import (
+	"container/list"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/turnage/graw/bot/internal/client"
+	"github.com/turnage/graw/bot/internal/operator"
 )
 
 func TestMonitorToggles(t *testing.T) {
-	monitor := &Monitor{
+	mon := &Monitor{
 		monitoredSubreddits: make(map[string]bool),
 		monitoredThreads:    make(map[string]bool),
 	}
 
-	monitor.MonitorSubreddits("awww", "self")
+	mon.MonitorSubreddits("awww", "self")
 	if !strings.Contains(
-		monitor.subredditQuery,
+		mon.subredditQuery,
 		"aww",
 	) || !strings.Contains(
-		monitor.subredditQuery,
+		mon.subredditQuery,
 		"self",
 	) {
 		t.Errorf(
 			"got %s; wanted awww+self (any order of)",
-			monitor.subredditQuery)
+			mon.subredditQuery)
 	}
-	monitor.UnmonitorSubreddits("awww")
-	if monitor.subredditQuery != "self" {
-		t.Errorf("got %s; wanted self", monitor.subredditQuery)
+	mon.UnmonitorSubreddits("awww")
+	if mon.subredditQuery != "self" {
+		t.Errorf("got %s; wanted self", mon.subredditQuery)
 	}
 
-	monitor.MonitorThreads("harry", "potter")
+	mon.MonitorThreads("harry", "potter")
 	if !strings.Contains(
-		monitor.threadQuery,
+		mon.threadQuery,
 		"harry",
 	) || !strings.Contains(
-		monitor.threadQuery,
+		mon.threadQuery,
 		"potter",
 	) {
 		t.Errorf(
 			"got %s; wanted harry,potter (any order of)",
-			monitor.threadQuery)
+			mon.threadQuery)
 	}
-	monitor.UnmonitorThreads("potter")
-	if monitor.threadQuery != "harry" {
-		t.Errorf("got %s; wanted harry", monitor.threadQuery)
+	mon.UnmonitorThreads("potter")
+	if mon.threadQuery != "harry" {
+		t.Errorf("got %s; wanted harry", mon.threadQuery)
+	}
+}
+
+func TestTip(t *testing.T) {
+	mon := &Monitor{
+		op: operator.New(
+			client.NewMock(`{
+				"data": {
+					"children": [
+						{"data":{"name":"4"}},
+						{"data":{"name":"3"}},
+						{"data":{"name":"2"}},
+						{"data":{"name":"1"}}
+					]
+				}
+			}`),
+		),
+		tip: list.New(),
+	}
+	mon.tip.PushFront("shouldnotbeatback")
+	for i := 0; i < maxTipSize-1; i++ {
+		mon.tip.PushFront("bunk")
+	}
+
+	posts, err := mon.fetchTip()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	if mon.tip.Back().Value.(string) == "shouldnotbeatback" {
+		t.Errorf("tips were not truncated at capacity")
+	}
+
+	if mon.tip.Front().Value.(string) != "4" {
+		t.Errorf(
+			"wanted front tip '4'; got %s",
+			mon.tip.Front().Value.(string))
+	}
+
+	if len(posts) != 4 {
+		t.Errorf("wanted 4 incrementally named posts; got %v", posts)
+	}
+}
+
+func TestFixTip(t *testing.T) {
+	mon := &Monitor{
+		op: operator.New(
+			client.NewMock(`{
+				"data": {
+					"children": [
+						{"data":{"name":"1"}},
+						{"data":{"name":"2"}},
+						{"data":{"name":"3"}},
+						{"data":{"name":"4"}}
+					]
+				}
+			}`),
+		),
+		tip: list.New(),
+	}
+	mon.tip.PushFront("1")
+	mon.tip.PushFront("0")
+	broken, err := mon.fixTip()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if mon.tip.Front().Value.(string) != "1" {
+		t.Errorf(
+			"wanted '1'; got %s",
+			mon.tip.Front().Value.(string))
+	}
+	if !broken {
+		t.Errorf("wanted fixTip to indicate broken; 0 was gone")
+	}
+
+	mon.tip = list.New()
+	mon.tip.PushFront("mark")
+	mon.tip.PushFront("internet")
+	_, err = mon.fixTip()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if mon.tip.Front().Value.(string) != "" {
+		t.Errorf(
+			"wanted ''; got %s",
+			mon.tip.Front().Value.(string))
+	}
+
+	mon.tip = list.New()
+	mon.tip.PushFront("1")
+	broken, err = mon.fixTip()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if broken {
+		t.Errorf("wanted broken to be false; '1' was valid tip")
 	}
 }
 
