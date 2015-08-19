@@ -20,9 +20,6 @@ type Bot interface {
 	// Post will be called to handle events that yield a post the Bot has
 	// not seen before.
 	Post(contr Controller, post *redditproto.Link)
-	// Alarm handles alarms set by the bot through Controller. Bots will be
-	// passed the name of their alarm.
-	Alarm(contr Controller, name string)
 	// TearDown will be called at the end of execution so the bot can free
 	// its resources. It will not be run in parallel.
 	TearDown()
@@ -41,7 +38,6 @@ func Run(agent string, bot Bot, subreddits ...string) error {
 		bot:        bot,
 		op:         operator.New(cli),
 		subreddits: subreddits,
-		alarms:     make(chan alarm),
 	}
 	return eng.Run()
 }
