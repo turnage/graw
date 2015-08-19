@@ -70,6 +70,47 @@ func TestMonitorToggles(t *testing.T) {
 	}
 }
 
+func TestCheckOnTip(t *testing.T) {
+	mon := &Monitor{
+		op: operator.New(
+			client.NewMock(`{
+				"data": {
+					"children": [
+						{"data":{"name":"4"}},
+						{"data":{"name":"3"}},
+						{"data":{"name":"2"}},
+						{"data":{"name":"1"}}
+					]
+				}
+			}`),
+		),
+		tip: list.New(),
+	}
+	mon.tip.PushFront("4")
+
+	if err := mon.checkOnTip(1); err != nil {
+		t.Fatalf("error: %v\n", err)
+	}
+	if mon.blanks != 0 {
+		t.Errorf("unwanted blank count increment; got %d", mon.blanks)
+	}
+
+	oldTolerance := mon.blankRoundTolerance
+	mon.blanks = mon.blankRoundTolerance
+	if err := mon.checkOnTip(0); err != nil {
+		t.Fatalf("error: %v\n", err)
+	}
+	if mon.blanks != 0 {
+		t.Errorf("got blank round count %d; wanted 0", mon.blanks)
+	}
+	if mon.blankRoundTolerance <= oldTolerance {
+		t.Errorf(
+			"got %d tolerance; wanted > %d",
+			mon.blankRoundTolerance,
+			oldTolerance)
+	}
+}
+
 func TestErrorBackoff(t *testing.T) {
 	mon := &Monitor{
 		Errors: make(chan error),

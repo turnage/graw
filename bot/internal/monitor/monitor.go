@@ -152,6 +152,7 @@ func (m *Monitor) checkOnTip(postCount int) error {
 		if !broken {
 			m.blankRoundTolerance++
 		}
+		m.blanks = 0
 	}
 
 	return nil
