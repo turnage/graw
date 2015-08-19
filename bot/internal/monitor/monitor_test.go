@@ -2,13 +2,32 @@ package monitor
 
 import (
 	"container/list"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/turnage/graw/bot/internal/client"
 	"github.com/turnage/graw/bot/internal/operator"
+	"github.com/turnage/redditproto"
 )
+
+func TestNew(t *testing.T) {
+	if mon := New(
+		&operator.Operator{},
+		[]string{"test"},
+	); mon.NewPosts == nil ||
+		mon.PostUpdates == nil ||
+		mon.Errors == nil ||
+		mon.errorBackOffUnit == 0 ||
+		mon.op == nil ||
+		mon.tip == nil ||
+		mon.monitoredSubreddits == nil ||
+		mon.monitoredThreads == nil ||
+		mon.subredditQuery == "" {
+		t.Errorf("there was an uninitialized field: %v", mon)
+	}
+}
 
 func TestMonitorToggles(t *testing.T) {
 	mon := &Monitor{
@@ -48,6 +67,63 @@ func TestMonitorToggles(t *testing.T) {
 	mon.UnmonitorThreads("potter")
 	if mon.threadQuery != "harry" {
 		t.Errorf("got %s; wanted harry", mon.threadQuery)
+	}
+}
+
+func TestErrorBackoff(t *testing.T) {
+	mon := &Monitor{
+		Errors: make(chan error),
+	}
+
+	mon.errors = errorTolerance - 1
+	mon.errorBackOff(nil)
+	if mon.errors != 0 {
+		t.Errorf("got error count %d; wanted it zero'd", mon.errors)
+	}
+
+	if mon.errorBackOff(fmt.Errorf("an error")) {
+		t.Errorf("should have forgiven error within tolerance")
+	}
+
+	mon.errors = errorTolerance
+	go func() { <-mon.Errors }()
+	if !mon.errorBackOff(fmt.Errorf("an error")) {
+		t.Errorf("wanted indication that error tolerance was exceeded")
+	}
+}
+
+func TestUpdatePosts(t *testing.T) {
+	mon := &Monitor{
+		op: operator.New(
+			client.NewMock(`{
+				"data": {
+					"children": [
+						{"data":{"name":"4"}},
+						{"data":{"name":"3"}},
+						{"data":{"name":"2"}},
+						{"data":{"name":"1"}}
+					]
+				}
+			}`),
+		),
+		NewPosts: make(chan *redditproto.Link),
+		tip:      list.New(),
+	}
+	mon.tip.PushFront("")
+
+	go func() {
+		for true {
+			<-mon.NewPosts
+		}
+	}()
+
+	count, err := mon.updatePosts()
+	if err != nil {
+		t.Fatal("error: %v", err)
+	}
+
+	if count != 4 {
+		t.Errorf("got %d posts, wanted 4 posts", count)
 	}
 }
 
@@ -166,7 +242,6 @@ func TestSetKeys(t *testing.T) {
 }
 
 func TestBuildQuery(t *testing.T) {
-	expected := "rob-joe"
 	if actual := buildQuery(
 		map[string]bool{
 			"rob":   true,
@@ -174,8 +249,8 @@ func TestBuildQuery(t *testing.T) {
 			"nikko": false,
 		},
 		"-",
-	); actual != expected {
-		t.Errorf("got %s; wanted %s", actual, expected)
+	); actual != "rob-joe" && actual != "joe-rob" {
+		t.Errorf("got %s; wanted rob-joe or joe-rob", actual)
 	}
 
 	if actual := buildQuery(nil, "-"); actual != "" {

@@ -6,12 +6,17 @@ import (
 	"bytes"
 	"container/list"
 	"sync"
+	"time"
 
 	"github.com/turnage/graw/bot/internal/operator"
 	"github.com/turnage/redditproto"
 )
 
 const (
+	// errorTolerance is the number of errors the monitor will tolerate from
+	// reddit in a row before it shuts down. Monitor backs off exponentially
+	// between the allowed errors.
+	errorTolerance = 5
 	// maxPosts is the maximum number of posts to request new at once.
 	maxPosts = 100
 	// maxTipSize is the number of posts to keep in the tracked tip. More than
@@ -32,12 +37,26 @@ type Monitor struct {
 	// gauruntee that a thread, once updated, will contain new information;
 	// it is possible no new activity occurs between updates.
 	PostUpdates chan *redditproto.Link
+	// Errors provides errors that cause monitor to quit running.
+	Errors chan error
 
 	// op is the operator through which the monitor will make update
 	// requests to reddit.
 	op *operator.Operator
 	// tip is the list of latest posts in the monitored subreddits.
 	tip *list.List
+	// errors is a count of how many errors monitor has encountered trying
+	// to talk to reddit.
+	errors uint
+	// errorBackoffUnit is the unit of time that the error back off strategy
+	// will increase and sleep between consecutive errors.
+	errorBackOffUnit time.Duration
+	// blanks is a count of how many times monitor has updated and found no
+	// new posts in row.
+	blanks uint
+	// blankRoundTolerance is how many times no new posts can be found in
+	// monitored subreddits before monitor attempts to fix its tip.
+	blankRoundTolerance uint
 
 	// mu protects the following fields.
 	mu sync.Mutex
@@ -55,10 +74,34 @@ type Monitor struct {
 	threadQuery string
 }
 
+func New(op *operator.Operator, subreddits []string) *Monitor {
+	mon := &Monitor{
+		NewPosts:            make(chan *redditproto.Link),
+		PostUpdates:         make(chan *redditproto.Link),
+		Errors:              make(chan error),
+		errorBackOffUnit:    time.Minute,
+		op:                  op,
+		tip:                 list.New(),
+		monitoredSubreddits: make(map[string]bool),
+		monitoredThreads:    make(map[string]bool),
+	}
+	mon.tip.PushFront("")
+	mon.MonitorSubreddits(subreddits...)
+	return mon
+}
+
 // Run is expected to be spawned as a goroutine, and run continuously.
 // It is the main loop of the monitor, and output is fed through
 // Monitor's exported channels.
-func (m *Monitor) Run() {}
+func (m *Monitor) Run() {
+	for true {
+		postCount, err := m.updatePosts()
+		if m.errorBackOff(err) {
+			return
+		}
+		m.checkOnTip(postCount)
+	}
+}
 
 // MonitorSubreddits starts monitoring the requested subreddits.
 func (m *Monitor) MonitorSubreddits(subreddits ...string) {
@@ -90,6 +133,60 @@ func (m *Monitor) UnmonitorThreads(threads ...string) {
 	setKeys(m.monitoredThreads, false, threads)
 	m.threadQuery = buildQuery(m.monitoredThreads, ",")
 	m.mu.Unlock()
+}
+
+// checkOnTip keeps track of how many times no posts have been returned on a
+// scrape, and once that has exceeded the tolerance, attempts to fix the tip.
+func (m *Monitor) checkOnTip(postCount int) error {
+	if postCount > 0 {
+		return nil
+	}
+
+	m.blanks++
+	if m.blanks > m.blankRoundTolerance {
+		broken, err := m.fixTip()
+		if err != nil {
+			return err
+		}
+		if !broken {
+			m.blankRoundTolerance++
+		}
+	}
+
+	return nil
+}
+
+// errorBackOff keeps a count of errors, and backs off by blocking the monitor
+// thread based on how many errors have occurred consecutively.
+//
+// It returns whether the error tolerance has been exceeded.
+func (m *Monitor) errorBackOff(err error) bool {
+	if err == nil {
+		m.errors = 0
+		return false
+	}
+
+	m.errors++
+	if m.errors > errorTolerance {
+		m.Errors <- err
+		return true
+	}
+
+	time.Sleep(m.errorBackOffUnit << m.errors)
+	return false
+}
+
+// updateSubreddits gets new posts from monitored subreddits and feeds them over
+// the output channel.
+func (m *Monitor) updatePosts() (int, error) {
+	posts, err := m.fetchTip()
+	if err != nil {
+		return 0, err
+	}
+	for _, post := range posts {
+		m.NewPosts <- post
+	}
+	return len(posts), nil
 }
 
 // fetchTip fetches the latest posts from the monitored subreddits.
