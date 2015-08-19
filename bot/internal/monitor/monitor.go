@@ -74,6 +74,7 @@ type Monitor struct {
 	threadQuery string
 }
 
+// New returns an initialized Monitor.
 func New(op *operator.Operator, subreddits []string) *Monitor {
 	mon := &Monitor{
 		NewPosts:            make(chan *redditproto.Link),
