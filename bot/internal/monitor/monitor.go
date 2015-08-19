@@ -4,10 +4,20 @@ package monitor
 
 import (
 	"bytes"
+	"container/list"
 	"sync"
 
 	"github.com/turnage/graw/bot/internal/operator"
 	"github.com/turnage/redditproto"
+)
+
+const (
+	// maxPosts is the maximum number of posts to request new at once.
+	maxPosts = 100
+	// maxTipSize is the number of posts to keep in the tracked tip. More than
+	// one is kept because a tip is needed to fetch only posts newer than
+	// that post. If one is deleted, monitor moves to a fallback tip.
+	maxTipSize = 15
 )
 
 // Monitor monitors sections of reddit real time and exports updates. All
@@ -25,7 +35,9 @@ type Monitor struct {
 
 	// op is the operator through which the monitor will make update
 	// requests to reddit.
-	op operator.Operator
+	op *operator.Operator
+	// tip is the list of latest posts in the monitored subreddits.
+	tip *list.List
 
 	// mu protects the following fields.
 	mu sync.Mutex
@@ -78,6 +90,59 @@ func (m *Monitor) UnmonitorThreads(threads ...string) {
 	setKeys(m.monitoredThreads, false, threads)
 	m.threadQuery = buildQuery(m.monitoredThreads, ",")
 	m.mu.Unlock()
+}
+
+// fetchTip fetches the latest posts from the monitored subreddits.
+func (m *Monitor) fetchTip() ([]*redditproto.Link, error) {
+	posts, err := m.op.Scrape(
+		m.subredditQuery,
+		"new",
+		"",
+		m.tip.Front().Value.(string),
+		maxPosts,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range posts {
+		m.tip.PushFront(posts[len(posts)-1-i].GetName())
+		if m.tip.Len() > maxTipSize {
+			m.tip.Remove(m.tip.Back())
+		}
+	}
+
+	return posts, nil
+}
+
+// fixTip fixes the tip if the post has been deleted. fixTip returns whether
+// the tip was broken.
+func (m *Monitor) fixTip() (bool, error) {
+	wasBroken := false
+	ids := make([]string, m.tip.Len())
+	for e := m.tip.Front(); e != nil; e = e.Next() {
+		ids = append(ids, e.Value.(string))
+	}
+	posts, err := m.op.Threads(ids...)
+	if err != nil {
+		return false, err
+	}
+
+	for e := m.tip.Front(); e != nil; e = e.Next() {
+		if e.Prev() != nil {
+			wasBroken = true
+			m.tip.Remove(e.Prev())
+		}
+		for _, post := range posts {
+			if e.Value.(string) == post.GetName() {
+				return wasBroken, nil
+			}
+		}
+	}
+	m.tip.Remove(m.tip.Front())
+	m.tip.PushFront("")
+
+	return wasBroken, nil
 }
 
 // setKeys sets the value of all provided keys to val in m.
