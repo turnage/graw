@@ -2,6 +2,7 @@ package bot
 
 import (
 	"github.com/turnage/graw/bot/internal/client"
+	"github.com/turnage/graw/bot/internal/monitor"
 	"github.com/turnage/graw/bot/internal/operator"
 	"github.com/turnage/redditproto"
 )
@@ -16,7 +17,7 @@ import (
 type Bot interface {
 	// SetUp will be called immediately before the start of the engine. It
 	// will not be run in parallel.
-	SetUp(contr Controller)
+	SetUp()
 	// Post will be called to handle events that yield a post the Bot has
 	// not seen before.
 	Post(contr Controller, post *redditproto.Link)
@@ -35,9 +36,10 @@ func Run(agent string, bot Bot, subreddits ...string) error {
 	}
 
 	eng := &rtEngine{
-		bot:        bot,
-		op:         operator.New(cli),
-		subreddits: subreddits,
+		bot: bot,
+		op:  operator.New(cli),
+		mon: monitor.New(operator.New(cli), subreddits),
 	}
+
 	return eng.Run()
 }
