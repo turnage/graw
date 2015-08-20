@@ -17,13 +17,11 @@ func TestNew(t *testing.T) {
 		&operator.Operator{},
 		[]string{"test"},
 	); mon.NewPosts == nil ||
-		mon.PostUpdates == nil ||
 		mon.Errors == nil ||
 		mon.errorBackOffUnit == 0 ||
 		mon.op == nil ||
 		mon.tip == nil ||
 		mon.monitoredSubreddits == nil ||
-		mon.monitoredThreads == nil ||
 		mon.subredditQuery == "" {
 		t.Errorf("there was an uninitialized field: %v", mon)
 	}
@@ -32,7 +30,6 @@ func TestNew(t *testing.T) {
 func TestMonitorToggles(t *testing.T) {
 	mon := &Monitor{
 		monitoredSubreddits: make(map[string]bool),
-		monitoredThreads:    make(map[string]bool),
 	}
 
 	mon.MonitorSubreddits("awww", "self")
@@ -50,23 +47,6 @@ func TestMonitorToggles(t *testing.T) {
 	mon.UnmonitorSubreddits("awww")
 	if mon.subredditQuery != "self" {
 		t.Errorf("got %s; wanted self", mon.subredditQuery)
-	}
-
-	mon.MonitorThreads("harry", "potter")
-	if !strings.Contains(
-		mon.threadQuery,
-		"harry",
-	) || !strings.Contains(
-		mon.threadQuery,
-		"potter",
-	) {
-		t.Errorf(
-			"got %s; wanted harry,potter (any order of)",
-			mon.threadQuery)
-	}
-	mon.UnmonitorThreads("potter")
-	if mon.threadQuery != "harry" {
-		t.Errorf("got %s; wanted harry", mon.threadQuery)
 	}
 }
 

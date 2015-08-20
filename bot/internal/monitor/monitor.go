@@ -33,10 +33,6 @@ type Monitor struct {
 	// have been posted very recently so they probably won't have comments
 	// or votes yet.
 	NewPosts chan *redditproto.Link
-	// PostUpdates provides updated versions of watched threads. There is no
-	// gauruntee that a thread, once updated, will contain new information;
-	// it is possible no new activity occurs between updates.
-	PostUpdates chan *redditproto.Link
 	// Errors provides errors that cause monitor to quit running.
 	Errors chan error
 
@@ -63,36 +59,27 @@ type Monitor struct {
 	// monitoredSubreddits is the list of monitored subreddits from which
 	// the requests are built.
 	monitoredSubreddits map[string]bool
-	// monitoredThreads is the list of monitored threads from which the
-	// requests are built.
-	monitoredThreads map[string]bool
 	// subredditQuery is the subreddit alias Monitor uses to fetch new
 	// posts. It uses reddit's "+" multireddit technique, e.g. "self+aww".
 	subredditQuery string
-	// threadQuery is the thread id string Monitor uses to fetch threads. It
-	// uses a list of fullnames, e.g. "t3_sdfnd,t3_sdjfdjf".
-	threadQuery string
 }
 
 // New returns an initialized Monitor.
 func New(op *operator.Operator, subreddits []string) *Monitor {
 	mon := &Monitor{
 		NewPosts:            make(chan *redditproto.Link),
-		PostUpdates:         make(chan *redditproto.Link),
 		Errors:              make(chan error),
 		errorBackOffUnit:    time.Minute,
 		op:                  op,
 		tip:                 list.New(),
 		monitoredSubreddits: make(map[string]bool),
-		monitoredThreads:    make(map[string]bool),
 	}
 	mon.tip.PushFront("")
 	mon.MonitorSubreddits(subreddits...)
 	return mon
 }
 
-// Run is expected to be spawned as a goroutine, and run continuously.
-// It is the main loop of the monitor, and output is fed through
+// Run is the main loop of the monitor, and output is fed through
 // Monitor's exported channels.
 func (m *Monitor) Run() {
 	for true {
@@ -117,22 +104,6 @@ func (m *Monitor) UnmonitorSubreddits(subreddits ...string) {
 	m.mu.Lock()
 	setKeys(m.monitoredSubreddits, false, subreddits)
 	m.subredditQuery = buildQuery(m.monitoredSubreddits, "+")
-	m.mu.Unlock()
-}
-
-// MonitorThreads starts monitoring the requested threads.
-func (m *Monitor) MonitorThreads(threads ...string) {
-	m.mu.Lock()
-	setKeys(m.monitoredThreads, true, threads)
-	m.threadQuery = buildQuery(m.monitoredThreads, ",")
-	m.mu.Unlock()
-}
-
-// UnmonitorThreads stops monitoring the requested threads.
-func (m *Monitor) UnmonitorThreads(threads ...string) {
-	m.mu.Lock()
-	setKeys(m.monitoredThreads, false, threads)
-	m.threadQuery = buildQuery(m.monitoredThreads, ",")
 	m.mu.Unlock()
 }
 
