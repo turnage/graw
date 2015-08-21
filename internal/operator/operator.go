@@ -155,7 +155,7 @@ func (o *Operator) Inbox() ([]*redditproto.Message, error) {
 func (o *Operator) Reply(parent, content string) error {
 	req, err := request.New(
 		"POST",
-		"https://ouath.reddit.com/api/comment",
+		"https://oauth.reddit.com/api/comment",
 		&url.Values{
 			"thing_id": []string{parent},
 			"text":     []string{content},
