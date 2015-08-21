@@ -4,6 +4,7 @@ package client
 import (
 	"io"
 	"net/http"
+	"time"
 )
 
 // Client implementations make requests.
@@ -20,11 +21,12 @@ func New(filename string) (Client, error) {
 	}
 
 	return &client{
-		agent:  agent.GetUserAgent(),
-		id:     agent.GetClientId(),
-		secret: agent.GetClientSecret(),
-		user:   agent.GetUsername(),
-		pass:   agent.GetPassword(),
+		agent:   agent.GetUserAgent(),
+		id:      agent.GetClientId(),
+		secret:  agent.GetClientSecret(),
+		user:    agent.GetUsername(),
+		pass:    agent.GetPassword(),
+		nextReq: time.Now(),
 	}, nil
 }
 

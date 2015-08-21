@@ -44,10 +44,7 @@ type client struct {
 // limits requests to Reddit to comply with the API rules. It returns the
 // response body.
 func (c *client) Do(r *http.Request) (io.ReadCloser, error) {
-	if time.Now().Before(c.nextReq) {
-		<-time.After(c.nextReq.Sub(time.Now()))
-	}
-	c.nextReq = time.Now().Add(rateLimit)
+	c.rateRequest()
 	if !c.token.Valid() {
 		var err error
 		c.cli, c.token, err = build(c.id, c.secret, c.user, c.pass)
@@ -87,4 +84,19 @@ func (c *client) doRaw(r *http.Request) (*http.Response, error) {
 	}
 	r.Header.Add("User-Agent", c.agent)
 	return c.cli.Do(r)
+}
+
+// rateRequest blocks until the rate limits have been abided by.
+func (c *client) rateRequest() {
+	c.rateMu.Lock()
+	defer c.rateMu.Unlock()
+
+	if time.Now().After(c.nextReq) {
+		c.nextReq = time.Now().Add(rateLimit)
+		return
+	}
+
+	currentReq := c.nextReq
+	c.nextReq = currentReq.Add(rateLimit)
+	<-time.After(currentReq.Sub(time.Now()))
 }
