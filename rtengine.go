@@ -3,6 +3,7 @@ package graw
 import (
 	"github.com/turnage/graw/internal/monitor"
 	"github.com/turnage/graw/internal/operator"
+	"github.com/turnage/redditproto"
 )
 
 // rtEngine runs bots against real time Reddit.
@@ -16,6 +17,16 @@ type rtEngine struct {
 
 	// stop is a switch bots can set to signal the engine should stop.
 	stop bool
+}
+
+// ReplyToPost posts a top-level comment on a submission.
+func (r *rtEngine) ReplyToPost(post *redditproto.Link, text string) error {
+	return r.op.Reply(post.GetName(), text)
+}
+
+// ReplyToMessage replies to an inboxable (private message, comment reply).
+func (r *rtEngine) ReplyToInbox(msg *redditproto.Message, text string) error {
+	return r.op.Reply(msg.GetName(), text)
 }
 
 // Stop is a function exposed to bots to stop the engine.
