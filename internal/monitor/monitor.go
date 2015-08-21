@@ -37,6 +37,8 @@ type Monitor struct {
 	NewMessages chan *redditproto.Message
 	// NewCommentReplies provides new comment replies to the bot's inbox.
 	NewCommentReplies chan *redditproto.Message
+	// NewMentions provides new mentions of the bot's username.
+	NewMentions chan *redditproto.Message
 	// Errors provides errors that cause monitor to quit running.
 	Errors chan error
 
@@ -73,6 +75,7 @@ func New(op *operator.Operator, subreddits []string) *Monitor {
 	mon := &Monitor{
 		NewPosts:            make(chan *redditproto.Link),
 		NewMessages:         make(chan *redditproto.Message),
+		NewMentions:         make(chan *redditproto.Message),
 		NewCommentReplies:   make(chan *redditproto.Message),
 		Errors:              make(chan error),
 		errorBackOffUnit:    time.Minute,
@@ -179,7 +182,9 @@ func (m *Monitor) updateInbox() error {
 		return err
 	}
 	for _, message := range messages {
-		if message.GetWasComment() {
+		if message.GetSubject() == "username mention" {
+			m.NewMentions <- message
+		} else if message.GetWasComment() {
 			m.NewCommentReplies <- message
 		} else {
 			m.NewMessages <- message

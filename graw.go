@@ -25,6 +25,9 @@ type Bot interface {
 	Message(Engine, *redditproto.Message)
 	// Reply will be called to handle comment replies to the bot.
 	Reply(Engine, *redditproto.Message)
+	// Mention will be called to handle content that mentions the bot's
+	// username.
+	Mention(Engine, *redditproto.Message)
 	// TearDown will be called at the end of execution so the bot can free
 	// its resources. It will not be run in parallel.
 	TearDown()

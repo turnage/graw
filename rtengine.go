@@ -49,6 +49,8 @@ func (r *rtEngine) Run() error {
 			go r.bot.Message(r, message)
 		case reply := <-r.mon.NewCommentReplies:
 			go r.bot.Reply(r, reply)
+		case mention := <-r.mon.NewMentions:
+			go r.bot.Mention(r, mention)
 		case err := <-r.mon.Errors:
 			return err
 		}
