@@ -3,12 +3,12 @@ package operator
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/turnage/graw/bot/internal/client"
+	"github.com/turnage/graw/bot/internal/operator/internal/client"
+	"github.com/turnage/graw/bot/internal/operator/internal/parser"
 	"github.com/turnage/graw/bot/internal/operator/internal/request"
 	"github.com/turnage/redditproto"
 )
@@ -18,14 +18,20 @@ type Operator struct {
 	cli client.Client
 }
 
-// New returns a new operator which uses cli as its client.
-func New(cli client.Client) *Operator {
-	return &Operator{cli: cli}
+// New returns a new operator which uses agent as its identity. agent should be
+// a filename of a file containing a UserAgent protobuffer.
+func New(agent string) (*Operator, error) {
+	cli, err := client.New(agent)
+	if err != nil {
+		return nil, err
+	}
+	return &Operator{cli: cli}, nil
 }
 
 // Scrape returns posts from a subreddit, in the specified sort order, with the
 // specified reference points for direction, up to lim. lims above 100 are
-// ineffective because Reddit will return only 100 posts per query.
+// ineffective because Reddit will return only 100 posts per query. Comments are
+// not included in this query.
 func (o *Operator) Scrape(sub, sort, after, before string, lim uint) ([]*redditproto.Link, error) {
 	req, err := request.New(
 		"GET",
@@ -40,10 +46,16 @@ func (o *Operator) Scrape(sub, sort, after, before string, lim uint) ([]*redditp
 		return nil, err
 	}
 
-	return o.getLinkListing(req)
+	response, err := o.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return parser.ParseLinkListing(response)
 }
 
 // Threads returns specific threads, requested by their fullname (t[1-6]_[id]).
+// This does not return their comments.
 func (o *Operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
 	ids := strings.Join(fullnames, ",")
 	req, err := request.New(
@@ -55,13 +67,29 @@ func (o *Operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
 		return nil, err
 	}
 
-	return o.getLinkListing(req)
+	response, err := o.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return parser.ParseLinkListing(response)
 }
 
-// getLinkListing executes a request and returns the reddit posts in the
-// returned link listing.
-func (o *Operator) getLinkListing(r *http.Request) ([]*redditproto.Link, error) {
-	response := &redditproto.LinkListing{}
-	err := o.cli.Do(r, response)
-	return getLinks(response), err
+// Thread returns a post with its comments.
+func (o *Operator) Thread(url string) (*redditproto.Link, error) {
+	req, err := request.New(
+		"GET",
+		fmt.Sprintf("%s.json", url),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := o.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return parser.ParseThread(response)
 }
