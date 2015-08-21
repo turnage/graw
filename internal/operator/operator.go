@@ -2,7 +2,6 @@
 package operator
 
 import (
-	"bytes"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -128,17 +127,16 @@ func (o *Operator) Inbox() ([]*redditproto.Message, error) {
 		return messages, nil
 	}
 
-	var buf bytes.Buffer
-	for _, message := range messages {
-		buf.WriteString("t4_" + message.GetId())
-		buf.WriteString(",")
+	messageIds := make([]string, len(messages))
+	for i, message := range messages {
+		messageIds[i] = message.GetName()
 	}
 
 	req, err = request.New(
 		"POST",
 		"https://oauth.reddit.com/api/read_message",
 		&url.Values{
-			"id": []string{buf.String()[:len(buf.String())-1]},
+			"id": messageIds,
 		},
 	)
 	if err != nil {
@@ -151,4 +149,26 @@ func (o *Operator) Inbox() ([]*redditproto.Message, error) {
 	}
 
 	return messages, nil
+}
+
+// Reply replies to a post, message, or comment.
+func (o *Operator) Reply(parent, content string) error {
+	req, err := request.New(
+		"POST",
+		"https://ouath.reddit.com/api/comment",
+		&url.Values{
+			"thing_id": []string{parent},
+			"text":     []string{content},
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = o.cli.Do(req)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
