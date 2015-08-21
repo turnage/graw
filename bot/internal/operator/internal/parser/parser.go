@@ -70,6 +70,36 @@ func ParseThread(content io.ReadCloser) (*redditproto.Link, error) {
 	return link, nil
 }
 
+// ParseInbox returns a slice of messages in the inbox JSON digest.
+func ParseInbox(content io.ReadCloser) ([]*redditproto.Message, error) {
+	if content == nil {
+		return nil, fmt.Errorf("no content provided")
+	}
+
+	messageListing := &redditproto.MessageListing{}
+	decoder := json.NewDecoder(content)
+	if err := decoder.Decode(messageListing); err != nil {
+		return nil, err
+	}
+
+	if messageListing.GetData() == nil {
+		return nil, fmt.Errorf("no data in listing")
+	}
+
+	if messageListing.GetData().GetChildren() == nil {
+		return nil, fmt.Errorf("the listing was infertile")
+	}
+
+	messages := make(
+		[]*redditproto.Message,
+		len(messageListing.GetData().GetChildren()))
+	for i, child := range messageListing.GetData().GetChildren() {
+		messages[i] = child.GetData()
+	}
+
+	return messages, nil
+}
+
 // unpackLinkListing returns a slice of the links contained in a link listing.
 func unpackLinkListing(
 	listing *redditproto.LinkListing,

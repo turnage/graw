@@ -19,7 +19,12 @@ type Bot interface {
 	SetUp()
 	// Post will be called to handle events that yield a post the Bot has
 	// not seen before.
-	Post(contr Controller, post *redditproto.Link)
+	Post(Controller, *redditproto.Link)
+	// Message will be called to handle new private messages to the Bot's
+	// inbox.
+	Message(Controller, *redditproto.Message)
+	// Reply will be called to handle comment replies to the bot.
+	Reply(Controller, *redditproto.Message)
 	// TearDown will be called at the end of execution so the bot can free
 	// its resources. It will not be run in parallel.
 	TearDown()

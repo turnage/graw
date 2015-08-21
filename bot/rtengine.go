@@ -46,6 +46,10 @@ func (r *rtEngine) Run() error {
 		select {
 		case post := <-r.mon.NewPosts:
 			go r.bot.Post(r, post)
+		case message := <-r.mon.NewMessages:
+			go r.bot.Message(r, message)
+		case reply := <-r.mon.NewCommentReplies:
+			go r.bot.Reply(r, reply)
 		case err := <-r.mon.Errors:
 			return err
 		}

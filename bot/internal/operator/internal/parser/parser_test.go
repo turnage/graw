@@ -130,6 +130,49 @@ func TestParseThread(t *testing.T) {
 	}
 }
 
+func TestParseInbox(t *testing.T) {
+	if _, err := ParseInbox(nil); err == nil {
+		t.Errorf("wanted error for nil content")
+	}
+
+	if _, err := ParseInbox(
+		&rcloser{bytes.NewBufferString(`[]"`)},
+	); err == nil {
+		t.Errorf("wanted error for invalid json")
+	}
+
+	if _, err := ParseInbox(
+		&rcloser{bytes.NewBufferString(`{}`)},
+	); err == nil {
+		t.Errorf("wanted error for nil data")
+	}
+
+	if _, err := ParseInbox(
+		&rcloser{bytes.NewBufferString(`{"data": {}}`)},
+	); err == nil {
+		t.Errorf("wanted error for nil children")
+	}
+
+	messages, err := ParseInbox(&rcloser{bytes.NewBufferString(`{
+		"data": {
+			"children" : [
+				{"data": {"was_comment": true}}
+			]
+		}
+	}`)})
+	if err != nil {
+		t.Errorf("error: %v", err)
+	}
+
+	if len(messages) != 1 {
+		t.Fatalf("got %d messages; wanted 1", len(messages))
+	}
+
+	if !messages[0].GetWasComment() {
+		t.Errorf("wanted message to be a comment")
+	}
+}
+
 func TestUnpackCommentListing(t *testing.T) {
 	if unpackCommentListing(&redditproto.CommentListing{}) != nil {
 		t.Errorf("wanted empty slice when data is nil")
