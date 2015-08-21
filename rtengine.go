@@ -5,23 +5,11 @@ import (
 	"github.com/turnage/graw/internal/operator"
 )
 
-const (
-	// fallbackCount is the amount of threads to consider "tip" at a given
-	// time, in case one of them is deleted and stops working as a reference
-	// point.
-	fallbackCount = 20
-	// maxTipSize is the maximum amount of posts to fetch as tip. This is
-	// determined by the maximum number of threads Reddit will return in a
-	// single listing.
-	maxTipSize = 100
-)
-
-// rtEngine is a real time engine that runs bots against live reddit and feeds
-// it new content as it is posted.
+// rtEngine runs bots against real time Reddit.
 type rtEngine struct {
 	// bot is the bot this engine will run.
 	bot Bot
-	// op is the rtEngine's operator for making reddit api callr.
+	// op is the rtEngine's operator for making reddit api calls.
 	op *operator.Operator
 	// mon is the monitor rtEngine gets real time updates from.
 	mon *monitor.Monitor
@@ -30,12 +18,12 @@ type rtEngine struct {
 	stop bool
 }
 
-// Stop is a function exposed over the Controller interface; bots can use this
-// to stop the engine.
+// Stop is a function exposed to bots to stop the engine.
 func (r *rtEngine) Stop() {
 	r.stop = true
 }
 
+// Run is the main engine loop which runs the bot.
 func (r *rtEngine) Run() error {
 	r.bot.SetUp()
 	defer r.bot.TearDown()
