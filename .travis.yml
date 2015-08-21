@@ -7,9 +7,9 @@ before_install:
   - go get github.com/mattn/goveralls
   - if ! go get code.google.com/p/go.tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 script:
-  - go test -coverprofile=bot.coverprofile ./bot
-  - go test -coverprofile=client.coverprofile ./bot/internal/client
-  - go test -coverprofile=operator.coverprofile ./bot/internal/operator
+  - go test -coverprofile=monitor.coverprofile ./bot/internal/monitor
+  - go test -coverprofile=client.coverprofile ./bot/internal/operator/internal/client
+  - go test -coverprofile=parser.coverprofile ./bot/internal/operator/internal/parser
   - go test -coverprofile=request.coverprofile ./bot/internal/operator/internal/request
   - $HOME/gopath/bin/gover
   - $HOME/gopath/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci
