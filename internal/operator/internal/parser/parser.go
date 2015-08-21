@@ -15,6 +15,7 @@ func ParseLinkListing(content io.ReadCloser) ([]*redditproto.Link, error) {
 	if content == nil {
 		return nil, fmt.Errorf("no content provided")
 	}
+	defer content.Close()
 
 	listing := &redditproto.LinkListing{}
 	decoder := json.NewDecoder(content)
@@ -34,6 +35,7 @@ func ParseThread(content io.ReadCloser) (*redditproto.Link, error) {
 	if content == nil {
 		return nil, fmt.Errorf("no content provided")
 	}
+	defer content.Close()
 
 	listings := []interface{}{
 		&redditproto.LinkListing{},
@@ -75,6 +77,7 @@ func ParseInbox(content io.ReadCloser) ([]*redditproto.Message, error) {
 	if content == nil {
 		return nil, fmt.Errorf("no content provided")
 	}
+	defer content.Close()
 
 	messageListing := &redditproto.MessageListing{}
 	decoder := json.NewDecoder(content)
