@@ -9,7 +9,7 @@ Goals to meet before 0.1
 
 [_] Event generation for new activity on watched threads.
 
-[_] Event generation for new private messages.
+[X] Event generation for new private messages.
 
 [_] Expose comment methods to bot (comment, reply).
 
