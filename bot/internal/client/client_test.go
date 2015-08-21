@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"io/ioutil"
 	"testing"
 
@@ -39,21 +40,21 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewMock(t *testing.T) {
-	resp := `{"key":"value"}`
-	expected := &struct {
-		Key string
-	}{Key: "value"}
-	actual := &struct {
-		Key string `"json:"key,omitempty"`
-	}{}
-	mock := NewMock(resp)
-	if err := mock.Do(nil, actual); err != nil {
-		t.Fatalf("Do() failed: %v", err)
+	expected := "internet"
+	mock := NewMock(expected)
+	body, err := mock.Do(nil)
+	if err != nil {
+		t.Fatalf("Do() error: %v", err)
 	}
-	if actual.Key != expected.Key {
-		t.Errorf(
-			"response incorrect; got %v, wanted %v",
-			actual,
-			expected)
+
+	actualBuffer := new(bytes.Buffer)
+	_, err = actualBuffer.ReadFrom(body)
+	if err != nil {
+		t.Errorf("failed to read response body: %v", err)
+	}
+
+	actual := actualBuffer.String()
+	if actual != expected {
+		t.Errorf("got %v, wanted %v", actual, expected)
 	}
 }

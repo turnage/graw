@@ -2,13 +2,14 @@
 package client
 
 import (
+	"io"
 	"net/http"
 )
 
 // Client implementations make requests.
 type Client interface {
-	// Do executes a request to reddit and interprets the response into out.
-	Do(r *http.Request, out interface{}) error
+	// Do executes a request to reddit and returns the response body.
+	Do(r *http.Request) (io.ReadCloser, error)
 }
 
 // New returns a new Client from a user agent file.
