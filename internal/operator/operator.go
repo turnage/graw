@@ -172,3 +172,58 @@ func (o *Operator) Reply(parent, content string) error {
 
 	return nil
 }
+
+// Compose sends a private message to a user.
+func (o *Operator) Compose(user, subject, content string) error {
+	req, err := request.New(
+		"POST",
+		"https://oauth.reddit.com/api/compose",
+		&url.Values{
+			"to":      []string{user},
+			"subject": []string{subject},
+			"text":    []string{content},
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = o.cli.Do(req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Submit submits a post.
+func (o *Operator) Submit(subreddit, kind, title, content string) error {
+	params := &url.Values{
+		"sr":    []string{subreddit},
+		"kind":  []string{kind},
+		"title": []string{title},
+	}
+	if kind == "link" {
+		params.Add("url", content)
+	} else if kind == "self" {
+		params.Add("text", content)
+	} else {
+		return fmt.Errorf("unsupported post type")
+	}
+
+	req, err := request.New(
+		"POST",
+		"https://oauth.reddit.com/api/submit",
+		params,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = o.cli.Do(req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
