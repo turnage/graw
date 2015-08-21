@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/turnage/graw/bot/internal/operator"
+	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
 

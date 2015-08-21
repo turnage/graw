@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/turnage/graw/bot/internal/operator/internal/client"
-	"github.com/turnage/graw/bot/internal/operator/internal/parser"
-	"github.com/turnage/graw/bot/internal/operator/internal/request"
+	"github.com/turnage/graw/internal/operator/internal/client"
+	"github.com/turnage/graw/internal/operator/internal/parser"
+	"github.com/turnage/graw/internal/operator/internal/request"
 	"github.com/turnage/redditproto"
 )
 
