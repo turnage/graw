@@ -17,6 +17,13 @@ func build(id, secret, user, pass string) (*http.Client, *oauth2.Token, error) {
 		ClientID:     id,
 		ClientSecret: secret,
 		Endpoint:     oauth2.Endpoint{TokenURL: tokenURL},
+		Scopes: []string{
+			"identity",
+			"read",
+			"privatemessages",
+			"submit",
+			"history",
+		},
 	}
 	token, err := cfg.PasswordCredentialsToken(oauth2.NoContext, user, pass)
 	return cfg.Client(oauth2.NoContext, token), token, err
