@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/turnage/graw/bot/internal/client"
 	"github.com/turnage/graw/bot/internal/operator"
 	"github.com/turnage/redditproto"
 )
@@ -52,18 +51,16 @@ func TestMonitorToggles(t *testing.T) {
 
 func TestCheckOnTip(t *testing.T) {
 	mon := &Monitor{
-		op: operator.New(
-			client.NewMock(`{
-				"data": {
-					"children": [
-						{"data":{"name":"4"}},
-						{"data":{"name":"3"}},
-						{"data":{"name":"2"}},
-						{"data":{"name":"1"}}
-					]
-				}
-			}`),
-		),
+		op: operator.NewMock(`{
+			"data": {
+				"children": [
+					{"data":{"name":"4"}},
+					{"data":{"name":"3"}},
+					{"data":{"name":"2"}},
+					{"data":{"name":"1"}}
+				]
+			}
+		}`),
 		tip: list.New(),
 	}
 	mon.tip.PushFront("4")
@@ -115,18 +112,16 @@ func TestErrorBackoff(t *testing.T) {
 
 func TestUpdatePosts(t *testing.T) {
 	mon := &Monitor{
-		op: operator.New(
-			client.NewMock(`{
-				"data": {
-					"children": [
-						{"data":{"name":"4"}},
-						{"data":{"name":"3"}},
-						{"data":{"name":"2"}},
-						{"data":{"name":"1"}}
-					]
-				}
-			}`),
-		),
+		op: operator.NewMock(`{
+			"data": {
+				"children": [
+					{"data":{"name":"4"}},
+					{"data":{"name":"3"}},
+					{"data":{"name":"2"}},
+					{"data":{"name":"1"}}
+				]
+			}
+		}`),
 		NewPosts: make(chan *redditproto.Link),
 		tip:      list.New(),
 	}
@@ -150,18 +145,16 @@ func TestUpdatePosts(t *testing.T) {
 
 func TestTip(t *testing.T) {
 	mon := &Monitor{
-		op: operator.New(
-			client.NewMock(`{
-				"data": {
-					"children": [
-						{"data":{"name":"4"}},
-						{"data":{"name":"3"}},
-						{"data":{"name":"2"}},
-						{"data":{"name":"1"}}
-					]
-				}
-			}`),
-		),
+		op: operator.NewMock(`{
+			"data": {
+				"children": [
+					{"data":{"name":"4"}},
+					{"data":{"name":"3"}},
+					{"data":{"name":"2"}},
+					{"data":{"name":"1"}}
+				]
+			}
+		}`),
 		tip: list.New(),
 	}
 	mon.tip.PushFront("shouldnotbeatback")
@@ -191,18 +184,16 @@ func TestTip(t *testing.T) {
 
 func TestFixTip(t *testing.T) {
 	mon := &Monitor{
-		op: operator.New(
-			client.NewMock(`{
-				"data": {
-					"children": [
-						{"data":{"name":"1"}},
-						{"data":{"name":"2"}},
-						{"data":{"name":"3"}},
-						{"data":{"name":"4"}}
-					]
-				}
-			}`),
-		),
+		op: operator.NewMock(`{
+			"data": {
+				"children": [
+					{"data":{"name":"1"}},
+					{"data":{"name":"2"}},
+					{"data":{"name":"3"}},
+					{"data":{"name":"4"}}
+				]
+			}
+		}`),
 		tip: list.New(),
 	}
 	mon.tip.PushFront("1")

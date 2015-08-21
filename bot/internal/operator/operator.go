@@ -28,6 +28,12 @@ func New(agent string) (*Operator, error) {
 	return &Operator{cli: cli}, nil
 }
 
+// NewMock returns an operator which will act as if it receives this provided
+// response from the server for all requests.
+func NewMock(response string) *Operator {
+	return &Operator{cli: client.NewMock(response)}
+}
+
 // Scrape returns posts from a subreddit, in the specified sort order, with the
 // specified reference points for direction, up to lim. lims above 100 are
 // ineffective because Reddit will return only 100 posts per query. Comments are

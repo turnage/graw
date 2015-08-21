@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"github.com/turnage/graw/bot/internal/client"
 	"github.com/turnage/graw/bot/internal/monitor"
 	"github.com/turnage/graw/bot/internal/operator"
 	"github.com/turnage/redditproto"
@@ -30,15 +29,15 @@ type Bot interface {
 // authenticated user agent (see "graw grant"). Events will be generated from
 // all included subreddits.
 func Run(agent string, bot Bot, subreddits ...string) error {
-	cli, err := client.New(agent)
+	op, err := operator.New(agent)
 	if err != nil {
 		return err
 	}
 
 	eng := &rtEngine{
 		bot: bot,
-		op:  operator.New(cli),
-		mon: monitor.New(operator.New(cli), subreddits),
+		op:  op,
+		mon: monitor.New(op, subreddits),
 	}
 
 	return eng.Run()
