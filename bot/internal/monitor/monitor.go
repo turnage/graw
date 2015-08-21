@@ -33,6 +33,10 @@ type Monitor struct {
 	// have been posted very recently so they probably won't have comments
 	// or votes yet.
 	NewPosts chan *redditproto.Link
+	// NewMessages provides new private messages to the bot's inbox.
+	NewMessages chan *redditproto.Message
+	// NewCommentReplies provides new comment replies to the bot's inbox.
+	NewCommentReplies chan *redditproto.Message
 	// Errors provides errors that cause monitor to quit running.
 	Errors chan error
 
@@ -68,6 +72,8 @@ type Monitor struct {
 func New(op *operator.Operator, subreddits []string) *Monitor {
 	mon := &Monitor{
 		NewPosts:            make(chan *redditproto.Link),
+		NewMessages:         make(chan *redditproto.Message),
+		NewCommentReplies:   make(chan *redditproto.Message),
 		Errors:              make(chan error),
 		errorBackOffUnit:    time.Minute,
 		op:                  op,
@@ -88,6 +94,9 @@ func (m *Monitor) Run() {
 			return
 		}
 		m.checkOnTip(postCount)
+		if m.errorBackOff(m.updateInbox()) {
+			return
+		}
 	}
 }
 
@@ -160,6 +169,23 @@ func (m *Monitor) updatePosts() (int, error) {
 		m.NewPosts <- post
 	}
 	return len(posts), nil
+}
+
+// updateInbox gets unread messages from monitored subreddits and feeds them
+// over the output channel.
+func (m *Monitor) updateInbox() error {
+	messages, err := m.op.Inbox()
+	if err != nil {
+		return err
+	}
+	for _, message := range messages {
+		if message.GetWasComment() {
+			m.NewCommentReplies <- message
+		} else {
+			m.NewMessages <- message
+		}
+	}
+	return nil
 }
 
 // fetchTip fetches the latest posts from the monitored subreddits.

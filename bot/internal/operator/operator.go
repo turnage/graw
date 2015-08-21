@@ -2,6 +2,7 @@
 package operator
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -98,4 +99,56 @@ func (o *Operator) Thread(url string) (*redditproto.Link, error) {
 	}
 
 	return parser.ParseThread(response)
+}
+
+// Inbox returns unread messages.
+func (o *Operator) Inbox() ([]*redditproto.Message, error) {
+	req, err := request.New(
+		"GET",
+		"https://oauth.reddit.com/message/unread",
+		&url.Values{
+			"limit": []string{"100"},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := o.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	messages, err := parser.ParseInbox(response)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(messages) == 0 {
+		return messages, nil
+	}
+
+	var buf bytes.Buffer
+	for _, message := range messages {
+		buf.WriteString("t4_" + message.GetId())
+		buf.WriteString(",")
+	}
+
+	req, err = request.New(
+		"POST",
+		"https://oauth.reddit.com/api/read_message",
+		&url.Values{
+			"id": []string{buf.String()[:len(buf.String())-1]},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = o.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return messages, nil
 }
