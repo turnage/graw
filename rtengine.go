@@ -19,14 +19,41 @@ type rtEngine struct {
 	stop bool
 }
 
+// ReplyToMessage replies to an inboxable (private message, comment reply).
+func (r *rtEngine) ReplyToInbox(msg *redditproto.Message, text string) error {
+	return r.op.Reply(msg.GetName(), text)
+}
+
+// SendMessage sends a private message.
+func (r *rtEngine) SendMessage(user, subject, text string) error {
+	return r.op.Compose(user, subject, text)
+}
+
 // ReplyToPost posts a top-level comment on a submission.
 func (r *rtEngine) ReplyToPost(post *redditproto.Link, text string) error {
 	return r.op.Reply(post.GetName(), text)
 }
 
-// ReplyToMessage replies to an inboxable (private message, comment reply).
-func (r *rtEngine) ReplyToInbox(msg *redditproto.Message, text string) error {
-	return r.op.Reply(msg.GetName(), text)
+// SelfPost makes a self (text) post to a subreddit.
+func (r *rtEngine) SelfPost(subreddit, title, text string) error {
+	return r.op.Submit(subreddit, "self", title, text)
+}
+
+// LinkPost makes a link post to a subreddit.
+func (r *rtEngine) LinkPost(subreddit, title, url string) error {
+	return r.op.Submit(subreddit, "link", title, url)
+}
+
+// ScrapeThread returns a full thread with prepared comment tree.
+func (r *rtEngine) ScrapeThread(
+	post *redditproto.Link,
+) (*redditproto.Link, error) {
+	return r.ScrapeThreadAt(post.GetUrl())
+}
+
+// ScrapeThreadAt returns a full thread with prepared comment tree.
+func (r *rtEngine) ScrapeThreadAt(url string) (*redditproto.Link, error) {
+	return r.op.Thread(url)
 }
 
 // Stop is a function exposed to bots to stop the engine.
