@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -8,22 +9,16 @@ import (
 	"testing"
 )
 
-func TestDo(t *testing.T) {
-	expected := &struct {
-		Key string
-	}{Key: "value"}
-	actual := &struct {
-		Key string `"json:"key,omitempty"`
-	}{}
+func TestExec(t *testing.T) {
 	cli := &client{cli: http.DefaultClient}
 	responseCode := 200
-	responseBody := `{"key": "value"}`
+	expectedBody := `{"key": "value"}`
 
 	serv := httptest.NewServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(responseCode)
-				fmt.Fprintf(w, responseBody)
+				fmt.Fprintf(w, expectedBody)
 			},
 		),
 	)
@@ -33,18 +28,23 @@ func TestDo(t *testing.T) {
 	}
 	req := &http.Request{URL: addr}
 
-	if err := cli.exec(req, actual); err != nil {
+	body, err := cli.exec(req)
+	if err != nil {
 		t.Errorf("exec failed: %v", err)
 	}
-	if actual.Key != expected.Key {
-		t.Errorf(
-			"response incorrect; got %v, wanted %v",
-			actual,
-			expected)
+	bodyBuffer := new(bytes.Buffer)
+	_, err = bodyBuffer.ReadFrom(body)
+	if err != nil {
+		t.Errorf("failed to ready response body: %v", err)
+	}
+
+	bodyString := bodyBuffer.String()
+	if bodyString != expectedBody {
+		t.Errorf("got %s; wanted %s", bodyString, expectedBody)
 	}
 
 	responseCode = 404
-	if err := cli.exec(req, actual); err == nil {
+	if _, err := cli.exec(req); err == nil {
 		t.Error("bad status code did not return an error")
 	}
 
@@ -55,7 +55,7 @@ func TestDo(t *testing.T) {
 
 	responseCode = 200
 	req = &http.Request{URL: addr}
-	if err := cli.exec(req, actual); err == nil {
+	if _, err := cli.exec(req); err == nil {
 		t.Error("error in request did not return an error")
 	}
 }

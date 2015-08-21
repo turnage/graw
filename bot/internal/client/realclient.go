@@ -1,8 +1,8 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -41,8 +41,9 @@ type client struct {
 }
 
 // Do wraps the execution of http requests. It updates authentications and rate
-// limits requests to Reddit to comply with the API rules.
-func (c *client) Do(r *http.Request, out interface{}) error {
+// limits requests to Reddit to comply with the API rules. It returns the
+// response body.
+func (c *client) Do(r *http.Request) (io.ReadCloser, error) {
 	if time.Now().Before(c.nextReq) {
 		<-time.After(c.nextReq.Sub(time.Now()))
 	}
@@ -51,35 +52,31 @@ func (c *client) Do(r *http.Request, out interface{}) error {
 		var err error
 		c.cli, c.token, err = build(c.id, c.secret, c.user, c.pass)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return c.exec(r, out)
+	return c.exec(r)
 }
 
-// exec executes an http request and parsest the http response into the out
-// interface.
-func (c *client) exec(r *http.Request, out interface{}) error {
-	rawResp, err := c.doRaw(r)
+// exec executes an http request and returns the response body.
+func (c *client) exec(r *http.Request) (io.ReadCloser, error) {
+	resp, err := c.doRaw(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if rawResp.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad response code: %d\n"+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad response code: %d\n"+
 			"request was: %v\n",
-			rawResp.StatusCode,
+			resp.StatusCode,
 			r)
 	}
 
-	defer func() {
-		if rawResp.Body != nil {
-			rawResp.Body.Close()
-		}
-	}()
+	if resp.Body == nil {
+		return nil, fmt.Errorf("no body in response")
+	}
 
-	decoder := json.NewDecoder(rawResp.Body)
-	return decoder.Decode(out)
+	return resp.Body, nil
 }
 
 // doRaw executes an http Request using an authenticated client, and the configured
