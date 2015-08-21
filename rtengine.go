@@ -1,8 +1,8 @@
-package bot
+package graw
 
 import (
-	"github.com/turnage/graw/bot/internal/monitor"
-	"github.com/turnage/graw/bot/internal/operator"
+	"github.com/turnage/graw/internal/monitor"
+	"github.com/turnage/graw/internal/operator"
 )
 
 const (
