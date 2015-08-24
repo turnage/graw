@@ -82,10 +82,10 @@ func (o *Operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
 }
 
 // Thread returns a post with its comments.
-func (o *Operator) Thread(url string) (*redditproto.Link, error) {
+func (o *Operator) Thread(permalink string) (*redditproto.Link, error) {
 	req, err := request.New(
 		"GET",
-		fmt.Sprintf("%s.json", url),
+		fmt.Sprintf("https://oauth.reddit.com%s.json", permalink),
 		nil,
 	)
 	if err != nil {

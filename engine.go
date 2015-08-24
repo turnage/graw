@@ -27,7 +27,10 @@ type Engine interface {
 	// comment tree. Access the link's GetComments() method for the comment
 	// tree, and comment subtrees using the comments' GetReplyTree() method.
 	ScrapeThread(thread *redditproto.Link) (*redditproto.Link, error)
-	ScrapeThreadAt(url string) (*redditproto.Link, error)
+	// ScrapeThreadAt works like ScrapeThread, but takes a permalink to a
+	// thread. A permalink is _not_ a full url; it is the part that starts
+	// with /r/.
+	ScrapeThreadAt(permalink string) (*redditproto.Link, error)
 
 	// Stop stops the engine execution.
 	Stop()

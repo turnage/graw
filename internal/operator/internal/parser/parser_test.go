@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -14,6 +15,16 @@ type rcloser struct {
 }
 
 func (b *rcloser) Close() error {
+	return nil
+}
+
+type errReader struct{}
+
+func (e *errReader) Read(p []byte) (int, error) {
+	return 0, fmt.Errorf("an error")
+}
+
+func (e *errReader) Close() error {
 	return nil
 }
 
@@ -60,6 +71,10 @@ func TestParseLinkListing(t *testing.T) {
 func TestParseThread(t *testing.T) {
 	if _, err := ParseThread(nil); err == nil {
 		t.Errorf("wanted error for nil content")
+	}
+
+	if _, err := ParseThread(&errReader{}); err == nil {
+		t.Errorf("Wanted error for failed read")
 	}
 
 	if _, err := ParseThread(
@@ -127,6 +142,30 @@ func TestParseThread(t *testing.T) {
 	}
 	if len(thread.GetComments()) != 2 {
 		t.Errorf("got %v; wanted 2 comments", thread.GetComments)
+	}
+
+	if _, err := ParseThread(&rcloser{bytes.NewBufferString(`[
+		{
+			"data": {
+				"children": [
+					{"data": {"title": "hola"}}
+				]
+			}
+		},
+		{
+			"data": {
+				"children": [
+					{"data": {"id": "arnold"}},
+					{"data": {
+							"replies": "",
+							"id": "harold"
+						}
+					}
+				]
+			}
+		}
+	]`)}); err != nil {
+		t.Fatalf("error: %v", err)
 	}
 }
 
