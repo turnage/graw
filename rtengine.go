@@ -48,12 +48,12 @@ func (r *rtEngine) LinkPost(subreddit, title, url string) error {
 func (r *rtEngine) ScrapeThread(
 	post *redditproto.Link,
 ) (*redditproto.Link, error) {
-	return r.ScrapeThreadAt(post.GetUrl())
+	return r.ScrapeThreadAt(post.GetPermalink())
 }
 
 // ScrapeThreadAt returns a full thread with prepared comment tree.
-func (r *rtEngine) ScrapeThreadAt(url string) (*redditproto.Link, error) {
-	return r.op.Thread(url)
+func (r *rtEngine) ScrapeThreadAt(permalink string) (*redditproto.Link, error) {
+	return r.op.Thread(permalink)
 }
 
 // Stop is a function exposed to bots to stop the engine.

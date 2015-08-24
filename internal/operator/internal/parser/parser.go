@@ -2,9 +2,11 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/turnage/redditproto"
 )
@@ -37,12 +39,18 @@ func ParseThread(content io.ReadCloser) (*redditproto.Link, error) {
 	}
 	defer content.Close()
 
+	// JSON decoder will choke on a string reply listing.
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(content); err != nil {
+		return nil, err
+	}
+	text := strings.Replace(buf.String(), `"replies": "",`, "", -1)
+
 	listings := []interface{}{
 		&redditproto.LinkListing{},
 		&redditproto.CommentListing{},
 	}
-	decoder := json.NewDecoder(content)
-	if err := decoder.Decode(&listings); err != nil {
+	if err := json.Unmarshal([]byte(text), &listings); err != nil {
 		return nil, err
 	}
 
