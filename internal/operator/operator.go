@@ -1,4 +1,4 @@
-// Package operator makes api calls to reddit.
+// Package operator makes api calls to Reddit.
 package operator
 
 import (
@@ -13,7 +13,7 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-// Operator makes api calls to reddit.
+// Operator makes api calls to Reddit.
 type Operator struct {
 	cli client.Client
 }
@@ -36,8 +36,8 @@ func NewMock(response string) *Operator {
 
 // Scrape returns posts from a subreddit, in the specified sort order, with the
 // specified reference points for direction, up to lim. lims above 100 are
-// ineffective because Reddit will return only 100 posts per query. Comments are
-// not included in this query.
+// ineffective because Reddit will return only 100 posts per query. The Comments
+// field will not be filled. For comments, request a thread using Thread().
 func (o *Operator) Scrape(sub, sort, after, before string, lim uint) ([]*redditproto.Link, error) {
 	req, err := request.New(
 		"GET",
@@ -60,8 +60,9 @@ func (o *Operator) Scrape(sub, sort, after, before string, lim uint) ([]*redditp
 	return parser.ParseLinkListing(response)
 }
 
-// Threads returns specific threads, requested by their fullname (t[1-6]_[id]).
-// This does not return their comments.
+// Threads returns specific threads, requested by their fullname (t3_[id]).
+// The Comments field will be not be filled. For comments, request a thread
+// using Thread().
 func (o *Operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
 	ids := strings.Join(fullnames, ",")
 	req, err := request.New(
@@ -81,7 +82,8 @@ func (o *Operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
 	return parser.ParseLinkListing(response)
 }
 
-// Thread returns a post with its comments.
+// Thread returns a link; the Comments field will be filled with the comment
+// tree. Browse each comment's reply tree from the ReplyTree field.
 func (o *Operator) Thread(permalink string) (*redditproto.Link, error) {
 	req, err := request.New(
 		"GET",
@@ -100,7 +102,7 @@ func (o *Operator) Thread(permalink string) (*redditproto.Link, error) {
 	return parser.ParseThread(response)
 }
 
-// Inbox returns unread messages.
+// Inbox returns unread messages and marks them as read.
 func (o *Operator) Inbox() ([]*redditproto.Message, error) {
 	req, err := request.New(
 		"GET",
