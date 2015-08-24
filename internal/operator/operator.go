@@ -120,37 +120,7 @@ func (o *Operator) Inbox() ([]*redditproto.Message, error) {
 		return nil, err
 	}
 
-	messages, err := parser.ParseInbox(response)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(messages) == 0 {
-		return messages, nil
-	}
-
-	messageIds := make([]string, len(messages))
-	for i, message := range messages {
-		messageIds[i] = message.GetName()
-	}
-
-	req, err = request.New(
-		"POST",
-		"https://oauth.reddit.com/api/read_message",
-		&url.Values{
-			"id": messageIds,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = o.cli.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	return messages, nil
+	return parser.ParseInbox(response)
 }
 
 // Reply replies to a post, message, or comment.
