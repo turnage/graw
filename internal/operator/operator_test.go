@@ -26,7 +26,7 @@ func TestScrapeRequest(t *testing.T) {
 		"new",
 		"a",
 		"",
-		maxLinks+1,
+		MaxLinks+1,
 	); err == nil {
 		t.Errorf("wanted error for requesting more links than max")
 	}
