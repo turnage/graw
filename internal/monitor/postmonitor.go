@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
@@ -20,7 +21,7 @@ type PostMonitor struct {
 	// Posts is the number of posts PostMonitor has found since it began.
 	Posts uint64
 	// Bot is the handler PostMonitor will send new posts to.
-	Bot PostHandler
+	Bot api.PostHandler
 	// Op is the operator through which the monitor will make update
 	// requests to reddit.
 	Op operator.Operator

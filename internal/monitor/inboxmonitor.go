@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/operator"
 )
 
@@ -11,7 +12,7 @@ type InboxMonitor struct {
 	Op operator.Operator
 	// Bot is the InboxHandler InboxMonitor will send the inbox items it
 	// finds to.
-	Bot InboxHandler
+	Bot api.InboxHandler
 }
 
 // Update updates the inbox and sends all messages to the InboxHandler.

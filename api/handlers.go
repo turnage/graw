@@ -1,4 +1,4 @@
-package monitor
+package api
 
 import (
 	"github.com/turnage/redditproto"

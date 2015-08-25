@@ -1,15 +1,20 @@
+// Package graw runs Reddit bots.
 package graw
 
 import (
 	"strings"
 
+	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/monitor"
 	"github.com/turnage/graw/internal/operator"
 )
 
-// Run runs a bot against live reddit. agent should be the filename of a
-// configured user agent protobuffer. The bot will monitor all provide
-// subreddits.
+// Run runs a bot against live reddit.
+// agent should be the filename of a configured user agent protobuffer.
+// graw will monitor all provided subreddits.
+//
+// For more information, see
+// https://github.com/turnage/graw/wiki/Getting-Started
 func Run(agent string, bot interface{}, subreddits ...string) error {
 	op, err := operator.New(agent)
 	if err != nil {
@@ -17,7 +22,7 @@ func Run(agent string, bot interface{}, subreddits ...string) error {
 	}
 
 	monitors := []monitor.Monitor{}
-	if postHandler, ok := bot.(monitor.PostHandler); ok {
+	if postHandler, ok := bot.(api.PostHandler); ok {
 		monitors = append(
 			monitors,
 			&monitor.PostMonitor{
@@ -27,7 +32,7 @@ func Run(agent string, bot interface{}, subreddits ...string) error {
 			},
 		)
 	}
-	if inboxHandler, ok := bot.(monitor.InboxHandler); ok {
+	if inboxHandler, ok := bot.(api.InboxHandler); ok {
 		monitors = append(
 			monitors,
 			&monitor.InboxMonitor{
@@ -42,8 +47,8 @@ func Run(agent string, bot interface{}, subreddits ...string) error {
 		monitors: monitors,
 	}
 
-	actor, _ := bot.(Actor)
-	loader, _ := bot.(Loader)
-	failer, _ := bot.(Failer)
+	actor, _ := bot.(api.Actor)
+	loader, _ := bot.(api.Loader)
+	failer, _ := bot.(api.Failer)
 	return eng.Run(actor, loader, failer)
 }

@@ -1,6 +1,7 @@
 package graw
 
 import (
+	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/monitor"
 	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
@@ -48,7 +49,11 @@ func (r *rtEngine) Stop() {
 }
 
 // Run is the main engine loop.
-func (r *rtEngine) Run(actor Actor, loader Loader, failer Failer) error {
+func (r *rtEngine) Run(
+	actor api.Actor,
+	loader api.Loader,
+	failer api.Failer,
+) error {
 	if loader != nil {
 		loader.SetUp()
 		defer loader.TearDown()
@@ -72,7 +77,7 @@ func (r *rtEngine) Run(actor Actor, loader Loader, failer Failer) error {
 }
 
 // fail lets the bot decide whether to treat an error as a failure.
-func (r *rtEngine) fail(failer Failer, err error) bool {
+func (r *rtEngine) fail(failer api.Failer, err error) bool {
 	if failer == nil {
 		return false
 	}
