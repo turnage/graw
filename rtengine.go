@@ -9,7 +9,7 @@ import (
 // rtEngine runs bots against real time Reddit.
 type rtEngine struct {
 	// op is the rtEngine's operator for making reddit api calls.
-	op *operator.Operator
+	op operator.Operator
 	// mon is the monitor rtEngine gets real time updates from.
 	mon *monitor.Monitor
 

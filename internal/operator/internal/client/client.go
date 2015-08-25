@@ -30,8 +30,10 @@ func New(filename string) (Client, error) {
 	}, nil
 }
 
-// NewMock returns a mock client that will parse the canned response string into
-// the output interface for all calls to Do().
-func NewMock(response string) Client {
-	return &mockClient{response: []byte(response)}
+// NewMock returns a mock client that will return the canned values.
+func NewMock(response string, err error) Client {
+	return &mockClient{
+		response: []byte(response),
+		err:      err,
+	}
 }

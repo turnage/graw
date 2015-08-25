@@ -1,5 +1,4 @@
-// Package parser parses Reddit's JSON responses into protobuffers.
-package parser
+package operator
 
 import (
 	"bytes"
@@ -11,9 +10,9 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-// ParseLinkListing returns a slice of Links which hold the same data the JSON
+// parseLinkListing returns a slice of Links which hold the same data the JSON
 // link listing provided contains.
-func ParseLinkListing(content io.ReadCloser) ([]*redditproto.Link, error) {
+func parseLinkListing(content io.ReadCloser) ([]*redditproto.Link, error) {
 	if content == nil {
 		return nil, fmt.Errorf("no content provided")
 	}
@@ -28,12 +27,12 @@ func ParseLinkListing(content io.ReadCloser) ([]*redditproto.Link, error) {
 	return unpackLinkListing(listing)
 }
 
-// ParseThread parses a combination link listing and comment listing, which
+// parseThread parses a combination link listing and comment listing, which
 // Reddit returns when asked for the JSON digest of a thread. This contains the
 // submission's information, and all of its comments. The returned link will
 // have the Comments field filled, and the comments will have their ReplyTree
 // field filled.
-func ParseThread(content io.ReadCloser) (*redditproto.Link, error) {
+func parseThread(content io.ReadCloser) (*redditproto.Link, error) {
 	if content == nil {
 		return nil, fmt.Errorf("no content provided")
 	}
@@ -80,8 +79,8 @@ func ParseThread(content io.ReadCloser) (*redditproto.Link, error) {
 	return link, nil
 }
 
-// ParseInbox returns a slice of messages in the inbox JSON digest.
-func ParseInbox(content io.ReadCloser) ([]*redditproto.Message, error) {
+// parseInbox returns a slice of messages in the inbox JSON digest.
+func parseInbox(content io.ReadCloser) ([]*redditproto.Message, error) {
 	if content == nil {
 		return nil, fmt.Errorf("no content provided")
 	}

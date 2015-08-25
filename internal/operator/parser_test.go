@@ -1,4 +1,4 @@
-package parser
+package operator
 
 import (
 	"bytes"
@@ -29,29 +29,29 @@ func (e *errReader) Close() error {
 }
 
 func TestParseLinkListing(t *testing.T) {
-	if _, err := ParseLinkListing(nil); err == nil {
+	if _, err := parseLinkListing(nil); err == nil {
 		t.Errorf("wanted error for nil content")
 	}
 
-	if _, err := ParseLinkListing(
+	if _, err := parseLinkListing(
 		&rcloser{bytes.NewBufferString(`[]"`)},
 	); err == nil {
 		t.Errorf("wanted error for invalid json")
 	}
 
-	if _, err := ParseLinkListing(
+	if _, err := parseLinkListing(
 		&rcloser{bytes.NewBufferString(`{}`)},
 	); err == nil {
 		t.Errorf("wanted error for nil data")
 	}
 
-	if _, err := ParseLinkListing(
+	if _, err := parseLinkListing(
 		&rcloser{bytes.NewBufferString(`{"data": {}}`)},
 	); err == nil {
 		t.Errorf("wanted error for nil children")
 	}
 
-	links, err := ParseLinkListing(&rcloser{bytes.NewBufferString(`{
+	links, err := parseLinkListing(&rcloser{bytes.NewBufferString(`{
 		"data": {
 			"children": [
 				{"data": {"title": "hello"}},
@@ -69,34 +69,34 @@ func TestParseLinkListing(t *testing.T) {
 }
 
 func TestParseThread(t *testing.T) {
-	if _, err := ParseThread(nil); err == nil {
+	if _, err := parseThread(nil); err == nil {
 		t.Errorf("wanted error for nil content")
 	}
 
-	if _, err := ParseThread(&errReader{}); err == nil {
+	if _, err := parseThread(&errReader{}); err == nil {
 		t.Errorf("Wanted error for failed read")
 	}
 
-	if _, err := ParseThread(
+	if _, err := parseThread(
 		&rcloser{bytes.NewBufferString(`asds`)},
 	); err == nil {
 		t.Errorf("wanted error for invalid json")
 	}
 
-	if _, err := ParseThread(
+	if _, err := parseThread(
 		&rcloser{bytes.NewBufferString(`[]`)},
 	); err == nil {
 		t.Errorf("wanted error for missing listings")
 	}
 
-	if _, err := ParseThread(&rcloser{bytes.NewBufferString(`[
+	if _, err := parseThread(&rcloser{bytes.NewBufferString(`[
 			{"data": {}},
 			{"data": {}}
 	]`)}); err == nil {
 		t.Errorf("wanted error for bad link listing")
 	}
 
-	if _, err := ParseThread(&rcloser{bytes.NewBufferString(`[
+	if _, err := parseThread(&rcloser{bytes.NewBufferString(`[
 		{
 			"data": {
 				"children": [
@@ -117,7 +117,7 @@ func TestParseThread(t *testing.T) {
 		t.Errorf("wanted error for non-one link listing")
 	}
 
-	thread, err := ParseThread(&rcloser{bytes.NewBufferString(`[
+	thread, err := parseThread(&rcloser{bytes.NewBufferString(`[
 		{
 			"data": {
 				"children": [
@@ -144,7 +144,7 @@ func TestParseThread(t *testing.T) {
 		t.Errorf("got %v; wanted 2 comments", thread.GetComments)
 	}
 
-	if _, err := ParseThread(&rcloser{bytes.NewBufferString(`[
+	if _, err := parseThread(&rcloser{bytes.NewBufferString(`[
 		{
 			"data": {
 				"children": [
@@ -170,29 +170,29 @@ func TestParseThread(t *testing.T) {
 }
 
 func TestParseInbox(t *testing.T) {
-	if _, err := ParseInbox(nil); err == nil {
+	if _, err := parseInbox(nil); err == nil {
 		t.Errorf("wanted error for nil content")
 	}
 
-	if _, err := ParseInbox(
+	if _, err := parseInbox(
 		&rcloser{bytes.NewBufferString(`[]"`)},
 	); err == nil {
 		t.Errorf("wanted error for invalid json")
 	}
 
-	if _, err := ParseInbox(
+	if _, err := parseInbox(
 		&rcloser{bytes.NewBufferString(`{}`)},
 	); err == nil {
 		t.Errorf("wanted error for nil data")
 	}
 
-	if _, err := ParseInbox(
+	if _, err := parseInbox(
 		&rcloser{bytes.NewBufferString(`{"data": {}}`)},
 	); err == nil {
 		t.Errorf("wanted error for nil children")
 	}
 
-	messages, err := ParseInbox(&rcloser{bytes.NewBufferString(`{
+	messages, err := parseInbox(&rcloser{bytes.NewBufferString(`{
 		"data": {
 			"children" : [
 				{"data": {"was_comment": true}}
