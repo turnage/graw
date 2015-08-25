@@ -14,11 +14,11 @@ import (
 )
 
 const (
+	// MaxLinks is the amount of posts reddit will return for a scrape
+	// query.
+	MaxLinks = 100
 	// baseURL is the url all requests extend from.
 	baseURL = "https://oauth.reddit.com"
-	// maxLinks is the amount of posts reddit will return for a scrape
-	// query.
-	maxLinks = 100
 )
 
 // Operator makes api calls to Reddit.
@@ -215,11 +215,11 @@ func scrapeRequest(
 	after string,
 	limit uint,
 ) (*http.Request, error) {
-	if limit > maxLinks {
+	if limit > MaxLinks {
 		return nil, fmt.Errorf(
 			"%s links requested; max is %s",
 			limit,
-			maxLinks)
+			MaxLinks)
 	}
 
 	if subreddit == "" {
