@@ -49,13 +49,18 @@ func (r *rtEngine) Stop() {
 
 // Run is the main engine loop which runs the bot.
 func (r *rtEngine) Run(
+	actor Actor,
 	loader Loader,
-	postHandler PostHandler,
-	inboxHandler InboxHandler,
+	postHandler monitor.PostHandler,
+	inboxHandler monitor.InboxHandler,
 ) error {
 	if loader != nil {
 		loader.SetUp()
 		defer loader.TearDown()
+	}
+
+	if actor != nil {
+		actor.TakeEngine(r)
 	}
 
 	go r.mon.Run()
@@ -63,15 +68,15 @@ func (r *rtEngine) Run(
 	for !r.stop {
 		select {
 		case post := <-r.mon.NewPosts:
-			go postHandler.Post(r, post)
+			go postHandler.Post(post)
 		case message := <-r.mon.NewMessages:
-			go inboxHandler.Message(r, message)
+			go inboxHandler.Message(message)
 		case reply := <-r.mon.NewCommentReplies:
-			go inboxHandler.CommentReply(r, reply)
+			go inboxHandler.CommentReply(reply)
 		case reply := <-r.mon.NewPostReplies:
-			go inboxHandler.PostReply(r, reply)
+			go inboxHandler.PostReply(reply)
 		case mention := <-r.mon.NewMentions:
-			go inboxHandler.Mention(r, mention)
+			go inboxHandler.Mention(mention)
 		case err := <-r.mon.Errors:
 			return err
 		}

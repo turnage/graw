@@ -19,8 +19,9 @@ func Run(agent string, bot interface{}, subreddits ...string) error {
 		mon: monitor.New(op, subreddits),
 	}
 
+	actor, _ := bot.(Actor)
 	loader, _ := bot.(Loader)
-	postHandler, _ := bot.(PostHandler)
-	inboxHandler, _ := bot.(InboxHandler)
-	return eng.Run(loader, postHandler, inboxHandler)
+	postHandler, _ := bot.(monitor.PostHandler)
+	inboxHandler, _ := bot.(monitor.InboxHandler)
+	return eng.Run(actor, loader, postHandler, inboxHandler)
 }
