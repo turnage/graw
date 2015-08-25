@@ -23,13 +23,19 @@ func TestMockOperator(t *testing.T) {
 		&redditproto.Message{Subject: &title},
 	}
 
-	mock := &MockOperator{
-		Err:           expectedErr,
+	mock := Operator(&MockOperator{
+		ScrapeErr:     expectedErr,
 		ScrapeReturn:  expectedScrapeReturn,
+		ThreadsErr:    expectedErr,
 		ThreadsReturn: expectedThreadsReturn,
+		ThreadErr:     expectedErr,
 		ThreadReturn:  expectedThreadReturn,
+		InboxErr:      expectedErr,
 		InboxReturn:   expectedInboxReturn,
-	}
+		ReplyErr:      expectedErr,
+		SubmitErr:     expectedErr,
+		ComposeErr:    expectedErr,
+	})
 
 	if err := mock.Reply("", ""); err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
