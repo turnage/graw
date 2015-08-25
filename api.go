@@ -58,3 +58,16 @@ type Loader interface {
 	// unload resources here.
 	TearDown() error
 }
+
+// Failer defines methods bots can use to control how the Engine responds to
+// failures.
+type Failer interface {
+	// Fail will be called when the engine encounters an error. The bot can
+	// return true to instruct the engine to fail, or false to instruct the
+	// engine to try again.
+	//
+	// This method will be called in the main engine loop; the bot may
+	// choose to pause here or do other things to respond to the failure
+	// (e.g. pause for three hours to respond to Reddit down time).
+	Fail(err error) bool
+}
