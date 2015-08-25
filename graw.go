@@ -1,6 +1,8 @@
 package graw
 
 import (
+	"strings"
+
 	"github.com/turnage/graw/internal/monitor"
 	"github.com/turnage/graw/internal/operator"
 )
@@ -14,14 +16,34 @@ func Run(agent string, bot interface{}, subreddits ...string) error {
 		return err
 	}
 
+	monitors := []monitor.Monitor{}
+	if postHandler, ok := bot.(monitor.PostHandler); ok {
+		monitors = append(
+			monitors,
+			&monitor.PostMonitor{
+				Query: strings.Join(subreddits, "+"),
+				Op:    op,
+				Bot:   postHandler,
+			},
+		)
+	}
+	if inboxHandler, ok := bot.(monitor.InboxHandler); ok {
+		monitors = append(
+			monitors,
+			&monitor.InboxMonitor{
+				Op:  op,
+				Bot: inboxHandler,
+			},
+		)
+	}
+
 	eng := &rtEngine{
-		op:  op,
-		mon: monitor.New(op, subreddits),
+		op:       op,
+		monitors: monitors,
 	}
 
 	actor, _ := bot.(Actor)
 	loader, _ := bot.(Loader)
-	postHandler, _ := bot.(monitor.PostHandler)
-	inboxHandler, _ := bot.(monitor.InboxHandler)
-	return eng.Run(actor, loader, postHandler, inboxHandler)
+	failer, _ := bot.(Failer)
+	return eng.Run(actor, loader, failer)
 }

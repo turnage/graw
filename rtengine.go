@@ -10,8 +10,8 @@ import (
 type rtEngine struct {
 	// op is the rtEngine's operator for making reddit api calls.
 	op operator.Operator
-	// mon is the monitor rtEngine gets real time updates from.
-	mon *monitor.Monitor
+	// monitors is a slice of the monitors rtEngine gets events from.
+	monitors []monitor.Monitor
 
 	// stop is a switch bots can set to signal the engine should stop.
 	stop bool
@@ -47,13 +47,8 @@ func (r *rtEngine) Stop() {
 	r.stop = true
 }
 
-// Run is the main engine loop which runs the bot.
-func (r *rtEngine) Run(
-	actor Actor,
-	loader Loader,
-	postHandler monitor.PostHandler,
-	inboxHandler monitor.InboxHandler,
-) error {
+// Run is the main engine loop.
+func (r *rtEngine) Run(actor Actor, loader Loader, failer Failer) error {
 	if loader != nil {
 		loader.SetUp()
 		defer loader.TearDown()
@@ -63,23 +58,24 @@ func (r *rtEngine) Run(
 		actor.TakeEngine(r)
 	}
 
-	go r.mon.Run()
-
 	for !r.stop {
-		select {
-		case post := <-r.mon.NewPosts:
-			go postHandler.Post(post)
-		case message := <-r.mon.NewMessages:
-			go inboxHandler.Message(message)
-		case reply := <-r.mon.NewCommentReplies:
-			go inboxHandler.CommentReply(reply)
-		case reply := <-r.mon.NewPostReplies:
-			go inboxHandler.PostReply(reply)
-		case mention := <-r.mon.NewMentions:
-			go inboxHandler.Mention(mention)
-		case err := <-r.mon.Errors:
-			return err
+		for _, mon := range r.monitors {
+			if err := mon.Update(); err != nil {
+				if r.fail(failer, err) {
+					return err
+				}
+			}
 		}
 	}
+
 	return nil
+}
+
+// fail lets the bot decide whether to treat an error as a failure.
+func (r *rtEngine) fail(failer Failer, err error) bool {
+	if failer == nil {
+		return false
+	}
+
+	return failer.Fail(err)
 }
