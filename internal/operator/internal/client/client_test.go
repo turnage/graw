@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -41,10 +42,11 @@ func TestNew(t *testing.T) {
 
 func TestNewMock(t *testing.T) {
 	expected := "internet"
-	mock := NewMock(expected)
+	expectedErr := fmt.Errorf("an error")
+	mock := NewMock(expected, expectedErr)
 	body, err := mock.Do(nil)
-	if err != nil {
-		t.Fatalf("Do() error: %v", err)
+	if err != expectedErr {
+		t.Fatalf("got %v; wanted %v", err, expectedErr)
 	}
 
 	actualBuffer := new(bytes.Buffer)

@@ -11,9 +11,27 @@ import (
 	"github.com/turnage/redditproto"
 )
 
+var (
+	names        = []string{"1", "2", "3", "4"}
+	mockOperator = &operator.MockOperator{
+		ScrapeReturn: []*redditproto.Link{
+			&redditproto.Link{Name: &names[3]},
+			&redditproto.Link{Name: &names[2]},
+			&redditproto.Link{Name: &names[1]},
+			&redditproto.Link{Name: &names[0]},
+		},
+		ThreadsReturn: []*redditproto.Link{
+			&redditproto.Link{Name: &names[0]},
+			&redditproto.Link{Name: &names[1]},
+			&redditproto.Link{Name: &names[2]},
+			&redditproto.Link{Name: &names[3]},
+		},
+	}
+)
+
 func TestNew(t *testing.T) {
 	if mon := New(
-		&operator.Operator{},
+		&operator.MockOperator{},
 		[]string{"test"},
 	); mon.NewPosts == nil ||
 		mon.Errors == nil ||
@@ -51,16 +69,7 @@ func TestMonitorToggles(t *testing.T) {
 
 func TestCheckOnTip(t *testing.T) {
 	mon := &Monitor{
-		op: operator.NewMock(`{
-			"data": {
-				"children": [
-					{"data":{"name":"4"}},
-					{"data":{"name":"3"}},
-					{"data":{"name":"2"}},
-					{"data":{"name":"1"}}
-				]
-			}
-		}`),
+		op:  mockOperator,
 		tip: list.New(),
 	}
 	mon.tip.PushFront("4")
@@ -112,16 +121,7 @@ func TestErrorBackoff(t *testing.T) {
 
 func TestUpdatePosts(t *testing.T) {
 	mon := &Monitor{
-		op: operator.NewMock(`{
-			"data": {
-				"children": [
-					{"data":{"name":"4"}},
-					{"data":{"name":"3"}},
-					{"data":{"name":"2"}},
-					{"data":{"name":"1"}}
-				]
-			}
-		}`),
+		op:       mockOperator,
 		NewPosts: make(chan *redditproto.Link),
 		tip:      list.New(),
 	}
@@ -145,16 +145,7 @@ func TestUpdatePosts(t *testing.T) {
 
 func TestTip(t *testing.T) {
 	mon := &Monitor{
-		op: operator.NewMock(`{
-			"data": {
-				"children": [
-					{"data":{"name":"4"}},
-					{"data":{"name":"3"}},
-					{"data":{"name":"2"}},
-					{"data":{"name":"1"}}
-				]
-			}
-		}`),
+		op:  mockOperator,
 		tip: list.New(),
 	}
 	mon.tip.PushFront("shouldnotbeatback")
@@ -184,16 +175,7 @@ func TestTip(t *testing.T) {
 
 func TestFixTip(t *testing.T) {
 	mon := &Monitor{
-		op: operator.NewMock(`{
-			"data": {
-				"children": [
-					{"data":{"name":"1"}},
-					{"data":{"name":"2"}},
-					{"data":{"name":"3"}},
-					{"data":{"name":"4"}}
-				]
-			}
-		}`),
+		op:  mockOperator,
 		tip: list.New(),
 	}
 	mon.tip.PushFront("1")

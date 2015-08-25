@@ -46,7 +46,7 @@ type Monitor struct {
 
 	// op is the operator through which the monitor will make update
 	// requests to reddit.
-	op *operator.Operator
+	op operator.Operator
 	// tip is the list of latest posts in the monitored subreddits.
 	tip *list.List
 	// errors is a count of how many errors monitor has encountered trying
@@ -73,7 +73,7 @@ type Monitor struct {
 }
 
 // New returns an initialized Monitor.
-func New(op *operator.Operator, subreddits []string) *Monitor {
+func New(op operator.Operator, subreddits []string) *Monitor {
 	mon := &Monitor{
 		NewPosts:            make(chan *redditproto.Link),
 		NewMessages:         make(chan *redditproto.Message),
