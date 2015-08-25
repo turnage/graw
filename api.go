@@ -4,7 +4,7 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-// Engine exposes certain functions to the bot the engine is running.
+// Engine exposes functions of the Engine to the bot.
 type Engine interface {
 	// Reply posts a reply to something on reddit. The behavior depends on
 	// what is being replied to. For
@@ -36,4 +36,25 @@ type Engine interface {
 	// Stop stops the engine. If it implemented it, the bot's TearDown
 	// method will be called.
 	Stop()
+}
+
+// Actor defines methods for bots that do things (send messages, make posts,
+// fetch threads, etc).
+type Actor interface {
+	// TakeEngine is called when the engine starts; bots should save the
+	// engine so they can call its methods. This is only called once.
+	TakeEngine(eng Engine)
+}
+
+// Loader defines methods for bots that use external resources or need to do
+// initialization.
+type Loader interface {
+	// SetUp is the first method ever called on the bot, and it will be
+	// allowed to finish before other methods are called. Bots should
+	// load resources here.
+	SetUp() error
+	// TearDown is the last method ever called on the bot, and all other
+	// method calls will finish before this method is called. Bots should
+	// unload resources here.
+	TearDown() error
 }
