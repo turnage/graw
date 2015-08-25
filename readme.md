@@ -28,5 +28,4 @@ graw provides all data from Reddit in the form of
 [Protocol Buffers](https://developers.google.com/protocol-buffers/).
 See graw's [proto definitions](https://github.com/turnage/redditproto/blob/master/reddit.proto).
 
-See the [getting started](https://github.com/turnage/graw/wiki/Getting-Started)
-page to see if graw is for you, and how to start using it.
+See the [wiki](https://github.com/turnage/graw/wiki) for a quick start.
