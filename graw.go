@@ -14,17 +14,38 @@ import (
 // graw will monitor all provided subreddits.
 //
 // For more information, see
-// https://github.com/turnage/graw/wiki/Getting-Started
+// https://github.com/turnage/graw/wiki
 func Run(agent string, bot interface{}, subreddits ...string) error {
 	op, err := operator.New(agent)
 	if err != nil {
 		return err
 	}
 
-	monitors := []monitor.Monitor{}
+	actor, _ := bot.(api.Actor)
+	failer, _ := bot.(api.Failer)
+	loader, _ := bot.(api.Loader)
+	eng := &rtEngine{
+		Op:       op,
+		Monitors: monitors(op, bot, subreddits),
+		Actor:    actor,
+		Failer:   failer,
+		Loader:   loader,
+	}
+
+	return eng.Run()
+}
+
+// monitors returns the monitors appropriate for the given bot, based on the
+// interfaces it implements.
+func monitors(
+	op operator.Operator,
+	bot interface{},
+	subreddits []string,
+) []monitor.Monitor {
+	mons := []monitor.Monitor{}
 	if postHandler, ok := bot.(api.PostHandler); ok {
-		monitors = append(
-			monitors,
+		mons = append(
+			mons,
 			&monitor.PostMonitor{
 				Query: strings.Join(subreddits, "+"),
 				Op:    op,
@@ -32,23 +53,25 @@ func Run(agent string, bot interface{}, subreddits ...string) error {
 			},
 		)
 	}
-	if inboxHandler, ok := bot.(api.InboxHandler); ok {
-		monitors = append(
-			monitors,
+
+	messageHandler, _ := bot.(api.MessageHandler)
+	postReplyHandler, _ := bot.(api.PostReplyHandler)
+	commentReplyHandler, _ := bot.(api.CommentReplyHandler)
+	mentionHandler, _ := bot.(api.MentionHandler)
+	if messageHandler != nil ||
+		postReplyHandler != nil ||
+		commentReplyHandler != nil ||
+		mentionHandler != nil {
+		mons = append(
+			mons,
 			&monitor.InboxMonitor{
-				Op:  op,
-				Bot: inboxHandler,
+				Op:                  op,
+				MessageHandler:      messageHandler,
+				PostReplyHandler:    postReplyHandler,
+				CommentReplyHandler: commentReplyHandler,
+				MentionHandler:      mentionHandler,
 			},
 		)
 	}
-
-	eng := &rtEngine{
-		op:       op,
-		monitors: monitors,
-	}
-
-	actor, _ := bot.(api.Actor)
-	loader, _ := bot.(api.Loader)
-	failer, _ := bot.(api.Failer)
-	return eng.Run(actor, loader, failer)
+	return mons
 }

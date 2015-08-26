@@ -55,7 +55,10 @@ func TestInboxMonitorUpdate(t *testing.T) {
 				&redditproto.Message{},
 			},
 		},
-		Bot: bot,
+		MessageHandler:      bot,
+		PostReplyHandler:    bot,
+		CommentReplyHandler: bot,
+		MentionHandler:      bot,
 	}
 	if err := im.Update(); err != nil {
 		t.Fatalf("error: %v", err)

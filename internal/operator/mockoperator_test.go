@@ -32,10 +32,15 @@ func TestMockOperator(t *testing.T) {
 		ThreadReturn:  expectedThreadReturn,
 		InboxErr:      expectedErr,
 		InboxReturn:   expectedInboxReturn,
+		MarkAsReadErr: expectedErr,
 		ReplyErr:      expectedErr,
 		SubmitErr:     expectedErr,
 		ComposeErr:    expectedErr,
 	})
+
+	if err := mock.MarkAsRead(); err != expectedErr {
+		t.Errorf("got %v; wanted %v", err, expectedErr)
+	}
 
 	if err := mock.Reply("", ""); err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
