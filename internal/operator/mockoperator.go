@@ -14,6 +14,7 @@ type MockOperator struct {
 	ThreadReturn  *redditproto.Link
 	InboxErr      error
 	InboxReturn   []*redditproto.Message
+	MarkAsReadErr error
 	ReplyErr      error
 	SubmitErr     error
 	ComposeErr    error
@@ -41,6 +42,10 @@ func (m *MockOperator) Thread(permalink string) (*redditproto.Link, error) {
 
 func (m *MockOperator) Inbox() ([]*redditproto.Message, error) {
 	return m.InboxReturn, m.InboxErr
+}
+
+func (m *MockOperator) MarkAsRead(fullnames ...string) error {
+	return m.MarkAsReadErr
 }
 
 func (m *MockOperator) Reply(parent, content string) error {

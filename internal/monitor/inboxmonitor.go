@@ -10,29 +10,48 @@ import (
 type InboxMonitor struct {
 	// Op is the operator InboxMonitor will use to query Reddit.
 	Op operator.Operator
-	// Bot is the InboxHandler InboxMonitor will send the inbox items it
-	// finds to.
-	Bot api.InboxHandler
+	// MessageHandler is the bot's interface for handling messages.
+	MessageHandler api.MessageHandler
+	// PostReplyHandler is the bot's interface for handling post replies.
+	PostReplyHandler api.PostReplyHandler
+	// CommentReplyHandler is the bot's interface for handling comment
+	// replies.
+	CommentReplyHandler api.CommentReplyHandler
+	// MentionHandler is the bot's interface for handling username mentions.
+	MentionHandler api.MentionHandler
 }
 
-// Update updates the inbox and sends all messages to the InboxHandler.
+// Update updates the inbox and sends all inbox items to their handler.
 func (i *InboxMonitor) Update() error {
 	messages, err := i.Op.Inbox()
 	if err != nil {
 		return err
 	}
 
+	handled := []string{}
 	for _, message := range messages {
 		if message.GetSubject() == "username mention" {
-			go i.Bot.Mention(message)
+			if i.MentionHandler != nil {
+				go i.MentionHandler.Mention(message)
+				handled = append(handled, message.GetName())
+			}
 		} else if message.GetSubject() == "post reply" {
-			go i.Bot.PostReply(message)
+			if i.PostReplyHandler != nil {
+				go i.PostReplyHandler.PostReply(message)
+				handled = append(handled, message.GetName())
+			}
 		} else if message.GetWasComment() {
-			go i.Bot.CommentReply(message)
+			if i.CommentReplyHandler != nil {
+				go i.CommentReplyHandler.CommentReply(message)
+				handled = append(handled, message.GetName())
+			}
 		} else {
-			go i.Bot.Message(message)
+			if i.MessageHandler != nil {
+				go i.MessageHandler.Message(message)
+				handled = append(handled, message.GetName())
+			}
 		}
 	}
 
-	return nil
+	return i.Op.MarkAsRead(handled...)
 }

@@ -31,6 +31,8 @@ type Operator interface {
 	Thread(permalink string) (*redditproto.Link, error)
 	// Inbox fetches unread messages from the reddit inbox (see definition).
 	Inbox() ([]*redditproto.Message, error)
+	// MarkAsRead marks inbox items read (see definition).
+	MarkAsRead(fullnames ...string) error
 	// Reply replies to reddit item (see definition).
 	Reply(parent, content string) error
 	// Compose sends a private message to a user (see definition).
@@ -110,7 +112,7 @@ func (o *operator) Thread(permalink string) (*redditproto.Link, error) {
 	return parseThread(response)
 }
 
-// Inbox returns unread messages and marks them as read.
+// Inbox returns unread inbox items.
 func (o *operator) Inbox() ([]*redditproto.Message, error) {
 	req, err := request.New(
 		"GET",
@@ -128,37 +130,25 @@ func (o *operator) Inbox() ([]*redditproto.Message, error) {
 		return nil, err
 	}
 
-	messages, err := parseInbox(response)
-	if err != nil {
-		return nil, err
-	}
+	return parseInbox(response)
+}
 
-	if len(messages) == 0 {
-		return messages, nil
-	}
-
-	messageIds := make([]string, len(messages))
-	for i, message := range messages {
-		messageIds[i] = message.GetName()
-	}
-
-	req, err = request.New(
+// MarkAsRead marks inbox items as read, so they are no longer returned by calls
+// to Inbox().
+func (o *operator) MarkAsRead(fullnames ...string) error {
+	req, err := request.New(
 		"POST",
 		fmt.Sprintf("%s/api/read_message", baseURL),
 		&url.Values{
-			"id": messageIds,
+			"id": []string{strings.Join(fullnames, ",")},
 		},
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_, err = o.cli.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	return messages, nil
+	return err
 }
 
 // Reply replies to a post, message, or comment.
