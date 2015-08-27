@@ -19,6 +19,8 @@ const (
 	MaxLinks = 100
 	// baseURL is the url all requests extend from.
 	baseURL = "https://oauth.reddit.com"
+	// oauth2Host is the hostname of Reddit's OAuth2 server.
+	oauth2Host = "oauth.reddit.com"
 )
 
 // Operator makes api calls to Reddit.
@@ -66,12 +68,26 @@ func (o *operator) Scrape(
 	before string,
 	limit uint,
 ) ([]*redditproto.Link, error) {
-	req, err := scrapeRequest(subreddit, sort, after, before, limit)
-	if err != nil {
-		return nil, err
+	req := http.Request{
+		Method:     "GET",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Close:      true,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   oauth2Host,
+			Path:   fmt.Sprintf("/r/%s/%s", subreddit, sort),
+			RawQuery: url.Values{
+				"limit":  []string{strconv.Itoa(int(limit))},
+				"before": []string{before},
+				"after":  []string{after},
+			}.Encode(),
+		},
+		Host: oauth2Host,
 	}
 
-	response, err := o.cli.Do(req)
+	response, err := o.cli.Do(&req)
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +99,24 @@ func (o *operator) Scrape(
 // The Comments field will be not be filled. For comments, request a thread
 // using Thread().
 func (o *operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
-	req, err := threadsRequest(fullnames)
-	if err != nil {
-		return nil, err
+	req := http.Request{
+		Method:     "GET",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Close:      true,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   oauth2Host,
+			Path: fmt.Sprintf(
+				"/by_id/%s",
+				strings.Join(fullnames, ","),
+			),
+		},
+		Host: oauth2Host,
 	}
 
-	response, err := o.cli.Do(req)
+	response, err := o.cli.Do(&req)
 	if err != nil {
 		return nil, err
 	}
@@ -99,12 +127,21 @@ func (o *operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
 // Thread returns a link; the Comments field will be filled with the comment
 // tree. Browse each comment's reply tree from the ReplyTree field.
 func (o *operator) Thread(permalink string) (*redditproto.Link, error) {
-	req, err := threadRequest(permalink)
-	if err != nil {
-		return nil, err
+	req := http.Request{
+		Method:     "GET",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Close:      true,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   oauth2Host,
+			Path:   fmt.Sprintf("%s.json", permalink),
+		},
+		Host: oauth2Host,
 	}
 
-	response, err := o.cli.Do(req)
+	response, err := o.cli.Do(&req)
 	if err != nil {
 		return nil, err
 	}
@@ -114,18 +151,21 @@ func (o *operator) Thread(permalink string) (*redditproto.Link, error) {
 
 // Inbox returns unread inbox items.
 func (o *operator) Inbox() ([]*redditproto.Message, error) {
-	req, err := request.New(
-		"GET",
-		fmt.Sprintf("%s/message/unread", baseURL),
-		&url.Values{
-			"limit": []string{"100"},
+	req := http.Request{
+		Method:     "GET",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Close:      true,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   oauth2Host,
+			Path:   "/message/unread",
 		},
-	)
-	if err != nil {
-		return nil, err
+		Host: oauth2Host,
 	}
 
-	response, err := o.cli.Do(req)
+	response, err := o.cli.Do(&req)
 	if err != nil {
 		return nil, err
 	}
@@ -194,87 +234,6 @@ func (o *operator) Submit(subreddit, kind, title, content string) error {
 	}
 
 	return nil
-}
-
-// scrapeRequests returns an http request representing a subreddit scrape query
-// to the Reddit api.
-func scrapeRequest(
-	subreddit,
-	sort,
-	before,
-	after string,
-	limit uint,
-) (*http.Request, error) {
-	if limit > MaxLinks {
-		return nil, fmt.Errorf(
-			"%s links requested; max is %s",
-			limit,
-			MaxLinks)
-	}
-
-	if subreddit == "" {
-		return nil, fmt.Errorf("no subreddit provided")
-	}
-
-	if sort == "" {
-		return nil, fmt.Errorf("no sort provided")
-	}
-
-	if limit == 0 {
-		return nil, fmt.Errorf("no request necessary for 0 links")
-	}
-
-	if before != "" && after != "" {
-		return nil, fmt.Errorf("have both after and before ids; " +
-			"this tells reddit to scrape in two directions.")
-	}
-
-	params := &url.Values{
-		"limit": []string{strconv.Itoa(int(limit))},
-	}
-	if before != "" {
-		params.Add("before", before)
-	} else if after != "" {
-		params.Add("after", after)
-	}
-
-	return request.New(
-		"GET",
-		fmt.Sprintf("%s/r/%s/%s.json", baseURL, subreddit, sort),
-		params,
-	)
-}
-
-// threadsRequest creates an http request that represents a by_id api call to
-// Reddit.
-func threadsRequest(fullnames []string) (*http.Request, error) {
-	if len(fullnames) == 0 {
-		return nil, fmt.Errorf("no threads provided")
-	}
-
-	return request.New(
-		"GET",
-		fmt.Sprintf(
-			"%s/by_id/%s",
-			baseURL,
-			strings.Join(fullnames, ","),
-		),
-		nil,
-	)
-}
-
-// threadRequest creates an http request that represents a call for a specific
-// thread comment listing from Reddit.
-func threadRequest(permalink string) (*http.Request, error) {
-	if permalink == "" {
-		return nil, fmt.Errorf("no permalink with which to find thread")
-	}
-
-	return request.New(
-		"GET",
-		fmt.Sprintf("%s%s.json", baseURL, permalink),
-		nil,
-	)
 }
 
 // replyRequest creates an http request that represents a reply api call to
