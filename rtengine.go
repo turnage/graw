@@ -84,7 +84,7 @@ func (r *rtEngine) Run() error {
 // fail lets the bot decide whether to treat an error as a failure.
 func (r *rtEngine) fail(err error) bool {
 	if r.Failer == nil {
-		return false
+		return true
 	}
 
 	return r.Failer.Fail(err)
