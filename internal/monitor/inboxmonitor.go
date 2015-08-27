@@ -53,5 +53,9 @@ func (i *InboxMonitor) Update() error {
 		}
 	}
 
-	return i.Op.MarkAsRead(handled...)
+	if len(handled) > 0 {
+		return i.Op.MarkAsRead(handled...)
+	}
+
+	return nil
 }
