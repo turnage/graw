@@ -2,93 +2,14 @@ package operator
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/turnage/graw/internal/operator/internal/client"
 )
 
-func TestScrapeRequest(t *testing.T) {
-	if _, err := scrapeRequest("", "new", "", "", 1); err == nil {
-		t.Errorf("wanted error for missing subreddit")
-	}
-
-	if _, err := scrapeRequest("self", "", "", "", 1); err == nil {
-		t.Errorf("wanted error for missing sort")
-	}
-
-	if _, err := scrapeRequest("self", "new", "a", "b", 1); err == nil {
-		t.Errorf("wanted error for having two directional references")
-	}
-
-	if _, err := scrapeRequest(
-		"self",
-		"new",
-		"a",
-		"",
-		MaxLinks+1,
-	); err == nil {
-		t.Errorf("wanted error for requesting more links than max")
-	}
-
-	if _, err := scrapeRequest("self", "new", "a", "", 0); err == nil {
-		t.Errorf("wanted error for making a 0 link request")
-	}
-
-	req, err := scrapeRequest("self", "new", "before", "", 1)
-	if err != nil {
-		t.Fatalf("error: %v", err)
-	}
-
-	if req.Method != "GET" {
-		t.Errorf("got %s; wanted GET", req.Method)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		t.Errorf("error parsing form: %v", err)
-	}
-
-	if !strings.Contains(req.URL.Path, "/r/self/new") {
-		t.Errorf("got %s; wanted /r/self/new", req.URL.Path)
-	}
-
-	if req.Form.Get("limit") != "1" {
-		t.Errorf("got %s; wanted limit=1 included", req.URL.RawQuery)
-	}
-
-	if req.Form.Get("before") != "before" {
-		t.Errorf("got %s; wanted before=before included", req.URL.RawQuery)
-	}
-
-	if req.Form.Get("after") != "" {
-		t.Errorf("got %s; did not want after value", req.URL.RawQuery)
-	}
-
-	req, err = scrapeRequest("self", "new", "", "after", 1)
-	if err != nil {
-		t.Fatalf("error: %v", err)
-	}
-
-	if req.Method != "GET" {
-		t.Errorf("got %s; wanted GET", req.Method)
-	}
-
-	if err := req.ParseForm(); err != nil {
-		t.Errorf("error parsing form: %v", err)
-	}
-
-	if req.Form.Get("after") != "after" {
-		t.Errorf("got %s; wanted after", req.URL.RawQuery)
-	}
-}
-
 func TestScrape(t *testing.T) {
 	op := &operator{
 		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if _, err := op.Scrape("", "", "", "", 0); err == nil {
-		t.Errorf("wanted error for invalid request")
 	}
 
 	if _, err := op.Scrape("self", "new", "", "", 1); err == nil {
@@ -120,35 +41,13 @@ func TestScrape(t *testing.T) {
 	}
 }
 
-func TestThreadsRequest(t *testing.T) {
-	if _, err := threadsRequest(nil); err == nil {
-		t.Errorf("wanted error for missing thread ids")
-	}
-	req, err := threadsRequest([]string{"1", "2"})
-	if err != nil {
-		t.Fatalf("error: %v", err)
-	}
-
-	if req.Method != "GET" {
-		t.Errorf("got %s; wanted GET", req.Method)
-	}
-
-	if !strings.Contains(req.URL.Path, "/by_id/1,2") {
-		t.Errorf("got %s; wanted /by_id/1,2", req.URL.Path)
-	}
-}
-
 func TestThreads(t *testing.T) {
 	op := &operator{
 		cli: client.NewMock("", fmt.Errorf("an error")),
 	}
 
-	if _, err := op.Threads(); err == nil {
-		t.Errorf("wanted error for invalid request")
-	}
-
 	if _, err := op.Threads("1", "2", "3"); err == nil {
-		t.Errorf("wanted error for request error")
+		t.Errorf("wanted error for request failure")
 	}
 
 	op = &operator{
@@ -176,32 +75,9 @@ func TestThreads(t *testing.T) {
 	}
 }
 
-func TestThreadRequest(t *testing.T) {
-	if _, err := threadRequest(""); err == nil {
-		t.Errorf("wanted error for empty permalink")
-	}
-
-	req, err := threadRequest("/path")
-	if err != nil {
-		t.Fatalf("error: %v", err)
-	}
-
-	if req.Method != "GET" {
-		t.Errorf("got %s; wanted GET", req.Method)
-	}
-
-	if !strings.Contains(req.URL.Path, "/path") {
-		t.Errorf("got %s; wanted /path included", req.URL.Path)
-	}
-}
-
 func TestThread(t *testing.T) {
 	op := &operator{
 		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if _, err := op.Thread(""); err == nil {
-		t.Errorf("wanted error for invalid request")
 	}
 
 	if _, err := op.Thread("/thread"); err == nil {
