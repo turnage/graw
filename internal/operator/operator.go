@@ -2,14 +2,15 @@
 package operator
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/turnage/graw/internal/operator/internal/client"
-	"github.com/turnage/graw/internal/operator/internal/request"
 	"github.com/turnage/redditproto"
 )
 
@@ -21,6 +22,12 @@ const (
 	baseURL = "https://oauth.reddit.com"
 	// oauth2Host is the hostname of Reddit's OAuth2 server.
 	oauth2Host = "oauth.reddit.com"
+)
+
+var (
+	formEncoding = map[string][]string{
+		"content-type": []string{"application/x-www-form-urlencoded"},
+	}
 )
 
 // Operator makes api calls to Reddit.
@@ -176,148 +183,121 @@ func (o *operator) Inbox() ([]*redditproto.Message, error) {
 // MarkAsRead marks inbox items as read, so they are no longer returned by calls
 // to Inbox().
 func (o *operator) MarkAsRead(fullnames ...string) error {
-	req, err := request.New(
-		"POST",
-		fmt.Sprintf("%s/api/read_message", baseURL),
-		&url.Values{
-			"id": []string{strings.Join(fullnames, ",")},
+	req := http.Request{
+		Method:     "POST",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Close:      true,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   oauth2Host,
+			Path:   "/api/read_message",
 		},
-	)
-	if err != nil {
-		return err
+		Header: formEncoding,
+		Body: ioutil.NopCloser(
+			bytes.NewBufferString(
+				url.Values{
+					"id": []string{
+						strings.Join(fullnames, ","),
+					},
+				}.Encode(),
+			),
+		),
+		Host: oauth2Host,
 	}
 
-	_, err = o.cli.Do(req)
+	_, err := o.cli.Do(&req)
 	return err
 }
 
 // Reply replies to a post, message, or comment.
 func (o *operator) Reply(parent, content string) error {
-	req, err := replyRequest(parent, content)
-	if err != nil {
-		return err
+	req := http.Request{
+		Method:     "POST",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Close:      true,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   oauth2Host,
+			Path:   "/api/comment",
+		},
+		Header: formEncoding,
+		Body: ioutil.NopCloser(
+			bytes.NewBufferString(
+				url.Values{
+					"thing_id": []string{parent},
+					"text":     []string{content},
+				}.Encode(),
+			),
+		),
+		Host: oauth2Host,
 	}
 
-	_, err = o.cli.Do(req)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := o.cli.Do(&req)
+	return err
 }
 
 // Compose sends a private message to a user.
 func (o *operator) Compose(user, subject, content string) error {
-	req, err := composeRequest(user, subject, content)
-	if err != nil {
-		return err
+	req := http.Request{
+		Method:     "POST",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Close:      true,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   oauth2Host,
+			Path:   "/api/compose",
+		},
+		Header: formEncoding,
+		Body: ioutil.NopCloser(
+			bytes.NewBufferString(
+				url.Values{
+					"to":      []string{user},
+					"subject": []string{subject},
+					"text":    []string{content},
+				}.Encode(),
+			),
+		),
+		Host: oauth2Host,
 	}
 
-	_, err = o.cli.Do(req)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := o.cli.Do(&req)
+	return err
 }
 
 // Submit submits a post.
 func (o *operator) Submit(subreddit, kind, title, content string) error {
-	req, err := submitRequest(subreddit, kind, title, content)
-	if err != nil {
-		return err
-	}
-
-	_, err = o.cli.Do(req)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// replyRequest creates an http request that represents a reply api call to
-// Reddit.
-func replyRequest(parent, content string) (*http.Request, error) {
-	if parent == "" {
-		return nil, fmt.Errorf("no parent provided to reply to")
-	}
-
-	if content == "" {
-		return nil, fmt.Errorf("reply body empty")
-	}
-
-	return request.New(
-		"POST",
-		fmt.Sprintf("%s/api/comment", baseURL),
-		&url.Values{
-			"thing_id": []string{parent},
-			"text":     []string{content},
+	req := http.Request{
+		Method:     "POST",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Close:      true,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   oauth2Host,
+			Path:   "/api/submit",
 		},
-	)
-}
-
-// composeRequest creates an http request that represents a compose api call to
-// Reddit.
-func composeRequest(user, subject, content string) (*http.Request, error) {
-	if user == "" {
-		return nil, fmt.Errorf("no user to message")
+		Header: formEncoding,
+		Body: ioutil.NopCloser(
+			bytes.NewBufferString(
+				url.Values{
+					"sr":    []string{subreddit},
+					"kind":  []string{kind},
+					"title": []string{title},
+					"url":   []string{content},
+					"text":  []string{content},
+				}.Encode(),
+			),
+		),
+		Host: oauth2Host,
 	}
 
-	if subject == "" {
-		return nil, fmt.Errorf("no subject for message")
-	}
-
-	if content == "" {
-		return nil, fmt.Errorf("no body for message")
-	}
-
-	return request.New(
-		"POST",
-		fmt.Sprintf("%s/api/compose", baseURL),
-		&url.Values{
-			"to":      []string{user},
-			"subject": []string{subject},
-			"text":    []string{content},
-		},
-	)
-}
-
-// submitRequest creates an http request that represents a submit api call to
-// Reddit.
-func submitRequest(
-	subreddit,
-	kind,
-	title,
-	content string,
-) (*http.Request, error) {
-	if subreddit == "" {
-		return nil, fmt.Errorf("no subreddit provided")
-	}
-
-	if title == "" {
-		return nil, fmt.Errorf("no title provided")
-	}
-
-	params := &url.Values{
-		"sr":    []string{subreddit},
-		"kind":  []string{kind},
-		"title": []string{title},
-	}
-	if kind == "link" {
-		if content == "" {
-			return nil, fmt.Errorf("no url provided for link post")
-		}
-		params.Add("url", content)
-	} else if kind == "self" {
-		params.Add("text", content)
-	} else {
-		return nil, fmt.Errorf("unsupported post type")
-	}
-
-	return request.New(
-		"POST",
-		fmt.Sprintf("%s/api/submit", baseURL),
-		params,
-	)
+	_, err := o.cli.Do(&req)
+	return err
 }
