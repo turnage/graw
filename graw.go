@@ -54,24 +54,8 @@ func monitors(
 		)
 	}
 
-	messageHandler, _ := bot.(api.MessageHandler)
-	postReplyHandler, _ := bot.(api.PostReplyHandler)
-	commentReplyHandler, _ := bot.(api.CommentReplyHandler)
-	mentionHandler, _ := bot.(api.MentionHandler)
-	if messageHandler != nil ||
-		postReplyHandler != nil ||
-		commentReplyHandler != nil ||
-		mentionHandler != nil {
-		mons = append(
-			mons,
-			&monitor.InboxMonitor{
-				Op:                  op,
-				MessageHandler:      messageHandler,
-				PostReplyHandler:    postReplyHandler,
-				CommentReplyHandler: commentReplyHandler,
-				MentionHandler:      mentionHandler,
-			},
-		)
+	if mon := monitor.InboxMonitor(op, bot); mon != nil {
+		mons = append(mons, mon)
 	}
 	return mons
 }
