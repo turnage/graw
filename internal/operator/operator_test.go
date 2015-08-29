@@ -114,6 +114,57 @@ func TestThread(t *testing.T) {
 	}
 }
 
+func TestInbox(t *testing.T) {
+	op := &operator{
+		cli: client.NewMock("", fmt.Errorf("an error")),
+	}
+
+	if _, err := op.Inbox(); err == nil {
+		t.Errorf("wanted error for request failure")
+	}
+
+	op = &operator{
+		cli: client.NewMock(`{
+			"data": {
+				"children" : [
+					{"data": {"was_comment": true}}
+				]
+			}
+		}`, nil),
+	}
+
+	messages, err := op.Inbox()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	if len(messages) != 1 {
+		t.Fatalf("got %d messages; wanted 1", len(messages))
+	}
+
+	if !messages[0].GetWasComment() {
+		t.Fatal("got non-comment inboxable; wanted comment inboxable")
+	}
+}
+
+func TestMarkAsRead(t *testing.T) {
+	op := &operator{
+		cli: client.NewMock("", fmt.Errorf("an error")),
+	}
+
+	if err := op.MarkAsRead("id1", "id2"); err == nil {
+		t.Errorf("wanted error for request failure")
+	}
+
+	op = &operator{
+		cli: client.NewMock("", nil),
+	}
+
+	if err := op.MarkAsRead("id1", "id2"); err != nil {
+		t.Fatalf("error: %v", err)
+	}
+}
+
 func TestReply(t *testing.T) {
 	op := &operator{
 		cli: client.NewMock("", fmt.Errorf("an error")),
