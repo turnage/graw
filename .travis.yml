@@ -10,6 +10,5 @@ script:
   - go test -coverprofile=monitor.coverprofile ./internal/monitor
   - go test -coverprofile=operator.coverprofile ./internal/operator
   - go test -coverprofile=client.coverprofile ./internal/operator/internal/client
-  - go test -coverprofile=request.coverprofile ./internal/operator/internal/request
   - $HOME/gopath/bin/gover
   - $HOME/gopath/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci
