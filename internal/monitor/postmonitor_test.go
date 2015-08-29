@@ -17,31 +17,63 @@ func (m *mockPostHandler) Post(post *redditproto.Link) {
 	m.Calls++
 }
 
+func TestPostMonitor(t *testing.T) {
+	if pm := PostMonitor(
+		&operator.MockOperator{},
+		&mockNoHandler{},
+		[]string{"self"},
+	); pm != nil {
+		t.Errorf("got %v; wanted nil")
+	}
+
+	if pm := PostMonitor(
+		&operator.MockOperator{},
+		&mockPostHandler{},
+		[]string{},
+	); pm != nil {
+		t.Errorf("got %v; wanted nil")
+	}
+
+	pm := PostMonitor(
+		&operator.MockOperator{},
+		&mockPostHandler{},
+		[]string{"self", "aww"},
+	).(*postMonitor)
+	if pm.postHandler == nil {
+		t.Errorf("wanted postHandler set")
+	}
+	if pm.query != "self+aww" {
+		t.Errorf("got %s; wanted self+aww", pm.query)
+	}
+}
+
 func TestPostMonitorUpdate(t *testing.T) {
-	pm := &PostMonitor{
-		Op: &operator.MockOperator{
+	pm := PostMonitor(
+		&operator.MockOperator{
 			ScrapeErr: fmt.Errorf("an error"),
 		},
-		Bot: &mockPostHandler{},
-	}
+		&mockPostHandler{},
+		[]string{"self"},
+	)
 	if err := pm.Update(); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
-	pm = &PostMonitor{
-		Op: &operator.MockOperator{
+	pm = PostMonitor(
+		&operator.MockOperator{
 			ThreadsErr: fmt.Errorf("an error"),
 		},
-		Bot: &mockPostHandler{},
-	}
+		&mockPostHandler{},
+		[]string{"self"},
+	)
 	if err := pm.Update(); err == nil {
 		t.Errorf("wanted error for fixtip failure")
 	}
 
 	bot := &mockPostHandler{}
 	postName := "name"
-	pm = &PostMonitor{
-		Op: &operator.MockOperator{
+	pm = PostMonitor(
+		&operator.MockOperator{
 			ScrapeReturn: []*redditproto.Link{
 				&redditproto.Link{Name: &postName},
 				&redditproto.Link{Name: &postName},
@@ -50,8 +82,9 @@ func TestPostMonitorUpdate(t *testing.T) {
 				&redditproto.Link{Name: &postName},
 			},
 		},
-		Bot: bot,
-	}
+		bot,
+		[]string{"self"},
+	)
 	if err := pm.Update(); err != nil {
 		t.Fatalf("error: %v", err)
 	}
@@ -64,20 +97,12 @@ func TestPostMonitorUpdate(t *testing.T) {
 	}
 }
 
-func TestInit(t *testing.T) {
-	pm := &PostMonitor{}
-	pm.init()
-	if len(pm.tip) != 1 {
-		t.Errorf("got %v; wanted slice with one empty string", pm.tip)
-	}
-}
-
 func TestFetchTip(t *testing.T) {
-	pm := &PostMonitor{
+	pm := &postMonitor{
 		tip: []string{""},
 	}
 
-	pm.Op = &operator.MockOperator{
+	pm.op = &operator.MockOperator{
 		ScrapeErr: fmt.Errorf("an error"),
 	}
 	if _, err := pm.fetchTip(); err == nil {
@@ -89,7 +114,7 @@ func TestFetchTip(t *testing.T) {
 		pm.tip = append(pm.tip, "id")
 	}
 	postName := "anything"
-	pm.Op = &operator.MockOperator{
+	pm.op = &operator.MockOperator{
 		ScrapeErr: nil,
 		ScrapeReturn: []*redditproto.Link{
 			&redditproto.Link{Name: &postName},
@@ -131,18 +156,18 @@ func TestFetchTip(t *testing.T) {
 }
 
 func TestFixTip(t *testing.T) {
-	pm := &PostMonitor{
+	pm := &postMonitor{
 		tip: []string{"1", "2", "3"},
 	}
 
-	pm.Op = &operator.MockOperator{
+	pm.op = &operator.MockOperator{
 		ThreadsErr: fmt.Errorf("an error"),
 	}
 	if err := pm.fixTip(); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
-	pm.Op = &operator.MockOperator{
+	pm.op = &operator.MockOperator{
 		ThreadsErr:    nil,
 		ThreadsReturn: nil,
 	}
@@ -158,7 +183,7 @@ func TestFixTip(t *testing.T) {
 }
 
 func TestShaveTip(t *testing.T) {
-	pm := &PostMonitor{
+	pm := &postMonitor{
 		tip: []string{"1", "2"},
 	}
 
