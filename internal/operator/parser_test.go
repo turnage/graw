@@ -3,20 +3,12 @@ package operator
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"testing"
 
 	"github.com/turnage/redditproto"
 )
-
-// rcloser wraps a buffer so that it can passed as an io.ReadCloser.
-type rcloser struct {
-	*bytes.Buffer
-}
-
-func (b *rcloser) Close() error {
-	return nil
-}
 
 type errReader struct{}
 
@@ -34,24 +26,24 @@ func TestParseLinkListing(t *testing.T) {
 	}
 
 	if _, err := parseLinkListing(
-		&rcloser{bytes.NewBufferString(`[]"`)},
+		ioutil.NopCloser(bytes.NewBufferString(`[]"`)),
 	); err == nil {
 		t.Errorf("wanted error for invalid json")
 	}
 
 	if _, err := parseLinkListing(
-		&rcloser{bytes.NewBufferString(`{}`)},
+		ioutil.NopCloser(bytes.NewBufferString(`{}`)),
 	); err == nil {
 		t.Errorf("wanted error for nil data")
 	}
 
 	if _, err := parseLinkListing(
-		&rcloser{bytes.NewBufferString(`{"data": {}}`)},
+		ioutil.NopCloser(bytes.NewBufferString(`{"data": {}}`)),
 	); err == nil {
 		t.Errorf("wanted error for nil children")
 	}
 
-	links, err := parseLinkListing(&rcloser{bytes.NewBufferString(`{
+	links, err := parseLinkListing(ioutil.NopCloser(bytes.NewBufferString(`{
 		"data": {
 			"children": [
 				{"data": {"title": "hello"}},
@@ -59,7 +51,7 @@ func TestParseLinkListing(t *testing.T) {
 				{"data": {"title": "bye"}}
 			]
 		}
-	}`)})
+	}`)))
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
@@ -78,25 +70,25 @@ func TestParseThread(t *testing.T) {
 	}
 
 	if _, err := parseThread(
-		&rcloser{bytes.NewBufferString(`asds`)},
+		ioutil.NopCloser(bytes.NewBufferString(`asds`)),
 	); err == nil {
 		t.Errorf("wanted error for invalid json")
 	}
 
 	if _, err := parseThread(
-		&rcloser{bytes.NewBufferString(`[]`)},
+		ioutil.NopCloser(bytes.NewBufferString(`[]`)),
 	); err == nil {
 		t.Errorf("wanted error for missing listings")
 	}
 
-	if _, err := parseThread(&rcloser{bytes.NewBufferString(`[
+	if _, err := parseThread(ioutil.NopCloser(bytes.NewBufferString(`[
 			{"data": {}},
 			{"data": {}}
-	]`)}); err == nil {
+	]`))); err == nil {
 		t.Errorf("wanted error for bad link listing")
 	}
 
-	if _, err := parseThread(&rcloser{bytes.NewBufferString(`[
+	if _, err := parseThread(ioutil.NopCloser(bytes.NewBufferString(`[
 		{
 			"data": {
 				"children": [
@@ -113,11 +105,11 @@ func TestParseThread(t *testing.T) {
 				]
 			}
 		}
-	]`)}); err == nil {
+	]`))); err == nil {
 		t.Errorf("wanted error for non-one link listing")
 	}
 
-	thread, err := parseThread(&rcloser{bytes.NewBufferString(`[
+	thread, err := parseThread(ioutil.NopCloser(bytes.NewBufferString(`[
 		{
 			"data": {
 				"children": [
@@ -133,7 +125,7 @@ func TestParseThread(t *testing.T) {
 				]
 			}
 		}
-	]`)})
+	]`)))
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
@@ -144,7 +136,7 @@ func TestParseThread(t *testing.T) {
 		t.Errorf("got %v; wanted 2 comments", thread.GetComments)
 	}
 
-	if _, err := parseThread(&rcloser{bytes.NewBufferString(`[
+	if _, err := parseThread(ioutil.NopCloser(bytes.NewBufferString(`[
 		{
 			"data": {
 				"children": [
@@ -164,7 +156,7 @@ func TestParseThread(t *testing.T) {
 				]
 			}
 		}
-	]`)}); err != nil {
+	]`))); err != nil {
 		t.Fatalf("error: %v", err)
 	}
 }
@@ -175,30 +167,30 @@ func TestParseInbox(t *testing.T) {
 	}
 
 	if _, err := parseInbox(
-		&rcloser{bytes.NewBufferString(`[]"`)},
+		ioutil.NopCloser(bytes.NewBufferString(`[]"`)),
 	); err == nil {
 		t.Errorf("wanted error for invalid json")
 	}
 
 	if _, err := parseInbox(
-		&rcloser{bytes.NewBufferString(`{}`)},
+		ioutil.NopCloser(bytes.NewBufferString(`{}`)),
 	); err == nil {
 		t.Errorf("wanted error for nil data")
 	}
 
 	if _, err := parseInbox(
-		&rcloser{bytes.NewBufferString(`{"data": {}}`)},
+		ioutil.NopCloser(bytes.NewBufferString(`{"data": {}}`)),
 	); err == nil {
 		t.Errorf("wanted error for nil children")
 	}
 
-	messages, err := parseInbox(&rcloser{bytes.NewBufferString(`{
+	messages, err := parseInbox(ioutil.NopCloser(bytes.NewBufferString(`{
 		"data": {
 			"children" : [
 				{"data": {"was_comment": true}}
 			]
 		}
-	}`)})
+	}`)))
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
