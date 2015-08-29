@@ -2,8 +2,6 @@
 package graw
 
 import (
-	"strings"
-
 	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/monitor"
 	"github.com/turnage/graw/internal/operator"
@@ -43,15 +41,8 @@ func monitors(
 	subreddits []string,
 ) []monitor.Monitor {
 	mons := []monitor.Monitor{}
-	if postHandler, ok := bot.(api.PostHandler); ok {
-		mons = append(
-			mons,
-			&monitor.PostMonitor{
-				Query: strings.Join(subreddits, "+"),
-				Op:    op,
-				Bot:   postHandler,
-			},
-		)
+	if mon := monitor.PostMonitor(op, bot, subreddits); mon != nil {
+		mons = append(mons, mon)
 	}
 
 	if mon := monitor.InboxMonitor(op, bot); mon != nil {

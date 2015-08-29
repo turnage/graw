@@ -1,6 +1,8 @@
 package monitor
 
 import (
+	"strings"
+
 	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
@@ -13,27 +15,47 @@ const (
 	maxTipSize = 15
 )
 
-// PostMonitor monitors subreddits for new posts, and sends them to its handler.
-type PostMonitor struct {
-	// Query is the multireddit query PostMonitor will use to find new posts
-	// (e.g. self+funny).
-	Query string
-	// Bot is the handler PostMonitor will send new posts to.
-	Bot api.PostHandler
-	// Op is the operator through which the monitor will make update
+// postMonitor monitors subreddits for new posts, and sends them to its handler.
+type postMonitor struct {
+	// op is the operator through which the monitor will make update
 	// requests to reddit.
-	Op operator.Operator
-
+	op operator.Operator
+	// postHandler is the handler PostMonitor will send new posts to.
+	postHandler api.PostHandler
+	// query is the multireddit query PostMonitor will use to find new posts
+	// (e.g. self+funny).
+	query string
 	// tip is the list of latest posts in the monitored subreddits.
 	tip []string
 }
 
-// Update polls for new posts and sends them to Bot when they are found.
-func (p *PostMonitor) Update() error {
-	if p.tip == nil {
-		p.init()
+// PostMonitor returns a post monitor for the requested subreddits, busing bot
+// to handle new posts it finds. If bot cannot handle posts or there are no
+// subreddits to monitor, returns nil.
+func PostMonitor(
+	op operator.Operator,
+	bot interface{},
+	subreddits []string,
+) Monitor {
+	postHandler, ok := bot.(api.PostHandler)
+	if !ok {
+		return nil
 	}
 
+	if len(subreddits) == 0 {
+		return nil
+	}
+
+	return &postMonitor{
+		op:          op,
+		postHandler: postHandler,
+		tip:         []string{""},
+		query:       strings.Join(subreddits, "+"),
+	}
+}
+
+// Update polls for new posts and sends them to Bot when they are found.
+func (p *postMonitor) Update() error {
 	posts, err := p.fetchTip()
 	if err != nil {
 		return err
@@ -46,23 +68,17 @@ func (p *PostMonitor) Update() error {
 	}
 
 	for _, post := range posts {
-		go p.Bot.Post(post)
+		go p.postHandler.Post(post)
 	}
 
 	return nil
-}
-
-// init initializes the PostMonitor.
-func (p *PostMonitor) init() {
-	p.tip = make([]string, 1)
-	p.tip[0] = ""
 }
 
 // fetchTip fetches the latest posts from the monitored subreddits. If there is
 // no tip, fetchTip considers the call an adjustment round, and will fetch a new
 // reference tip but discard the post (because, most likely, that post was
 // already returned before).
-func (p *PostMonitor) fetchTip() ([]*redditproto.Link, error) {
+func (p *postMonitor) fetchTip() ([]*redditproto.Link, error) {
 	tip := p.tip[len(p.tip)-1]
 	links := uint(operator.MaxLinks)
 	adjustment := false
@@ -71,8 +87,8 @@ func (p *PostMonitor) fetchTip() ([]*redditproto.Link, error) {
 		adjustment = true
 	}
 
-	posts, err := p.Op.Scrape(
-		p.Query,
+	posts, err := p.op.Scrape(
+		p.query,
 		"new",
 		"",
 		tip,
@@ -99,8 +115,8 @@ func (p *PostMonitor) fetchTip() ([]*redditproto.Link, error) {
 
 // fixTip attempts to fix the PostMonitor's reference point for new posts. If it
 // has been deleted, fixTip will move to a fallback tip.
-func (p *PostMonitor) fixTip() error {
-	posts, err := p.Op.Threads(p.tip[len(p.tip)-1])
+func (p *postMonitor) fixTip() error {
+	posts, err := p.op.Threads(p.tip[len(p.tip)-1])
 	if err != nil {
 		return err
 	}
@@ -114,7 +130,7 @@ func (p *PostMonitor) fixTip() error {
 
 // shaveTip shaves off the latest tip thread name. If all tips are shaved off,
 // uses an empty tip name (this will just get the latest threads).
-func (p *PostMonitor) shaveTip() {
+func (p *postMonitor) shaveTip() {
 	if len(p.tip) == 1 {
 		p.tip[0] = ""
 		return
