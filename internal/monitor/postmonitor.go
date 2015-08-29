@@ -18,8 +18,6 @@ type PostMonitor struct {
 	// Query is the multireddit query PostMonitor will use to find new posts
 	// (e.g. self+funny).
 	Query string
-	// Posts is the number of posts PostMonitor has found since it began.
-	Posts uint64
 	// Bot is the handler PostMonitor will send new posts to.
 	Bot api.PostHandler
 	// Op is the operator through which the monitor will make update
