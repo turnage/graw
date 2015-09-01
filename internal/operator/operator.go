@@ -14,6 +14,13 @@ import (
 	"github.com/turnage/redditproto"
 )
 
+type ListingKind int
+
+const (
+	Comment = iota
+	Link    = iota
+)
+
 const (
 	// MaxLinks is the amount of posts reddit will return for a scrape
 	// query.
@@ -33,7 +40,7 @@ var (
 // Operator makes api calls to Reddit.
 type Operator interface {
 	// Scrape fetches new reddit posts (see definition).
-	Scrape(subreddit, sort, after, before string, limit uint) ([]*redditproto.Link, error)
+	Scrape(path, after, before string, limit uint, kind ListingKind) (interface{}, error)
 	// Threads fetches specific threads by name (see definition).
 	Threads(fullnames ...string) ([]*redditproto.Link, error)
 	// Thread fetches a post and its comment tree (see definition).
@@ -65,16 +72,16 @@ func New(agent string) (Operator, error) {
 	return &operator{cli: cli}, nil
 }
 
-// Scrape returns posts from a subreddit, in the specified sort order, with the
-// specified reference points for direction, up to limit. The Comments
-// field will not be filled. For comments, request a thread using Thread().
+// Scrape returns the content of a listing endpoint on Reddit at path. kind
+// should specify the expected return type. See the ListingKind enum for
+// supported options.
 func (o *operator) Scrape(
-	subreddit,
-	sort,
+	path,
 	after,
 	before string,
 	limit uint,
-) ([]*redditproto.Link, error) {
+	kind ListingKind,
+) (interface{}, error) {
 	req := http.Request{
 		Method:     "GET",
 		Proto:      "HTTP/1.1",
@@ -84,7 +91,7 @@ func (o *operator) Scrape(
 		URL: &url.URL{
 			Scheme: "https",
 			Host:   oauth2Host,
-			Path:   fmt.Sprintf("/r/%s/%s", subreddit, sort),
+			Path:   path,
 			RawQuery: url.Values{
 				"limit":  []string{strconv.Itoa(int(limit))},
 				"before": []string{before},
@@ -99,7 +106,11 @@ func (o *operator) Scrape(
 		return nil, err
 	}
 
-	return parseLinkListing(response)
+	if kind == Link {
+		return parseLinkListing(response)
+	}
+
+	return parseCommentListing(response)
 }
 
 // Threads returns specific threads, requested by their fullname (t3_[id]).

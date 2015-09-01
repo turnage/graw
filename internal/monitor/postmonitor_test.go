@@ -42,8 +42,8 @@ func TestPostMonitor(t *testing.T) {
 	if pm.postHandler == nil {
 		t.Errorf("wanted postHandler set")
 	}
-	if pm.query != "self+aww" {
-		t.Errorf("got %s; wanted self+aww", pm.query)
+	if pm.query != "/r/self+aww/new" {
+		t.Errorf("got %s; wanted /r/self+aww/new", pm.query)
 	}
 }
 

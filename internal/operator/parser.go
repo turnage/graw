@@ -27,6 +27,34 @@ func parseLinkListing(content io.ReadCloser) ([]*redditproto.Link, error) {
 	return unpackLinkListing(listing)
 }
 
+// parseCommentListing returns a slice of comments in a comment listing. The
+// comment tree, if present, will be parsed and available in the ReplyTree
+// field.
+func parseCommentListing(
+	content io.ReadCloser,
+) ([]*redditproto.Comment, error) {
+	if content == nil {
+		return nil, fmt.Errorf("no content provided")
+	}
+	defer content.Close()
+
+	commentListing := &redditproto.CommentListing{}
+	decoder := json.NewDecoder(content)
+	if err := decoder.Decode(commentListing); err != nil {
+		return nil, err
+	}
+
+	if commentListing.GetData() == nil {
+		return nil, fmt.Errorf("no data in listing")
+	}
+
+	if commentListing.GetData().GetChildren() == nil {
+		return nil, fmt.Errorf("the listing was infertile")
+	}
+
+	return unpackCommentListing(commentListing), nil
+}
+
 // parseThread parses a combination link listing and comment listing, which
 // Reddit returns when asked for the JSON digest of a thread. This contains the
 // submission's information, and all of its comments. The returned link will

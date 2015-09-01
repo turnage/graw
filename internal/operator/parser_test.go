@@ -60,6 +60,46 @@ func TestParseLinkListing(t *testing.T) {
 	}
 }
 
+func TestParseCommentListing(t *testing.T) {
+	if _, err := parseCommentListing(nil); err == nil {
+		t.Errorf("wanted error for nil content")
+	}
+
+	if _, err := parseCommentListing(
+		ioutil.NopCloser(bytes.NewBufferString(`[]"`)),
+	); err == nil {
+		t.Errorf("wanted error for invalid json")
+	}
+
+	if _, err := parseCommentListing(
+		ioutil.NopCloser(bytes.NewBufferString(`{}`)),
+	); err == nil {
+		t.Errorf("wanted error for nil data")
+	}
+
+	if _, err := parseCommentListing(
+		ioutil.NopCloser(bytes.NewBufferString(`{"data": {}}`)),
+	); err == nil {
+		t.Errorf("wanted error for nil children")
+	}
+
+	comments, err := parseCommentListing(ioutil.NopCloser(bytes.NewBufferString(`{
+		"data": {
+			"children": [
+				{"data": {"body": "hello"}},
+				{"data": {"body": "hola"}},
+				{"data": {"body": "bye"}}
+			]
+		}
+	}`)))
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if len(comments) != 3 {
+		t.Errorf("wanted to find 3 comments; resp is %v", comments)
+	}
+}
+
 func TestParseThread(t *testing.T) {
 	if _, err := parseThread(nil); err == nil {
 		t.Errorf("wanted error for nil content")

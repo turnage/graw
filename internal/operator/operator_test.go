@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/turnage/graw/internal/operator/internal/client"
+	"github.com/turnage/redditproto"
 )
 
 func TestScrape(t *testing.T) {
@@ -12,7 +13,7 @@ func TestScrape(t *testing.T) {
 		cli: client.NewMock("", fmt.Errorf("an error")),
 	}
 
-	if _, err := op.Scrape("self", "new", "", "", 1); err == nil {
+	if _, err := op.Scrape("/r/self/new", "", "", 1, Link); err == nil {
 		t.Errorf("wanted error for request error")
 	}
 
@@ -21,9 +22,18 @@ func TestScrape(t *testing.T) {
 			`{
 				"data": {
 					"children": [
-						{"data": {"title": "hello"}},
-						{"data": {"title": "hola"}},
-						{"data": {"title": "bye"}}
+						{"data": {
+							"title": "hello",
+							"body": "hello"
+						}},
+						{"data": {
+							"title": "hola",
+							"body": "hola"
+						}},
+						{"data": {
+							"title": "bye",
+							"body": "bye"
+						}}
 					]
 				}
 			}`,
@@ -31,13 +41,28 @@ func TestScrape(t *testing.T) {
 		),
 	}
 
-	posts, err := op.Scrape("self", "new", "", "", 3)
+	postInterface, err := op.Scrape("/r/self/new", "", "", 1, Link)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
+	posts := postInterface.([]*redditproto.Link)
 
 	if len(posts) != 3 {
 		t.Errorf("got %d posts; wanted 3", len(posts))
+	}
+
+	if posts[0].GetTitle() != "hello" {
+		t.Errorf("got %s; wanted hello", posts[0].GetTitle())
+	}
+
+	commentInterface, err := op.Scrape("/r/self/new", "", "", 1, Comment)
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	comments := commentInterface.([]*redditproto.Comment)
+
+	if comments[0].GetBody() != "hello" {
+		t.Errorf("got %s; wanted hello", comments[0].GetBody())
 	}
 }
 

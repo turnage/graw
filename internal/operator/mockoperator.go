@@ -21,12 +21,12 @@ type MockOperator struct {
 }
 
 func (m *MockOperator) Scrape(
-	subreddit,
-	sort,
+	path,
 	after,
 	before string,
 	limit uint,
-) ([]*redditproto.Link, error) {
+	kind ListingKind,
+) (interface{}, error) {
 	return m.ScrapeReturn, m.ScrapeErr
 }
 

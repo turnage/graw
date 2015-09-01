@@ -54,8 +54,8 @@ func TestMockOperator(t *testing.T) {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
 	}
 
-	threads, err := mock.Scrape("", "", "", "", 0)
-	if !reflect.DeepEqual(threads, expectedScrapeReturn) {
+	threads, err := mock.Scrape("", "", "", 0, Link)
+	if !reflect.DeepEqual(threads.([]*redditproto.Link), expectedScrapeReturn) {
 		t.Errorf("got %v; wanted %v", threads, expectedScrapeReturn)
 	}
 
