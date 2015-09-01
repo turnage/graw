@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/turnage/graw/api"
@@ -50,7 +51,10 @@ func PostMonitor(
 		op:          op,
 		postHandler: postHandler,
 		tip:         []string{""},
-		query:       strings.Join(subreddits, "+"),
+		query: fmt.Sprintf(
+			"/r/%s/new",
+			strings.Join(subreddits, "+"),
+		),
 	}
 }
 
@@ -87,16 +91,17 @@ func (p *postMonitor) fetchTip() ([]*redditproto.Link, error) {
 		adjustment = true
 	}
 
-	posts, err := p.op.Scrape(
+	postsInterface, err := p.op.Scrape(
 		p.query,
-		"new",
 		"",
 		tip,
 		links,
+		operator.Link,
 	)
 	if err != nil {
 		return nil, err
 	}
+	posts := postsInterface.([]*redditproto.Link)
 
 	for i := range posts {
 		p.tip = append(p.tip, posts[len(posts)-1-i].GetName())
