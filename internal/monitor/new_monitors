@@ -1,0 +1,22 @@
+Generalization of Monitors
+==========================
+
+Many interesting endpoints on Reddit are provided as listings. New posts, user
+submissions, friend submissions, etc. At this commit, postMonitor is the only
+monitor that handles listings. Its behaviors for maintaining a tip are needed
+for monitoring any listing. The only thing that changes between the different
+listings is the endpoint and (maybe) some parameters.
+
+postMonitor should become hollow, and shell out to a scanner. A scanner scans
+its listing endpoint and maintains its tip. It returns interface{} from its scan
+method in order to account for that a listing can be made of comments or posts.
+This will come from a generic listing method in operator (a derivative of its
+current Scrape() method).
+
+Using the core postMonitor will shell out to, two more monitors will be made:
+user monitor, and friend monitor.
+
+User Monitor:
+  This adds to the bot api UserComment(comment) and UserPost(post)
+Friend Monitor:
+  This adds to the bot api FriendPost(post)
