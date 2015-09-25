@@ -7,7 +7,7 @@ import (
 // MockOperator mocks Operator; it returns canned responses.
 type MockOperator struct {
 	ScrapeErr     error
-	ScrapeReturn  []*redditproto.Link
+	ScrapeReturn  []Thing
 	ThreadsErr    error
 	ThreadsReturn []*redditproto.Link
 	ThreadErr     error
@@ -26,7 +26,7 @@ func (m *MockOperator) Scrape(
 	before string,
 	limit uint,
 	kind ListingKind,
-) (interface{}, error) {
+) ([]Thing, error) {
 	return m.ScrapeReturn, m.ScrapeErr
 }
 

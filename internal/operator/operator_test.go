@@ -41,11 +41,14 @@ func TestScrape(t *testing.T) {
 		),
 	}
 
-	postInterface, err := op.Scrape("/r/self/new", "", "", 1, Link)
+	postThings, err := op.Scrape("/r/self/new", "", "", 1, Link)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
-	posts := postInterface.([]*redditproto.Link)
+	posts := make([]*redditproto.Link, len(postThings))
+	for i, thing := range postThings {
+		posts[i] = thing.(*redditproto.Link)
+	}
 
 	if len(posts) != 3 {
 		t.Errorf("got %d posts; wanted 3", len(posts))
@@ -55,11 +58,14 @@ func TestScrape(t *testing.T) {
 		t.Errorf("got %s; wanted hello", posts[0].GetTitle())
 	}
 
-	commentInterface, err := op.Scrape("/r/self/new", "", "", 1, Comment)
+	commentThings, err := op.Scrape("/r/self/new", "", "", 1, Comment)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
-	comments := commentInterface.([]*redditproto.Comment)
+	comments := make([]*redditproto.Comment, len(commentThings))
+	for i, thing := range commentThings {
+		comments[i] = thing.(*redditproto.Comment)
+	}
 
 	if comments[0].GetBody() != "hello" {
 		t.Errorf("got %s; wanted hello", comments[0].GetBody())
