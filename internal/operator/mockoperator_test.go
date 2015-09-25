@@ -8,82 +8,134 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-func TestMockOperator(t *testing.T) {
-	title := "title"
+func TestMockMarkAsRead(t *testing.T) {
 	expectedErr := fmt.Errorf("an error")
-	expectedScrapeReturn := []*redditproto.Link{
-		&redditproto.Link{Title: &title},
-	}
-	expectedThreadsReturn := []*redditproto.Link{
-		&redditproto.Link{Title: &title},
-		&redditproto.Link{Title: &title},
-	}
-	expectedThreadReturn := &redditproto.Link{Title: &title}
-	expectedInboxReturn := []*redditproto.Message{
-		&redditproto.Message{Subject: &title},
-	}
-
-	mock := Operator(&MockOperator{
-		ScrapeErr:     expectedErr,
-		ScrapeReturn:  expectedScrapeReturn,
-		ThreadsErr:    expectedErr,
-		ThreadsReturn: expectedThreadsReturn,
-		ThreadErr:     expectedErr,
-		ThreadReturn:  expectedThreadReturn,
-		InboxErr:      expectedErr,
-		InboxReturn:   expectedInboxReturn,
-		MarkAsReadErr: expectedErr,
-		ReplyErr:      expectedErr,
-		SubmitErr:     expectedErr,
-		ComposeErr:    expectedErr,
-	})
-
+	mock := Operator(
+		&MockOperator{
+			MarkAsReadErr: expectedErr,
+		},
+	)
 	if err := mock.MarkAsRead(); err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
 	}
+}
 
+func TestMockReply(t *testing.T) {
+	expectedErr := fmt.Errorf("an error")
+	mock := Operator(
+		&MockOperator{
+			ReplyErr: expectedErr,
+		},
+	)
 	if err := mock.Reply("", ""); err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
 	}
+}
 
+func TestMockCompose(t *testing.T) {
+	expectedErr := fmt.Errorf("an error")
+	mock := Operator(
+		&MockOperator{
+			ComposeErr: expectedErr,
+		},
+	)
 	if err := mock.Compose("", "", ""); err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
 	}
+}
 
+func TestMockSubmit(t *testing.T) {
+	expectedErr := fmt.Errorf("an error")
+	mock := Operator(
+		&MockOperator{
+			SubmitErr: expectedErr,
+		},
+	)
 	if err := mock.Submit("", "", "", ""); err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
 	}
+}
 
-	threads, err := mock.Scrape("", "", "", 0, Link)
-	if !reflect.DeepEqual(threads.([]*redditproto.Link), expectedScrapeReturn) {
-		t.Errorf("got %v; wanted %v", threads, expectedScrapeReturn)
+func TestMockScrape(t *testing.T) {
+	expectedErr := fmt.Errorf("an error")
+	title := "title"
+	expected := []Thing{
+		&redditproto.Link{Title: &title},
+	}
+	mock := Operator(
+		&MockOperator{
+			ScrapeErr:    expectedErr,
+			ScrapeReturn: expected,
+		},
+	)
+	actual, err := mock.Scrape("", "", "", 0, Link)
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("got %v; wanted %v", actual, expected)
 	}
 
 	if err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
 	}
+}
 
-	threads, err = mock.Threads()
-	if !reflect.DeepEqual(threads, expectedThreadsReturn) {
-		t.Errorf("got %v; wanted %v", threads, expectedThreadsReturn)
+func TestMockThreads(t *testing.T) {
+	expectedErr := fmt.Errorf("an error")
+	title := "title"
+	expected := []*redditproto.Link{
+		&redditproto.Link{Title: &title},
+		&redditproto.Link{Title: &title},
+	}
+	mock := Operator(
+		&MockOperator{
+			ThreadsErr:    expectedErr,
+			ThreadsReturn: expected,
+		},
+	)
+	actual, err := mock.Threads()
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("got %v; wanted %v", actual, expected)
 	}
 
 	if err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
 	}
+}
 
-	thread, err := mock.Thread("")
-	if !reflect.DeepEqual(thread, expectedThreadReturn) {
-		t.Errorf("got %v; wanted %v", thread, expectedThreadReturn)
+func TestMockThread(t *testing.T) {
+	expectedErr := fmt.Errorf("an error")
+	title := "title"
+	expected := &redditproto.Link{Title: &title}
+	mock := Operator(
+		&MockOperator{
+			ThreadErr:    expectedErr,
+			ThreadReturn: expected,
+		},
+	)
+	actual, err := mock.Thread("")
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("got %v; wanted %v", actual, expected)
 	}
 
 	if err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
 	}
+}
 
-	messages, err := mock.Inbox()
-	if !reflect.DeepEqual(messages, expectedInboxReturn) {
-		t.Errorf("got %v; wanted %v", messages, expectedInboxReturn)
+func TestMockInbox(t *testing.T) {
+	expectedErr := fmt.Errorf("an error")
+	title := "title"
+	expected := []*redditproto.Message{
+		&redditproto.Message{Subject: &title},
+	}
+	mock := Operator(
+		&MockOperator{
+			InboxErr:    expectedErr,
+			InboxReturn: expected,
+		},
+	)
+	actual, err := mock.Inbox()
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("got %v; wanted %v", actual, expected)
 	}
 
 	if err != expectedErr {

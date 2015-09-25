@@ -37,10 +37,16 @@ var (
 	}
 )
 
+// Thing describes methods of Reddit's Thing class.
+type Thing interface {
+	// GetName returns the fullname of a Reddit Thing.
+	GetName() string
+}
+
 // Operator makes api calls to Reddit.
 type Operator interface {
 	// Scrape fetches new reddit posts (see definition).
-	Scrape(path, after, before string, limit uint, kind ListingKind) (interface{}, error)
+	Scrape(path, after, before string, limit uint, kind ListingKind) ([]Thing, error)
 	// Threads fetches specific threads by name (see definition).
 	Threads(fullnames ...string) ([]*redditproto.Link, error)
 	// Thread fetches a post and its comment tree (see definition).
@@ -81,7 +87,7 @@ func (o *operator) Scrape(
 	before string,
 	limit uint,
 	kind ListingKind,
-) (interface{}, error) {
+) ([]Thing, error) {
 	req := http.Request{
 		Method:     "GET",
 		Proto:      "HTTP/1.1",
@@ -107,10 +113,20 @@ func (o *operator) Scrape(
 	}
 
 	if kind == Link {
-		return parseLinkListing(response)
+		links, err := parseLinkListing(response)
+		things := make([]Thing, len(links))
+		for i, link := range links {
+			things[i] = link
+		}
+		return things, err
 	}
 
-	return parseCommentListing(response)
+	comments, err := parseCommentListing(response)
+	things := make([]Thing, len(comments))
+	for i, link := range comments {
+		things[i] = link
+	}
+	return things, err
 }
 
 // Threads returns specific threads, requested by their fullname (t3_[id]).
