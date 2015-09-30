@@ -6,18 +6,18 @@ import (
 
 // MockOperator mocks Operator; it returns canned responses.
 type MockOperator struct {
-	ScrapeErr     error
-	ScrapeReturn  []Thing
-	ThreadsErr    error
-	ThreadsReturn []*redditproto.Link
-	ThreadErr     error
-	ThreadReturn  *redditproto.Link
-	InboxErr      error
-	InboxReturn   []*redditproto.Message
-	MarkAsReadErr error
-	ReplyErr      error
-	SubmitErr     error
-	ComposeErr    error
+	ScrapeErr      error
+	ScrapeReturn   []Thing
+	GetThingErr    error
+	GetThingReturn Thing
+	ThreadErr      error
+	ThreadReturn   *redditproto.Link
+	InboxErr       error
+	InboxReturn    []*redditproto.Message
+	MarkAsReadErr  error
+	ReplyErr       error
+	SubmitErr      error
+	ComposeErr     error
 }
 
 func (m *MockOperator) Scrape(
@@ -25,15 +25,13 @@ func (m *MockOperator) Scrape(
 	after,
 	before string,
 	limit uint,
-	kind ListingKind,
+	kind Kind,
 ) ([]Thing, error) {
 	return m.ScrapeReturn, m.ScrapeErr
 }
 
-func (m *MockOperator) Threads(
-	fullnames ...string,
-) ([]*redditproto.Link, error) {
-	return m.ThreadsReturn, m.ThreadsErr
+func (m *MockOperator) GetThing(id string, kind Kind) (Thing, error) {
+	return m.GetThingReturn, m.GetThingErr
 }
 
 func (m *MockOperator) Thread(permalink string) (*redditproto.Link, error) {

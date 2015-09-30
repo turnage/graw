@@ -43,6 +43,7 @@ func PostMonitor(
 				strings.Join(subreddits, "+"),
 			),
 			op,
+			operator.Link,
 		),
 		postHandler: postHandler,
 	}

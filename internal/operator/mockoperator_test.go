@@ -78,20 +78,18 @@ func TestMockScrape(t *testing.T) {
 	}
 }
 
-func TestMockThreads(t *testing.T) {
+func TestMockGetThing(t *testing.T) {
 	expectedErr := fmt.Errorf("an error")
 	title := "title"
-	expected := []*redditproto.Link{
-		&redditproto.Link{Title: &title},
-		&redditproto.Link{Title: &title},
-	}
+	expected := &redditproto.Link{Title: &title}
+
 	mock := Operator(
 		&MockOperator{
-			ThreadsErr:    expectedErr,
-			ThreadsReturn: expected,
+			GetThingErr:    expectedErr,
+			GetThingReturn: expected,
 		},
 	)
-	actual, err := mock.Threads()
+	actual, err := mock.GetThing("", Link)
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("got %v; wanted %v", actual, expected)
 	}
