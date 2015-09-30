@@ -12,7 +12,7 @@ import (
 
 const (
 	// rateLimit is the wait time between requests to Reddit.
-	rateLimit = time.Second
+	rateLimit = 2 * time.Second
 )
 
 type client struct {
