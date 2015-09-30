@@ -72,12 +72,12 @@ func TestScrape(t *testing.T) {
 	}
 }
 
-func TestThreads(t *testing.T) {
+func TestGetThing(t *testing.T) {
 	op := &operator{
 		cli: client.NewMock("", fmt.Errorf("an error")),
 	}
 
-	if _, err := op.Threads("1", "2", "3"); err == nil {
+	if _, err := op.GetThing("1", Link); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
@@ -86,9 +86,7 @@ func TestThreads(t *testing.T) {
 			`{
 				"data": {
 					"children": [
-						{"data": {"title": "hello"}},
-						{"data": {"title": "hola"}},
-						{"data": {"title": "bye"}}
+						{"data": {"name": "charlie"}}
 					]
 				}
 			}`,
@@ -96,13 +94,55 @@ func TestThreads(t *testing.T) {
 		),
 	}
 
-	posts, err := op.Threads("1", "2", "3")
+	thing, err := op.GetThing("1", Link)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
 
-	if len(posts) != 3 {
-		t.Errorf("got %d posts; wanted 3", len(posts))
+	if thing == nil {
+		t.Fatalf("wanted a thing returned")
+	}
+
+	if thing.GetName() != "charlie" {
+		t.Errorf("got %s posts; wanted charlie", thing.GetName())
+	}
+
+	// Bad responses should bubble an error up.
+	op = &operator{
+		cli: client.NewMock(
+			`{
+				"data": {
+					"children": [
+						{"data": {"name": "charlie"}},
+					]
+				}
+			}`,
+			nil,
+		),
+	}
+	thing, err = op.GetThing("1", Link)
+	if err == nil {
+		t.Errorf("wanted an error for a bad response")
+	}
+
+	// Missing Things should return nil.
+	op = &operator{
+		cli: client.NewMock(
+			`{
+				"data": {
+					"children": []
+				}
+			}`,
+			nil,
+		),
+	}
+	thing, err = op.GetThing("1", Link)
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	if thing != nil {
+		t.Errorf("got %v; wanted nil", thing)
 	}
 }
 

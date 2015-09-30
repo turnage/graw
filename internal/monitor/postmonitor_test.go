@@ -64,9 +64,7 @@ func TestPostMonitorUpdate(t *testing.T) {
 				&redditproto.Link{Name: &postName},
 				&redditproto.Link{Name: &postName},
 			},
-			ThreadsReturn: []*redditproto.Link{
-				&redditproto.Link{Name: &postName},
-			},
+			GetThingReturn: &redditproto.Link{Name: &postName},
 		},
 		bot,
 		[]string{"self"},

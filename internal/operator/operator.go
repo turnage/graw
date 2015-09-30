@@ -4,6 +4,7 @@ package operator
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,7 +15,7 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-type ListingKind int
+type Kind int
 
 const (
 	Comment = iota
@@ -46,9 +47,10 @@ type Thing interface {
 // Operator makes api calls to Reddit.
 type Operator interface {
 	// Scrape fetches new reddit posts (see definition).
-	Scrape(path, after, before string, limit uint, kind ListingKind) ([]Thing, error)
-	// Threads fetches specific threads by name (see definition).
-	Threads(fullnames ...string) ([]*redditproto.Link, error)
+	Scrape(path, after, before string, limit uint, kind Kind) ([]Thing, error)
+	// GetThing fetches a particular thing from reddit. Thing returns nil if
+	// there is no such Thing.
+	GetThing(id string, kind Kind) (Thing, error)
 	// Thread fetches a post and its comment tree (see definition).
 	Thread(permalink string) (*redditproto.Link, error)
 	// Inbox fetches unread messages from the reddit inbox (see definition).
@@ -79,14 +81,14 @@ func New(agent string) (Operator, error) {
 }
 
 // Scrape returns the content of a listing endpoint on Reddit at path. kind
-// should specify the expected return type. See the ListingKind enum for
+// should specify the expected return type. See the Kind enum for
 // supported options.
 func (o *operator) Scrape(
 	path,
 	after,
 	before string,
 	limit uint,
-	kind ListingKind,
+	kind Kind,
 ) ([]Thing, error) {
 	req := http.Request{
 		Method:     "GET",
@@ -112,27 +114,12 @@ func (o *operator) Scrape(
 		return nil, err
 	}
 
-	if kind == Link {
-		links, err := parseLinkListing(response)
-		things := make([]Thing, len(links))
-		for i, link := range links {
-			things[i] = link
-		}
-		return things, err
-	}
-
-	comments, err := parseCommentListing(response)
-	things := make([]Thing, len(comments))
-	for i, link := range comments {
-		things[i] = link
-	}
-	return things, err
+	return thingListing(response, kind)
 }
 
-// Threads returns specific threads, requested by their fullname (t3_[id]).
-// The Comments field will be not be filled. For comments, request a thread
-// using Thread().
-func (o *operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
+// GetThing returns a specific thing, by its id. It will return nil if the Thing
+// did not exist.
+func (o *operator) GetThing(id string, kind Kind) (Thing, error) {
 	req := http.Request{
 		Method:     "GET",
 		Proto:      "HTTP/1.1",
@@ -142,10 +129,10 @@ func (o *operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
 		URL: &url.URL{
 			Scheme: "https",
 			Host:   oauth2Host,
-			Path: fmt.Sprintf(
-				"/by_id/%s",
-				strings.Join(fullnames, ","),
-			),
+			Path:   "/api/info.json",
+			RawQuery: url.Values{
+				"id": []string{id},
+			}.Encode(),
 		},
 		Host: oauth2Host,
 	}
@@ -155,7 +142,16 @@ func (o *operator) Threads(fullnames ...string) ([]*redditproto.Link, error) {
 		return nil, err
 	}
 
-	return parseLinkListing(response)
+	things, err := thingListing(response, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(things) != 1 {
+		return nil, nil
+	}
+
+	return things[0], nil
 }
 
 // Thread returns a link; the Comments field will be filled with the comment
@@ -327,4 +323,24 @@ func (o *operator) Submit(subreddit, kind, title, content string) error {
 
 	_, err := o.cli.Do(&req)
 	return err
+}
+
+// thingListing returns a slice of Thing interfaces, each referencing a Reddit
+// type from a returned JSON listing.
+func thingListing(listing io.ReadCloser, kind Kind) ([]Thing, error) {
+	if kind == Link {
+		links, err := parseLinkListing(listing)
+		things := make([]Thing, len(links))
+		for i, link := range links {
+			things[i] = link
+		}
+		return things, err
+	}
+
+	comments, err := parseCommentListing(listing)
+	things := make([]Thing, len(comments))
+	for i, link := range comments {
+		things[i] = link
+	}
+	return things, err
 }

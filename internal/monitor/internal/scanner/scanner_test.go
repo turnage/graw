@@ -31,6 +31,7 @@ func TestScanReturnsOnlyNewThings(t *testing.T) {
 				&redditproto.Link{Name: &thingName},
 			},
 		},
+		operator.Link,
 	)
 
 	// The first scan should set the tip and not return any Things.
@@ -61,8 +62,9 @@ func TestScanReportsFixTipErrors(t *testing.T) {
 	sc := New(
 		"",
 		&operator.MockOperator{
-			ThreadsErr: expectedErr,
+			GetThingErr: expectedErr,
 		},
+		operator.Link,
 	)
 	sc.blanks = sc.blankThreshold + 1
 	if _, err := sc.Scan(); err != expectedErr {
@@ -74,10 +76,9 @@ func TestScanIncreasesBlankThreshold(t *testing.T) {
 	sc := New(
 		"",
 		&operator.MockOperator{
-			ThreadsReturn: []*redditproto.Link{
-				&redditproto.Link{},
-			},
+			GetThingReturn: &redditproto.Link{},
 		},
+		operator.Link,
 	)
 	sc.blanks = sc.blankThreshold + 1
 	things, err := sc.Scan()
@@ -159,7 +160,7 @@ func TestFixTip(t *testing.T) {
 	}
 
 	sc.op = &operator.MockOperator{
-		ThreadsErr: fmt.Errorf("an error"),
+		GetThingErr: fmt.Errorf("an error"),
 	}
 	if _, err := sc.fixTip(); err == nil {
 		t.Errorf("wanted error for request failure")
@@ -183,9 +184,7 @@ func TestFixTip(t *testing.T) {
 
 	nameTwo := "2"
 	sc.op = &operator.MockOperator{
-		ThreadsReturn: []*redditproto.Link{
-			&redditproto.Link{Name: &nameTwo},
-		},
+		GetThingReturn: &redditproto.Link{Name: &nameTwo},
 	}
 	shaved, err = sc.fixTip()
 	if err != nil {

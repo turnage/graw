@@ -31,6 +31,8 @@ type Scanner struct {
 	// path is the url path of a listing on reddit.com this Scanner will
 	// monitor.
 	path string
+	// kind is the kind of listing path accesses.
+	kind operator.Kind
 	// tip is the list of most recent Thing fullnames from the listing this
 	// Scanner monitors. This is used because reddit allows queries relative
 	// to fullnames.
@@ -39,11 +41,12 @@ type Scanner struct {
 
 // New returns a Scanner which scans the given listing path using the given
 // operator.
-func New(path string, op operator.Operator) *Scanner {
+func New(path string, op operator.Operator, kind operator.Kind) *Scanner {
 	return &Scanner{
 		op:             op,
 		blankThreshold: defaultBlankThreshold,
 		path:           path,
+		kind:           kind,
 		tip:            []string{""},
 	}
 }
@@ -117,12 +120,12 @@ func (s *Scanner) fetchTip() ([]operator.Thing, error) {
 // has been deleted, fixTip will move to a fallback tip. fixtip returns true if
 // the tip was shaved.
 func (s *Scanner) fixTip() (bool, error) {
-	things, err := s.op.Threads(s.tip[len(s.tip)-1])
+	thing, err := s.op.GetThing(s.tip[len(s.tip)-1], s.kind)
 	if err != nil {
 		return false, err
 	}
 
-	if len(things) != 1 {
+	if thing == nil {
 		s.shaveTip()
 		return true, nil
 	}
