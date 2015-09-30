@@ -8,6 +8,7 @@ before_install:
   - if ! go get code.google.com/p/go.tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 script:
   - go test -coverprofile=monitor.coverprofile ./internal/monitor
+  - go test -coverprofile=monitor.coverprofile ./internal/monitor/internal/scanner
   - go test -coverprofile=operator.coverprofile ./internal/operator
   - go test -coverprofile=client.coverprofile ./internal/operator/internal/client
   - $HOME/gopath/bin/gover
