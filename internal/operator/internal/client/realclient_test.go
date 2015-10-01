@@ -82,7 +82,7 @@ func TestDoRaw(t *testing.T) {
 
 	resp, err := cli.doRaw(&http.Request{URL: url})
 	if err != nil {
-		t.Fatalf("failed to execute request: %v")
+		t.Fatalf("failed to execute request: %v", err)
 	}
 	if resp.StatusCode != 200 {
 		t.Errorf("an anomaly occurred")

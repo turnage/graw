@@ -15,11 +15,14 @@ import (
 	"github.com/turnage/redditproto"
 )
 
+// Kind describes a kind of reddit Thing.
 type Kind int
 
 const (
+	// Comment represents the reddit Thing type t1.
 	Comment = iota
-	Link    = iota
+	// Link represents the reddit Thing type t3.
+	Link = iota
 )
 
 const (
@@ -34,7 +37,7 @@ const (
 
 var (
 	formEncoding = map[string][]string{
-		"content-type": []string{"application/x-www-form-urlencoded"},
+		"content-type": {"application/x-www-form-urlencoded"},
 	}
 )
 

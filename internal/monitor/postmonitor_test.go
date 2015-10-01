@@ -23,7 +23,7 @@ func TestPostMonitor(t *testing.T) {
 		&mockNoHandler{},
 		[]string{"self"},
 	); pm != nil {
-		t.Errorf("got %v; wanted nil")
+		t.Errorf("got %v; wanted nil", pm)
 	}
 
 	if pm := PostMonitor(
@@ -31,7 +31,7 @@ func TestPostMonitor(t *testing.T) {
 		&mockPostHandler{},
 		[]string{},
 	); pm != nil {
-		t.Errorf("got %v; wanted nil")
+		t.Errorf("got %v; wanted nil", pm)
 	}
 
 	pm := PostMonitor(
