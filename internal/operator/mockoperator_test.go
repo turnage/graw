@@ -123,7 +123,7 @@ func TestMockInbox(t *testing.T) {
 	expectedErr := fmt.Errorf("an error")
 	title := "title"
 	expected := []*redditproto.Message{
-		&redditproto.Message{Subject: &title},
+		{Subject: &title},
 	}
 	mock := Operator(
 		&MockOperator{

@@ -6,18 +6,30 @@ import (
 
 // MockOperator mocks Operator; it returns canned responses.
 type MockOperator struct {
-	ScrapeErr      error
-	ScrapeReturn   []Thing
-	GetThingErr    error
+	// ScrapeErr is returned in the error field of Scrape.
+	ScrapeErr error
+	// ScrapeReturn is returned by Scrape.
+	ScrapeReturn []Thing
+	// GetThingErr is returned in the error field of GetThing.
+	GetThingErr error
+	// GetThingReturn is returned by GetThing.
 	GetThingReturn Thing
-	ThreadErr      error
-	ThreadReturn   *redditproto.Link
-	InboxErr       error
-	InboxReturn    []*redditproto.Message
-	MarkAsReadErr  error
-	ReplyErr       error
-	SubmitErr      error
-	ComposeErr     error
+	// ThreadErr is returned in the error field of Thread.
+	ThreadErr error
+	// ThreadReturn is returned by Thread.
+	ThreadReturn *redditproto.Link
+	// InboxErr is returned in the error field of Inbox.
+	InboxErr error
+	// InboxReturn is returned by Inbox.
+	InboxReturn []*redditproto.Message
+	// MarkAsReadErr is returned in the error field of MarkAsRead.
+	MarkAsReadErr error
+	// ReplyErr is returned in the error field of Reply.
+	ReplyErr error
+	// SubmitErr is returned in the error field of Submit.
+	SubmitErr error
+	// ComposeErr is returned in the error field of Compose.
+	ComposeErr error
 }
 
 func (m *MockOperator) Scrape(

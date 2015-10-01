@@ -255,14 +255,14 @@ func TestUnpackCommentListing(t *testing.T) {
 		t.Errorf("wanted empty slice when children is nil")
 	}
 
-	topId := "top"
-	subId := "sub"
+	topID := "top"
+	subID := "sub"
 	sublisting := &redditproto.CommentListing{
 		Data: &redditproto.CommentData{
 			Children: []*redditproto.CommentChildren{
-				&redditproto.CommentChildren{
+				{
 					Data: &redditproto.Comment{
-						Id: &subId,
+						Id: &subID,
 					},
 				},
 			},
@@ -271,9 +271,9 @@ func TestUnpackCommentListing(t *testing.T) {
 	listing := &redditproto.CommentListing{
 		Data: &redditproto.CommentData{
 			Children: []*redditproto.CommentChildren{
-				&redditproto.CommentChildren{
+				{
 					Data: &redditproto.Comment{
-						Id:      &topId,
+						Id:      &topID,
 						Replies: sublisting,
 					},
 				},
@@ -281,11 +281,11 @@ func TestUnpackCommentListing(t *testing.T) {
 		},
 	}
 	expected := []*redditproto.Comment{
-		&redditproto.Comment{
-			Id: &topId,
+		{
+			Id: &topID,
 			ReplyTree: []*redditproto.Comment{
-				&redditproto.Comment{
-					Id: &subId,
+				{
+					Id: &subID,
 				},
 			},
 		},

@@ -56,7 +56,7 @@ func TestInboxMonitor(t *testing.T) {
 		im.mentionHandler == nil ||
 		im.postReplyHandler == nil ||
 		im.commentReplyHandler == nil {
-		t.Errorf("got %v; wanted all fields set")
+		t.Errorf("got %v; wanted all fields set", im)
 	}
 }
 
@@ -78,10 +78,10 @@ func TestInboxMonitorUpdate(t *testing.T) {
 	im = InboxMonitor(
 		&operator.MockOperator{
 			InboxReturn: []*redditproto.Message{
-				&redditproto.Message{Subject: &mentionSubject},
-				&redditproto.Message{Subject: &postReplySubject},
-				&redditproto.Message{WasComment: &tval},
-				&redditproto.Message{},
+				{Subject: &mentionSubject},
+				{Subject: &postReplySubject},
+				{WasComment: &tval},
+				{},
 			},
 		},
 		bot,
