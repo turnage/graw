@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/turnage/graw/internal/monitor/internal/scanner"
 	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
@@ -46,29 +47,31 @@ func TestPostMonitor(t *testing.T) {
 
 func TestPostMonitorUpdate(t *testing.T) {
 	pm := PostMonitor(
-		&operator.MockOperator{
-			ScrapeErr: fmt.Errorf("an error"),
-		},
+		&operator.MockOperator{},
 		&mockPostHandler{},
 		[]string{"self"},
 	)
+	mon := pm.(*postMonitor)
+	mon.postScanner = &scanner.MockScanner{
+		ScanErr: fmt.Errorf("an error"),
+	}
 	if err := pm.Update(); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
 	bot := &mockPostHandler{}
-	postName := "name"
 	pm = PostMonitor(
-		&operator.MockOperator{
-			ScrapeReturn: []operator.Thing{
-				&redditproto.Link{Name: &postName},
-				&redditproto.Link{Name: &postName},
-			},
-			GetThingReturn: &redditproto.Link{Name: &postName},
-		},
+		&operator.MockOperator{},
 		bot,
 		[]string{"self"},
 	)
+	mon = pm.(*postMonitor)
+	mon.postScanner = &scanner.MockScanner{
+		ScanLinksReturn: []*redditproto.Link{
+			&redditproto.Link{},
+			&redditproto.Link{},
+		},
+	}
 	if err := pm.Update(); err != nil {
 		t.Fatalf("error: %v", err)
 	}

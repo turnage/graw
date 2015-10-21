@@ -7,14 +7,13 @@ import (
 	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/monitor/internal/scanner"
 	"github.com/turnage/graw/internal/operator"
-	"github.com/turnage/redditproto"
 )
 
 // postMonitor monitors subreddits for new posts, and sends them to its handler.
 type postMonitor struct {
 	// postScanner is the scanner postMonitor uses to get updates from
 	// subreddits it monitors.
-	postScanner *scanner.Scanner
+	postScanner scanner.Scanner
 	// postHandler is the handler PostMonitor will send new posts to.
 	postHandler api.PostHandler
 }
@@ -37,13 +36,9 @@ func PostMonitor(
 	}
 
 	return &postMonitor{
-		postScanner: scanner.New(
-			fmt.Sprintf(
-				"/r/%s/new",
-				strings.Join(subreddits, "+"),
-			),
+		postScanner: scanner.NewPostScanner(
+			fmt.Sprintf("%s", strings.Join(subreddits, "+")),
 			op,
-			operator.Link,
 		),
 		postHandler: postHandler,
 	}
@@ -51,14 +46,9 @@ func PostMonitor(
 
 // Update polls for new posts and sends them to Bot when they are found.
 func (p *postMonitor) Update() error {
-	postThings, err := p.postScanner.Scan()
+	posts, _, err := p.postScanner.Scan()
 	if err != nil {
 		return err
-	}
-
-	posts := make([]*redditproto.Link, len(postThings))
-	for i, thing := range postThings {
-		posts[len(posts)-1-i] = thing.(*redditproto.Link)
 	}
 
 	for _, post := range posts {
