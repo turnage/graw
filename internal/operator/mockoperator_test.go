@@ -56,19 +56,19 @@ func TestMockSubmit(t *testing.T) {
 	}
 }
 
-func TestMockScrape(t *testing.T) {
+func TestMockPosts(t *testing.T) {
 	expectedErr := fmt.Errorf("an error")
 	title := "title"
-	expected := []Thing{
+	expected := []*redditproto.Link{
 		&redditproto.Link{Title: &title},
 	}
 	mock := Operator(
 		&MockOperator{
-			ScrapeErr:    expectedErr,
-			ScrapeReturn: expected,
+			PostsErr:    expectedErr,
+			PostsReturn: expected,
 		},
 	)
-	actual, err := mock.Scrape("", "", "", 0, Link)
+	actual, err := mock.Posts("", "", "", 1)
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("got %v; wanted %v", actual, expected)
 	}
@@ -78,19 +78,49 @@ func TestMockScrape(t *testing.T) {
 	}
 }
 
-func TestMockGetThing(t *testing.T) {
+func TestMockUserContent(t *testing.T) {
 	expectedErr := fmt.Errorf("an error")
 	title := "title"
-	expected := &redditproto.Link{Title: &title}
+	expectedLinks := []*redditproto.Link{
+		&redditproto.Link{Title: &title},
+	}
+	body := "body"
+	expectedComments := []*redditproto.Comment{
+		&redditproto.Comment{Body: &body},
+	}
+	mock := Operator(
+		&MockOperator{
+			UserContentErr:            expectedErr,
+			UserContentLinksReturn:    expectedLinks,
+			UserContentCommentsReturn: expectedComments,
+		},
+	)
+	actualLinks, actualComments, err := mock.UserContent("", "", "", 1)
+	if !reflect.DeepEqual(actualLinks, expectedLinks) {
+		t.Errorf("got %v; wanted %v", actualComments, expectedLinks)
+	}
+
+	if !reflect.DeepEqual(actualComments, expectedComments) {
+		t.Errorf("got %v; wanted %v", actualComments, expectedComments)
+	}
+
+	if err != expectedErr {
+		t.Errorf("got %v; wanted %v", err, expectedErr)
+	}
+}
+
+func TestMockIsThereThing(t *testing.T) {
+	expectedErr := fmt.Errorf("an error")
+	expected := false
 
 	mock := Operator(
 		&MockOperator{
-			GetThingErr:    expectedErr,
-			GetThingReturn: expected,
+			IsThereThingErr:    expectedErr,
+			IsThereThingReturn: expected,
 		},
 	)
-	actual, err := mock.GetThing("", Link)
-	if !reflect.DeepEqual(actual, expected) {
+	actual, err := mock.IsThereThing("")
+	if actual != expected {
 		t.Errorf("got %v; wanted %v", actual, expected)
 	}
 
