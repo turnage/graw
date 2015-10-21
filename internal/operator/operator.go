@@ -15,16 +15,6 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-// Kind describes a kind of reddit Thing.
-type Kind int
-
-const (
-	// Comment represents the reddit Thing type t1.
-	Comment = iota
-	// Link represents the reddit Thing type t3.
-	Link = iota
-)
-
 const (
 	// MaxLinks is the amount of posts reddit will return for a scrape
 	// query.
@@ -41,30 +31,27 @@ var (
 	}
 )
 
-// Thing describes methods of Reddit's Thing class.
-type Thing interface {
-	// GetName returns the fullname of a Reddit Thing.
-	GetName() string
-}
-
 // Operator makes api calls to Reddit.
 type Operator interface {
-	// Scrape fetches new reddit posts (see definition).
-	Scrape(path, after, before string, limit uint, kind Kind) ([]Thing, error)
-	// GetThing fetches a particular thing from reddit. Thing returns nil if
-	// there is no such Thing.
-	GetThing(id string, kind Kind) (Thing, error)
-	// Thread fetches a post and its comment tree (see definition).
+	// Posts returns a listing of posts in a subreddit.
+	Posts(subreddit, after, before string, limit uint) ([]*redditproto.Link, error)
+	// UserContent returns a listing of posts and comments from a user's
+	// landing page.
+	UserContent(user, after, before string, limit uint) ([]*redditproto.Link, []*redditproto.Comment, error)
+	// IsThereThing fetches a particular thing from reddit. Thing returns
+	// whether there is such a thing.
+	IsThereThing(id string) (bool, error)
+	// Thread fetches a post and its comment tree.
 	Thread(permalink string) (*redditproto.Link, error)
-	// Inbox fetches unread messages from the reddit inbox (see definition).
+	// Inbox fetches unread messages from the reddit inbox.
 	Inbox() ([]*redditproto.Message, error)
-	// MarkAsRead marks inbox items read (see definition).
+	// MarkAsRead marks inbox items read.
 	MarkAsRead(fullnames ...string) error
-	// Reply replies to reddit item (see definition).
+	// Reply replies to reddit item.
 	Reply(parent, content string) error
-	// Compose sends a private message to a user (see definition).
+	// Compose sends a private message to a user.
 	Compose(user, subject, content string) error
-	// Submit posts to Reddit (see definition).
+	// Submit posts to Reddit.
 	Submit(subreddit, kind, title, content string) error
 }
 
@@ -83,127 +70,146 @@ func New(agent string) (Operator, error) {
 	return &operator{cli: cli}, nil
 }
 
-// Scrape returns the content of a listing endpoint on Reddit at path. kind
-// should specify the expected return type. See the Kind enum for
-// supported options.
-func (o *operator) Scrape(
-	path,
+// Posts returns a list of posts in a subreddit.
+func (o *operator) Posts(
+	subreddit,
 	after,
 	before string,
 	limit uint,
-	kind Kind,
-) ([]Thing, error) {
-	req := http.Request{
-		Method:     "GET",
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Close:      true,
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   oauth2Host,
-			Path:   path,
-			RawQuery: url.Values{
-				"limit":  []string{strconv.Itoa(int(limit))},
-				"before": []string{before},
-				"after":  []string{after},
-			}.Encode(),
+) ([]*redditproto.Link, error) {
+	bytes, err := o.exec(
+		http.Request{
+			Method:     "GET",
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
+			Close:      true,
+			URL: &url.URL{
+				Scheme:   "https",
+				Host:     oauth2Host,
+				Path:     fmt.Sprintf("/r/%s/new", subreddit),
+				RawQuery: listingParams(limit, after, before),
+			},
+			Host: oauth2Host,
 		},
-		Host: oauth2Host,
-	}
-
-	response, err := o.cli.Do(&req)
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return thingListing(response, kind)
+	return redditproto.ParseLinkListing(bytes)
 }
 
-// GetThing returns a specific thing, by its id. It will return nil if the Thing
-// did not exist.
-func (o *operator) GetThing(id string, kind Kind) (Thing, error) {
-	req := http.Request{
-		Method:     "GET",
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Close:      true,
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   oauth2Host,
-			Path:   "/api/info.json",
-			RawQuery: url.Values{
-				"id": []string{id},
-			}.Encode(),
+// UserContent returns a list of content from a user's landing page.
+func (o *operator) UserContent(
+	user,
+	after,
+	before string,
+	limit uint,
+) ([]*redditproto.Link, []*redditproto.Comment, error) {
+	bytes, err := o.exec(
+		http.Request{
+			Method:     "GET",
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
+			Close:      true,
+			URL: &url.URL{
+				Scheme:   "https",
+				Host:     oauth2Host,
+				Path:     fmt.Sprintf("/u/%s.json", user),
+				RawQuery: listingParams(limit, after, before),
+			},
+			Host: oauth2Host,
 		},
-		Host: oauth2Host,
-	}
-
-	response, err := o.cli.Do(&req)
+	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	things, err := thingListing(response, kind)
+	return redditproto.ParseUserPage(bytes)
+}
+
+// IsThereThing returns whether a thing by the given id exists.
+func (o *operator) IsThereThing(id string) (bool, error) {
+	bytes, err := o.exec(
+		http.Request{
+			Method:     "GET",
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
+			Close:      true,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   oauth2Host,
+				Path:   "/api/info.json",
+				RawQuery: url.Values{
+					"id": []string{id},
+				}.Encode(),
+			},
+			Host: oauth2Host,
+		},
+	)
+
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	if len(things) != 1 {
-		return nil, nil
+	links, comments, err := redditproto.ParseUserPage(bytes)
+	if err != nil {
+		return false, err
 	}
 
-	return things[0], nil
+	return (len(links) == 1) != (len(comments) == 1), nil
 }
 
 // Thread returns a link; the Comments field will be filled with the comment
 // tree. Browse each comment's reply tree from the ReplyTree field.
 func (o *operator) Thread(permalink string) (*redditproto.Link, error) {
-	req := http.Request{
-		Method:     "GET",
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Close:      true,
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   oauth2Host,
-			Path:   fmt.Sprintf("%s.json", permalink),
+	bytes, err := o.exec(
+		http.Request{
+			Method:     "GET",
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
+			Close:      true,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   oauth2Host,
+				Path:   fmt.Sprintf("%s.json", permalink),
+			},
+			Host: oauth2Host,
 		},
-		Host: oauth2Host,
-	}
-
-	response, err := o.cli.Do(&req)
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return parseThread(response)
+	return redditproto.ParseThread(bytes)
 }
 
 // Inbox returns unread inbox items.
 func (o *operator) Inbox() ([]*redditproto.Message, error) {
-	req := http.Request{
-		Method:     "GET",
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Close:      true,
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   oauth2Host,
-			Path:   "/message/unread",
+	bytes, err := o.exec(
+		http.Request{
+			Method:     "GET",
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
+			Close:      true,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   oauth2Host,
+				Path:   "/message/unread",
+			},
+			Host: oauth2Host,
 		},
-		Host: oauth2Host,
-	}
-
-	response, err := o.cli.Do(&req)
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return parseInbox(response)
+	return redditproto.ParseMessageListing(bytes)
 }
 
 // MarkAsRead marks inbox items as read, so they are no longer returned by calls
@@ -328,22 +334,31 @@ func (o *operator) Submit(subreddit, kind, title, content string) error {
 	return err
 }
 
-// thingListing returns a slice of Thing interfaces, each referencing a Reddit
-// type from a returned JSON listing.
-func thingListing(listing io.ReadCloser, kind Kind) ([]Thing, error) {
-	if kind == Link {
-		links, err := parseLinkListing(listing)
-		things := make([]Thing, len(links))
-		for i, link := range links {
-			things[i] = link
-		}
-		return things, err
+// exec executes a request and returns the response body bytes.
+func (o *operator) exec(r http.Request) ([]byte, error) {
+	response, err := o.cli.Do(&r)
+	if err != nil {
+		return nil, err
 	}
 
-	comments, err := parseCommentListing(listing)
-	things := make([]Thing, len(comments))
-	for i, link := range comments {
-		things[i] = link
+	return responseBytes(response)
+}
+
+// listingParams returns encoded values for parameters to a Reddit listing
+// endpoint.
+func listingParams(limit uint, after, before string) string {
+	return url.Values{
+		"limit":  []string{strconv.Itoa(int(limit))},
+		"before": []string{before},
+		"after":  []string{after},
+	}.Encode()
+}
+
+// responseBytes returns a slice of bytes from a response body.
+func responseBytes(response io.ReadCloser) ([]byte, error) {
+	var buffer bytes.Buffer
+	if _, err := buffer.ReadFrom(response); err != nil {
+		return nil, err
 	}
-	return things, err
+	return buffer.Bytes(), nil
 }

@@ -5,106 +5,162 @@ import (
 	"testing"
 
 	"github.com/turnage/graw/internal/operator/internal/client"
-	"github.com/turnage/redditproto"
 )
 
-func TestScrape(t *testing.T) {
+var (
+	linkListingJSON = `{
+		"kind": "Listing",
+		"data": {
+			"children": [
+				{
+					"kind": "t3",
+					"data": {
+						"title": "hello",
+						"body": "hello"
+					}
+				}
+			]
+		}
+	}`
+	comboListingJSON = `{
+		"kind": "Listing",
+		"data": {
+			"children": [
+				{
+					"kind": "t3",
+					"data": {
+						"title": "hello",
+						"body": "hello"
+					}
+				},
+				{
+					"kind": "t1",
+					"data": {
+						"body": "hello"
+					}
+				}
+			]
+		}
+	}`
+	threadJSON = `[
+		{
+			"kind": "Listing",
+			"data": {
+				"children": [
+					{
+						"kind": "t3",
+						"data": {
+							"title": "hola"
+						}
+					}
+				]
+			}
+		},
+		{
+			"kind": "Listing",
+			"data": {
+				"children": [
+					{
+						"kind": "t1",
+						"data": {
+							"id": "arnold"
+						}
+					},
+					{
+						"kind": "t1",
+						"data": {
+							"id": "harold"
+						}
+					}
+				]
+			}
+		}
+	]`
+	inboxJSON = `{
+		"kind": "Listing",
+		"data": {
+			"children" : [
+				{
+					"kind": "t4",
+					"data": {
+						"was_comment": true
+					}
+				}
+			]
+		}
+	}`
+)
+
+func TestPosts(t *testing.T) {
 	op := &operator{
 		cli: client.NewMock("", fmt.Errorf("an error")),
 	}
 
-	if _, err := op.Scrape("/r/self/new", "", "", 1, Link); err == nil {
+	if _, err := op.Posts("/r/self/new", "", "", 1); err == nil {
 		t.Errorf("wanted error for request error")
 	}
 
 	op = &operator{
-		cli: client.NewMock(
-			`{
-				"data": {
-					"children": [
-						{"data": {
-							"title": "hello",
-							"body": "hello"
-						}},
-						{"data": {
-							"title": "hola",
-							"body": "hola"
-						}},
-						{"data": {
-							"title": "bye",
-							"body": "bye"
-						}}
-					]
-				}
-			}`,
-			nil,
-		),
+		cli: client.NewMock(linkListingJSON, nil),
 	}
 
-	postThings, err := op.Scrape("/r/self/new", "", "", 1, Link)
+	posts, err := op.Posts("self", "", "", 1)
 	if err != nil {
-		t.Fatalf("error: %v", err)
-	}
-	posts := make([]*redditproto.Link, len(postThings))
-	for i, thing := range postThings {
-		posts[i] = thing.(*redditproto.Link)
+		t.Fatal(err)
 	}
 
-	if len(posts) != 3 {
-		t.Errorf("got %d posts; wanted 3", len(posts))
-	}
-
-	if posts[0].GetTitle() != "hello" {
-		t.Errorf("got %s; wanted hello", posts[0].GetTitle())
-	}
-
-	commentThings, err := op.Scrape("/r/self/new", "", "", 1, Comment)
-	if err != nil {
-		t.Fatalf("error: %v", err)
-	}
-	comments := make([]*redditproto.Comment, len(commentThings))
-	for i, thing := range commentThings {
-		comments[i] = thing.(*redditproto.Comment)
-	}
-
-	if comments[0].GetBody() != "hello" {
-		t.Errorf("got %s; wanted hello", comments[0].GetBody())
+	if len(posts) != 1 {
+		t.Errorf("got %d posts; wanted 1", len(posts))
 	}
 }
 
-func TestGetThing(t *testing.T) {
+func TestUserContent(t *testing.T) {
 	op := &operator{
 		cli: client.NewMock("", fmt.Errorf("an error")),
 	}
 
-	if _, err := op.GetThing("1", Link); err == nil {
+	if _, _, err := op.UserContent("user", "", "", 1); err == nil {
+		t.Errorf("wanted error for request error")
+	}
+
+	op = &operator{
+		cli: client.NewMock(comboListingJSON, nil),
+	}
+
+	posts, comments, err := op.UserContent("user", "", "", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(posts) != 1 {
+		t.Errorf("got %d posts; wanted 1", len(posts))
+	}
+
+	if len(comments) != 1 {
+		t.Errorf("got %d comments; wanted 1", len(comments))
+	}
+}
+
+func TestIsThereThing(t *testing.T) {
+	op := &operator{
+		cli: client.NewMock("", fmt.Errorf("an error")),
+	}
+
+	if _, err := op.IsThereThing("1"); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
 	op = &operator{
-		cli: client.NewMock(
-			`{
-				"data": {
-					"children": [
-						{"data": {"name": "charlie"}}
-					]
-				}
-			}`,
-			nil,
-		),
+		cli: client.NewMock(linkListingJSON, nil),
 	}
 
-	thing, err := op.GetThing("1", Link)
+	exists, err := op.IsThereThing("1")
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
 
-	if thing == nil {
-		t.Fatalf("wanted a thing returned")
-	}
-
-	if thing.GetName() != "charlie" {
-		t.Errorf("got %s posts; wanted charlie", thing.GetName())
+	if exists == false {
+		t.Errorf("got false; wanted true")
 	}
 
 	// Bad responses should bubble an error up.
@@ -120,7 +176,7 @@ func TestGetThing(t *testing.T) {
 			nil,
 		),
 	}
-	thing, err = op.GetThing("1", Link)
+	_, err = op.IsThereThing("1")
 	if err == nil {
 		t.Errorf("wanted an error for a bad response")
 	}
@@ -129,6 +185,7 @@ func TestGetThing(t *testing.T) {
 	op = &operator{
 		cli: client.NewMock(
 			`{
+				"kind": "Listing",
 				"data": {
 					"children": []
 				}
@@ -136,13 +193,13 @@ func TestGetThing(t *testing.T) {
 			nil,
 		),
 	}
-	thing, err = op.GetThing("1", Link)
+	exists, err = op.IsThereThing("1")
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
 
-	if thing != nil {
-		t.Errorf("got %v; wanted nil", thing)
+	if exists != false {
+		t.Errorf("got true; wanted false")
 	}
 }
 
@@ -156,23 +213,7 @@ func TestThread(t *testing.T) {
 	}
 
 	op = &operator{
-		cli: client.NewMock(`[
-			{
-				"data": {
-					"children": [
-						{"data": {"title": "hola"}}
-					]
-				}
-			},
-			{
-				"data": {
-					"children": [
-						{"data": {"id": "arnold"}},
-						{"data": {"id": "harold"}}
-					]
-				}
-			}
-		]`, nil),
+		cli: client.NewMock(threadJSON, nil),
 	}
 
 	thread, err := op.Thread("/thread")
@@ -195,13 +236,7 @@ func TestInbox(t *testing.T) {
 	}
 
 	op = &operator{
-		cli: client.NewMock(`{
-			"data": {
-				"children" : [
-					{"data": {"was_comment": true}}
-				]
-			}
-		}`, nil),
+		cli: client.NewMock(inboxJSON, nil),
 	}
 
 	messages, err := op.Inbox()
