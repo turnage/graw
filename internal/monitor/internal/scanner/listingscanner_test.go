@@ -9,84 +9,92 @@ import (
 )
 
 func TestScanReportsScrapeErrors(t *testing.T) {
-	sc := &Scanner{
-		tip: []string{""},
+	expectedErr := fmt.Errorf("an error")
+	sc := &listingScanner{
+		tip:  []string{""},
+		user: "user",
+		op: &operator.MockOperator{
+			UserContentErr: expectedErr,
+		},
+	}
+	if _, _, err := sc.Scan(); err == nil {
+		t.Errorf("wanted error for user content request failure")
 	}
 
-	expectedErr := fmt.Errorf("an error")
-	sc.op = &operator.MockOperator{
-		ScrapeErr: expectedErr,
+	sc = &listingScanner{
+		tip:       []string{""},
+		subreddit: "self",
+		op: &operator.MockOperator{
+			PostsErr: expectedErr,
+		},
 	}
-	if _, err := sc.Scan(); err == nil {
-		t.Errorf("wanted error for request failure")
+	if _, _, err := sc.Scan(); err == nil {
+		t.Errorf("wanted error for posts request failure")
 	}
 }
 
 func TestScanReturnsOnlyNewThings(t *testing.T) {
 	thingName := "name"
-	sc := New(
-		"",
+	sc := NewPostScanner(
+		"self",
 		&operator.MockOperator{
-			ScrapeReturn: []operator.Thing{
+			PostsReturn: []*redditproto.Link{
 				&redditproto.Link{Name: &thingName},
 			},
 		},
-		operator.Link,
 	)
 
-	// The first scan should set the tip and not return any Things.
-	things, err := sc.Scan()
+	// The first scan should set the tip and not return any content.
+	links, _, err := sc.Scan()
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	if len(things) != 0 {
-		t.Fatalf("got %d things; wanted 0", len(things))
+	if len(links) != 0 {
+		t.Fatalf("got %d links; wanted 0", len(links))
 	}
 
 	// After setting the tip, listings should be returned.
-	things, err = sc.Scan()
+	links, _, err = sc.Scan()
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	if len(things) != 1 {
-		t.Fatalf("got %d things; wanted 1", len(things))
+	if len(links) != 1 {
+		t.Fatalf("got %d links; wanted 1", len(links))
 	}
 
-	if things[0].GetName() != thingName {
-		t.Errorf("got %s; wanted %s", things[0].GetName(), thingName)
+	if links[0].GetName() != thingName {
+		t.Errorf("got %s; wanted %s", links[0].GetName(), thingName)
 	}
 }
 
 func TestScanReportsFixTipErrors(t *testing.T) {
 	expectedErr := fmt.Errorf("an error")
-	sc := New(
-		"",
+	sc := NewUserScanner(
+		"user",
 		&operator.MockOperator{
-			GetThingErr: expectedErr,
+			IsThereThingErr: expectedErr,
 		},
-		operator.Link,
 	)
 	sc.blanks = sc.blankThreshold + 1
-	if _, err := sc.Scan(); err != expectedErr {
+	if _, _, err := sc.Scan(); err != expectedErr {
 		t.Errorf("got %v; wanted %v", err, expectedErr)
 	}
 }
 
 func TestScanIncreasesBlankThreshold(t *testing.T) {
-	sc := New(
-		"",
+	sc := NewUserScanner(
+		"user",
 		&operator.MockOperator{
-			GetThingReturn: &redditproto.Link{},
+			IsThereThingReturn: true,
 		},
-		operator.Link,
 	)
 	sc.blanks = sc.blankThreshold + 1
-	things, err := sc.Scan()
+	_, comments, err := sc.Scan()
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	if len(things) != 0 {
-		t.Errorf("got %v; wanted nothing", things)
+	if len(comments) != 0 {
+		t.Errorf("got %v; wanted nothing", comments)
 	}
 	if sc.blankThreshold <= defaultBlankThreshold {
 		t.Errorf(
@@ -97,14 +105,15 @@ func TestScanIncreasesBlankThreshold(t *testing.T) {
 }
 
 func TestFetchTip(t *testing.T) {
-	sc := &Scanner{
-		tip: []string{""},
+	sc := &listingScanner{
+		subreddit: "self",
+		tip:       []string{""},
 	}
 
 	sc.op = &operator.MockOperator{
-		ScrapeErr: fmt.Errorf("an error"),
+		PostsErr: fmt.Errorf("an error"),
 	}
-	if _, err := sc.fetchTip(); err == nil {
+	if _, _, err := sc.fetchTip(); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
@@ -112,55 +121,55 @@ func TestFetchTip(t *testing.T) {
 	for i := 0; i < maxTipSize; i++ {
 		sc.tip = append(sc.tip, "id")
 	}
-	thingName := "anything"
+	linkName := "anything"
 	sc.op = &operator.MockOperator{
-		ScrapeErr: nil,
-		ScrapeReturn: []operator.Thing{
-			&redditproto.Link{Name: &thingName},
+		PostsErr: nil,
+		PostsReturn: []*redditproto.Link{
+			&redditproto.Link{Name: &linkName},
 		},
 	}
 
-	things, err := sc.fetchTip()
+	links, _, err := sc.fetchTip()
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
 
-	if sc.tip[len(sc.tip)-1] != thingName {
+	if sc.tip[len(sc.tip)-1] != linkName {
 		t.Errorf(
 			"got tip %s; wanted %s",
 			sc.tip[len(sc.tip)-1],
-			thingName)
+			linkName)
 	}
 
-	if len(things) != 1 {
-		t.Fatalf("got %d things; expected 1", len(things))
+	if len(links) != 1 {
+		t.Fatalf("got %d links; expected 1", len(links))
 	}
 
-	if things[0].GetName() != thingName {
+	if links[0].GetName() != linkName {
 		t.Errorf(
 			"got thread name %s; wanted %s",
-			things[0].GetName(),
-			thingName)
+			links[0].GetName(),
+			linkName)
 	}
 
 	sc.tip = []string{""}
-	things, err = sc.fetchTip()
+	links, _, err = sc.fetchTip()
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
 
-	if things != nil {
-		t.Errorf("got %v; wanted no things for adjustment round", things)
+	if links != nil {
+		t.Errorf("got %v; wanted no links for adjustment round", links)
 	}
 }
 
 func TestFixTip(t *testing.T) {
-	sc := &Scanner{
+	sc := &listingScanner{
 		tip: []string{"1", "2", "3"},
 	}
 
 	sc.op = &operator.MockOperator{
-		GetThingErr: fmt.Errorf("an error"),
+		IsThereThingErr: fmt.Errorf("an error"),
 	}
 	if _, err := sc.fixTip(); err == nil {
 		t.Errorf("wanted error for request failure")
@@ -182,9 +191,8 @@ func TestFixTip(t *testing.T) {
 			sc.tip[len(sc.tip)-1])
 	}
 
-	nameTwo := "2"
 	sc.op = &operator.MockOperator{
-		GetThingReturn: &redditproto.Link{Name: &nameTwo},
+		IsThereThingReturn: true,
 	}
 	shaved, err = sc.fixTip()
 	if err != nil {
@@ -197,7 +205,7 @@ func TestFixTip(t *testing.T) {
 }
 
 func TestShaveTip(t *testing.T) {
-	sc := &Scanner{
+	sc := &listingScanner{
 		tip: []string{"1", "2"},
 	}
 
