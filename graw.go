@@ -2,6 +2,8 @@
 package graw
 
 import (
+	"strings"
+
 	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/monitor"
 	"github.com/turnage/graw/internal/operator"
@@ -23,6 +25,7 @@ func Run(agent string, bot interface{}, subreddits ...string) error {
 	failer, _ := bot.(api.Failer)
 	loader, _ := bot.(api.Loader)
 	eng := &rtEngine{
+		Bot:      bot,
 		Op:       op,
 		Monitors: monitors(op, bot, subreddits),
 		Actor:    actor,
@@ -39,14 +42,14 @@ func monitors(
 	op operator.Operator,
 	bot interface{},
 	subreddits []string,
-) []monitor.Monitor {
-	mons := []monitor.Monitor{}
+) map[string]monitor.Monitor {
+	mons := make(map[string]monitor.Monitor)
 	if mon := monitor.PostMonitor(op, bot, subreddits); mon != nil {
-		mons = append(mons, mon)
+		mons["/r/"+strings.Join(subreddits, "-")] = mon
 	}
 
 	if mon := monitor.InboxMonitor(op, bot); mon != nil {
-		mons = append(mons, mon)
+		mons["/messages/"] = mon
 	}
 	return mons
 }

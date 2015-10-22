@@ -1,6 +1,8 @@
 package graw
 
 import (
+	"sync"
+
 	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/monitor"
 	"github.com/turnage/graw/internal/operator"
@@ -11,8 +13,8 @@ import (
 type rtEngine struct {
 	// op is the rtEngine's operator for making reddit api calls.
 	Op operator.Operator
-	// monitors is a slice of the monitors rtEngine gets events from.
-	Monitors []monitor.Monitor
+	// Bot is the bot rtEngine is running.
+	Bot interface{}
 	// Actor is the bot's interface for receiving an interface to the
 	// Engine, so that it can act through its Reddit account.
 	Actor api.Actor
@@ -23,6 +25,10 @@ type rtEngine struct {
 	// resources.
 	Loader api.Loader
 
+	// mu protects all variable below.
+	mu sync.Mutex
+	// monitors is a set of the monitors rtEngine gets events from.
+	Monitors map[string]monitor.Monitor
 	// stop is a switch bots can set to signal the engine should stop.
 	stop bool
 }
@@ -47,6 +53,24 @@ func (r *rtEngine) LinkPost(subreddit, title, url string) error {
 	return r.Op.Submit(subreddit, "link", title, url)
 }
 
+// WatchUser starts monitoring a user.
+func (r *rtEngine) WatchUser(user string) error {
+	r.mu.Lock()
+	if mon := monitor.UserMonitor(r.Op, r.Bot, user); mon != nil {
+		r.Monitors[user] = mon
+	}
+	r.mu.Unlock()
+	return nil
+}
+
+// Unwatch users stops monitoring a user.
+func (r *rtEngine) UnwatchUser(user string) error {
+	r.mu.Lock()
+	delete(r.Monitors, user)
+	r.mu.Unlock()
+	return nil
+}
+
 // DigestThread returns a Link with a parsed comment tree.
 func (r *rtEngine) DigestThread(permalink string) (*redditproto.Link, error) {
 	return r.Op.Thread(permalink)
@@ -54,7 +78,9 @@ func (r *rtEngine) DigestThread(permalink string) (*redditproto.Link, error) {
 
 // Stop is a function exposed to bots to stop the engine.
 func (r *rtEngine) Stop() {
+	r.mu.Lock()
 	r.stop = true
+	r.mu.Unlock()
 }
 
 // Run is the main engine loop.

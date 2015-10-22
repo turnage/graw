@@ -26,6 +26,12 @@ type Engine interface {
 	// LinkPost makes a link post to a subreddit.
 	LinkPost(subreddit, title, url string) error
 
+	// WatchUser starts monitoring a user for posts or comments.
+	WatchUser(user string) error
+
+	// UnwatchUser stops monitoring a user for posts or comments.
+	UnwatchUser(user string) error
+
 	// DigestThread returns a post with a parsed comment tree. Call
 	// GetComments() on the returned Link for a slice of top level comments,
 	// and GetReplyTree() on Comments for their replies.

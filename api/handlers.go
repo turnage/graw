@@ -65,3 +65,13 @@ type MentionHandler interface {
 	// inbox. [Called as goroutine.]
 	Mention(mention *redditproto.Message)
 }
+
+// UserHandler defines methods for bots that handle activity by monitored users.
+type UserHandler interface {
+	// UserPost is called when a monitored user makes a post in a subreddit
+	// the bot can view. [Called as goroutine.]
+	UserPost(post *redditproto.Link)
+	// UserComment is called when the monitored user makes a comment in a
+	// subreddit the bot can view. [Called as goroutine.]
+	UserComment(comment *redditproto.Comment)
+}
