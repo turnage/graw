@@ -144,11 +144,11 @@ func TestFetchTip(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 
-	if sc.tip[len(sc.tip)-1] != second {
+	if sc.tip[len(sc.tip)-1] != first {
 		t.Errorf(
 			"got tip %s; wanted %s",
 			sc.tip[len(sc.tip)-1],
-			second)
+			first)
 	}
 
 	if len(links) != 2 {
