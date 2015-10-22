@@ -85,8 +85,9 @@ func TestUserMonitorUpdate(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 
-	// Allow bot goroutines to work.
-	time.Sleep(time.Second)
+	for i := 0; i < 100 && bot.postCalls+bot.commentCalls < 4; i++ {
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	if bot.postCalls != 2 {
 		t.Errorf(
