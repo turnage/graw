@@ -121,11 +121,21 @@ func TestFetchTip(t *testing.T) {
 	for i := 0; i < maxTipSize; i++ {
 		sc.tip = append(sc.tip, "id")
 	}
-	linkName := "anything"
+	first := "1"
+	firstTime := float64(1)
+	second := "2"
+	secondTime := float64(2)
 	sc.op = &operator.MockOperator{
 		PostsErr: nil,
 		PostsReturn: []*redditproto.Link{
-			&redditproto.Link{Name: &linkName},
+			&redditproto.Link{
+				Name:       &first,
+				CreatedUtc: &firstTime,
+			},
+			&redditproto.Link{
+				Name:       &second,
+				CreatedUtc: &secondTime,
+			},
 		},
 	}
 
@@ -134,25 +144,34 @@ func TestFetchTip(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 
-	if sc.tip[len(sc.tip)-1] != linkName {
+	if sc.tip[len(sc.tip)-1] != second {
 		t.Errorf(
 			"got tip %s; wanted %s",
 			sc.tip[len(sc.tip)-1],
-			linkName)
+			second)
 	}
 
-	if len(links) != 1 {
-		t.Fatalf("got %d links; expected 1", len(links))
+	if len(links) != 2 {
+		t.Fatalf("got %d links; expected 2", len(links))
 	}
 
-	if links[0].GetName() != linkName {
+	if links[0].GetName() != first {
 		t.Errorf(
 			"got thread name %s; wanted %s",
 			links[0].GetName(),
-			linkName)
+			first)
 	}
 
 	sc.tip = []string{""}
+	sc.op = &operator.MockOperator{
+		PostsErr: nil,
+		PostsReturn: []*redditproto.Link{
+			&redditproto.Link{
+				Name:       &first,
+				CreatedUtc: &firstTime,
+			},
+		},
+	}
 	links, _, err = sc.fetchTip()
 	if err != nil {
 		t.Fatalf("error: %v", err)

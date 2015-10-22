@@ -23,6 +23,8 @@ const (
 	baseURL = "https://oauth.reddit.com"
 	// oauth2Host is the hostname of Reddit's OAuth2 server.
 	oauth2Host = "oauth.reddit.com"
+	// deletedAuthor is the author value if a post or comment was deleted.
+	deletedAuthor = "[deleted]"
 )
 
 var (
@@ -160,7 +162,15 @@ func (o *operator) IsThereThing(id string) (bool, error) {
 		return false, err
 	}
 
-	return (len(links) == 1) != (len(comments) == 1), nil
+	if len(links) == 1 {
+		return links[0].GetAuthor() != deletedAuthor, nil
+	}
+
+	if len(comments) == 1 {
+		return comments[0].GetAuthor() != deletedAuthor, nil
+	}
+
+	return false, nil
 }
 
 // Thread returns a link; the Comments field will be filled with the comment
