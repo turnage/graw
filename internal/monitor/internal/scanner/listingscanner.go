@@ -133,7 +133,7 @@ func (l *listingScanner) fetchTip() (
 	k := 0
 	tipAppendage := make([]string, len(links)+len(comments))
 	for i := 0; i < len(links)+len(comments); i++ {
-		if k < len(comments) && (j > len(links) || links[j].GetCreatedUtc() > comments[k].GetCreatedUtc()) {
+		if k < len(comments) && (j >= len(links) || links[j].GetCreatedUtc() > comments[k].GetCreatedUtc()) {
 			tipAppendage[len(tipAppendage)-1-i] = comments[k].GetName()
 			k++
 		} else if j < len(links) {
