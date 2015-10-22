@@ -76,8 +76,9 @@ func TestPostMonitorUpdate(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 
-	// Allow bot goroutines to work.
-	time.Sleep(time.Second)
+	for i := 0; i < 100 && bot.Calls < 2; i++ {
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	if bot.Calls != 2 {
 		t.Errorf("%d calls were made to mock bot; wanted 1", bot.Calls)
