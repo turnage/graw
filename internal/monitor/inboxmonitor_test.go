@@ -9,8 +9,6 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-type mockNoHandler struct{}
-
 type mockInboxHandler struct {
 	MentionCalls      int
 	PostReplyCalls    int
@@ -36,15 +34,11 @@ func (m *mockInboxHandler) Message(msg *redditproto.Message) {
 
 func TestInboxMonitor(t *testing.T) {
 	expectedOperator := &operator.MockOperator{}
-	if im := InboxMonitor(
-		expectedOperator,
-		&mockNoHandler{},
-	); im != nil {
-		t.Errorf("got %v; wanted nil", im)
-	}
-
 	im := InboxMonitor(
 		expectedOperator,
+		&mockInboxHandler{},
+		&mockInboxHandler{},
+		&mockInboxHandler{},
 		&mockInboxHandler{},
 	).(*inboxMonitor)
 
@@ -66,6 +60,9 @@ func TestInboxMonitorUpdate(t *testing.T) {
 			InboxErr: fmt.Errorf("an error"),
 		},
 		&mockInboxHandler{},
+		&mockInboxHandler{},
+		&mockInboxHandler{},
+		&mockInboxHandler{},
 	)
 	if err := im.Update(); err == nil {
 		t.Errorf("wanted error for request failure")
@@ -84,6 +81,9 @@ func TestInboxMonitorUpdate(t *testing.T) {
 				{},
 			},
 		},
+		bot,
+		bot,
+		bot,
 		bot,
 	)
 	if err := im.Update(); err != nil {
