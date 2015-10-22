@@ -129,7 +129,7 @@ func (o *operator) UserContent(
 		return nil, nil, err
 	}
 
-	return redditproto.ParseUserPage(bytes)
+	return redditproto.ParseComboListing(bytes)
 }
 
 // IsThereThing returns whether a thing by the given id exists.
@@ -157,7 +157,7 @@ func (o *operator) IsThereThing(id string) (bool, error) {
 		return false, err
 	}
 
-	links, comments, err := redditproto.ParseUserPage(bytes)
+	links, comments, err := redditproto.ParseComboListing(bytes)
 	if err != nil {
 		return false, err
 	}
