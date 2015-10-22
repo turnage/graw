@@ -59,20 +59,30 @@ func RealTime(
 	loader, _ := bot.(api.Loader)
 	monitors := make(map[string]monitor.Monitor)
 
-	if len(subreddits) > 0 {
-		monitors["/r/"] = monitor.PostMonitor(op, bot, subreddits)
+	if postHandler, ok := bot.(api.PostHandler); ok && len(subreddits) > 0 {
+		monitors["/r/"] = monitor.PostMonitor(
+			op,
+			postHandler,
+			subreddits,
+		)
 	}
 
-	messageHandler, _ := bot.(*api.MessageHandler)
-	postReplyHandler, _ := bot.(*api.PostReplyHandler)
-	commentReplyHandler, _ := bot.(*api.CommentReplyHandler)
-	mentionHandler, _ := bot.(*api.MentionHandler)
+	messageHandler, _ := bot.(api.MessageHandler)
+	postReplyHandler, _ := bot.(api.PostReplyHandler)
+	commentReplyHandler, _ := bot.(api.CommentReplyHandler)
+	mentionHandler, _ := bot.(api.MentionHandler)
 
 	if messageHandler != nil ||
 		postReplyHandler != nil ||
 		commentReplyHandler != nil ||
 		mentionHandler != nil {
-		monitors["/messages/"] = monitor.InboxMonitor(op, bot)
+		monitors["/messages/"] = monitor.InboxMonitor(
+			op,
+			messageHandler,
+			postReplyHandler,
+			commentReplyHandler,
+			mentionHandler,
+		)
 	}
 
 	return &rtEngine{
@@ -108,8 +118,8 @@ func (r *rtEngine) LinkPost(subreddit, title, url string) error {
 // WatchUser starts monitoring a user.
 func (r *rtEngine) WatchUser(user string) error {
 	r.mu.Lock()
-	if mon := monitor.UserMonitor(r.op, r.bot, user); mon != nil {
-		r.monitors[user] = mon
+	if userHandler, ok := r.bot.(api.UserHandler); ok {
+		r.monitors[user] = monitor.UserMonitor(r.op, userHandler, user)
 	}
 	r.mu.Unlock()
 	return nil
