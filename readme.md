@@ -9,10 +9,10 @@ Status: Pilot Program
 
     go get github.com/turnage/graw
 
-graw
-* is for writing Reddit bots that run forever and all time.
-* is for writing Reddit bots fast without worrying about things like "loops".
-* is for writing Reddit bots *in Go*!
+graw is for writing Reddit bots
+* that run forever and all the time.
+* quickly without worrying about things like "loops".
+* *in Go!*
 
 Choose what events on Reddit to listen for (e.g. private messages, or new posts 
 in certain subreddits) and graw will feed them to your bot. Here is a simple
