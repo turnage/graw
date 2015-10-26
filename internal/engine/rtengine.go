@@ -2,7 +2,6 @@ package engine
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/turnage/graw/api"
 	"github.com/turnage/graw/internal/monitor"
@@ -12,25 +11,11 @@ import (
 
 // rtEngine runs bots against real time Reddit.
 type rtEngine struct {
-	// op is the rtEngine's operator for making reddit api calls.
-	op operator.Operator
+	base
 	// bot is the bot rtEngine is running.
 	bot interface{}
-	// actor is the bot's interface for receiving an interface to the
-	// Engine, so that it can act through its Reddit account.
-	actor api.Actor
-	// failer is the bot's interface for handling errors. rtEngine will
-	// defer to this to decide what to when it encounters an error.
-	failer api.Failer
-	// loader is the bot's interface for setting up and tearing down
-	// resources.
-	loader api.Loader
-	// mu protects all variable below.
-	mu sync.Mutex
 	// monitors is a set of the monitors rtEngine gets events from.
 	monitors map[string]monitor.Monitor
-	// stop is a switch bots can set to signal the engine should stop.
-	stop bool
 }
 
 // New returns the ignition to a real time engine, so that it can be started.
@@ -86,11 +71,13 @@ func RealTime(
 	}
 
 	return &rtEngine{
-		op:       op,
+		base: base{
+			op:     op,
+			actor:  actor,
+			failer: failer,
+			loader: loader,
+		},
 		bot:      bot,
-		actor:    actor,
-		failer:   failer,
-		loader:   loader,
 		monitors: monitors,
 	}, nil
 }
@@ -138,13 +125,6 @@ func (r *rtEngine) DigestThread(permalink string) (*redditproto.Link, error) {
 	return r.op.Thread(permalink)
 }
 
-// Stop stops the engine.
-func (r *rtEngine) Stop() {
-	r.mu.Lock()
-	r.stop = true
-	r.mu.Unlock()
-}
-
 // Run is the main engine loop.
 func (r *rtEngine) Run() error {
 	r.setup()
@@ -159,25 +139,4 @@ func (r *rtEngine) Run() error {
 	}
 
 	return nil
-}
-
-// setup prepares the engine and bot to run.
-func (r *rtEngine) setup() {
-	if r.loader != nil {
-		r.loader.SetUp()
-		defer r.loader.TearDown()
-	}
-
-	if r.actor != nil {
-		r.actor.TakeEngine(r)
-	}
-}
-
-// fail lets the bot decide whether to treat an error as a failure.
-func (r *rtEngine) fail(err error) bool {
-	if r.failer == nil {
-		return true
-	}
-
-	return r.failer.Fail(err)
 }
