@@ -3,8 +3,8 @@ graw
 
 Status: Pilot Program
 
-![Build Status](https://travis-ci.org/turnage/graw.svg?branch=master)
-[![Coverage Status](https://coveralls.io/repos/turnage/graw/badge.svg?branch=master&service=github)](https://coveralls.io/github/turnage/graw?branch=master)
+![Build Status](https://travis-ci.org/turnage/graw.svg?branch=pilot)
+[![Coverage Status](https://coveralls.io/repos/turnage/graw/badge.svg?branch=pilot&service=github)](https://coveralls.io/github/turnage/graw?branch=pilot)
 [![GoDoc](https://godoc.org/github.com/turnage/graw?status.svg)](https://godoc.org/github.com/turnage/graw)
 
     go get github.com/turnage/graw
