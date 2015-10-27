@@ -24,22 +24,6 @@ func (m *mockUserHandler) UserComment(comment *redditproto.Comment) {
 }
 
 func TestUserMonitor(t *testing.T) {
-	if um := UserMonitor(
-		&operator.MockOperator{},
-		&mockNoHandler{},
-		"user",
-	); um != nil {
-		t.Errorf("got %v; wanted nil", um)
-	}
-
-	if um := UserMonitor(
-		&operator.MockOperator{},
-		&mockUserHandler{},
-		"",
-	); um != nil {
-		t.Errorf("got %v; wanted nil", um)
-	}
-
 	um := UserMonitor(
 		&operator.MockOperator{},
 		&mockUserHandler{},

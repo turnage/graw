@@ -18,29 +18,19 @@ type postMonitor struct {
 	postHandler api.PostHandler
 }
 
-// PostMonitor returns a post monitor for the requested subreddits, busing bot
-// to handle new posts it finds. If bot cannot handle posts or there are no
-// subreddits to monitor, returns nil.
+// PostMonitor returns a post monitor for the requested subreddits, using bot
+// to handle new posts it finds.
 func PostMonitor(
 	op operator.Operator,
-	bot interface{},
+	bot api.PostHandler,
 	subreddits []string,
 ) Monitor {
-	postHandler, ok := bot.(api.PostHandler)
-	if !ok {
-		return nil
-	}
-
-	if len(subreddits) == 0 {
-		return nil
-	}
-
 	return &postMonitor{
 		postScanner: scanner.NewPostScanner(
 			fmt.Sprintf("%s", strings.Join(subreddits, "+")),
 			op,
 		),
-		postHandler: postHandler,
+		postHandler: bot,
 	}
 }
 
