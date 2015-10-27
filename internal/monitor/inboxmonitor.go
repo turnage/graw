@@ -23,19 +23,13 @@ type inboxMonitor struct {
 
 // InboxMonitor returns an inbox monitor that forwards events that a bot can
 // handle to bot. If the bot cannot handle any inbox events, returns nil.
-func InboxMonitor(op operator.Operator, bot interface{}) Monitor {
-	messageHandler, _ := bot.(api.MessageHandler)
-	postReplyHandler, _ := bot.(api.PostReplyHandler)
-	commentReplyHandler, _ := bot.(api.CommentReplyHandler)
-	mentionHandler, _ := bot.(api.MentionHandler)
-
-	if messageHandler == nil &&
-		postReplyHandler == nil &&
-		commentReplyHandler == nil &&
-		mentionHandler == nil {
-		return nil
-	}
-
+func InboxMonitor(
+	op operator.Operator,
+	messageHandler api.MessageHandler,
+	postReplyHandler api.PostReplyHandler,
+	commentReplyHandler api.CommentReplyHandler,
+	mentionHandler api.MentionHandler,
+) Monitor {
 	return &inboxMonitor{
 		op:                  op,
 		messageHandler:      messageHandler,

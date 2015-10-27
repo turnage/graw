@@ -19,21 +19,12 @@ type userMonitor struct {
 // UserMonitor returns a user monitor for the requested user.
 func UserMonitor(
 	op operator.Operator,
-	bot interface{},
+	bot api.UserHandler,
 	user string,
 ) Monitor {
-	userHandler, ok := bot.(api.UserHandler)
-	if !ok {
-		return nil
-	}
-
-	if user == "" {
-		return nil
-	}
-
 	return &userMonitor{
 		userScanner: scanner.NewUserScanner(user, op),
-		userHandler: userHandler,
+		userHandler: bot,
 	}
 }
 

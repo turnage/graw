@@ -19,22 +19,6 @@ func (m *mockPostHandler) Post(post *redditproto.Link) {
 }
 
 func TestPostMonitor(t *testing.T) {
-	if pm := PostMonitor(
-		&operator.MockOperator{},
-		&mockNoHandler{},
-		[]string{"self"},
-	); pm != nil {
-		t.Errorf("got %v; wanted nil", pm)
-	}
-
-	if pm := PostMonitor(
-		&operator.MockOperator{},
-		&mockPostHandler{},
-		[]string{},
-	); pm != nil {
-		t.Errorf("got %v; wanted nil", pm)
-	}
-
 	pm := PostMonitor(
 		&operator.MockOperator{},
 		&mockPostHandler{},

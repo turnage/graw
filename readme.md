@@ -3,16 +3,16 @@ graw
 
 Status: Pilot Program
 
-![Build Status](https://travis-ci.org/turnage/graw.svg?branch=master)
-[![Coverage Status](https://coveralls.io/repos/turnage/graw/badge.svg?branch=master&service=github)](https://coveralls.io/github/turnage/graw?branch=master)
+![Build Status](https://travis-ci.org/turnage/graw.svg?branch=pilot)
+[![Coverage Status](https://coveralls.io/repos/turnage/graw/badge.svg?branch=pilot&service=github)](https://coveralls.io/github/turnage/graw?branch=pilot)
 [![GoDoc](https://godoc.org/github.com/turnage/graw?status.svg)](https://godoc.org/github.com/turnage/graw)
 
     go get github.com/turnage/graw
 
-graw
-* is for writing Reddit bots that run forever and all time.
-* is for writing Reddit bots fast without worrying about things like "loops".
-* is for writing Reddit bots *in Go*!
+graw is for writing Reddit bots
+* that run forever and all the time.
+* quickly without worrying about things like "loops".
+* *in Go!*
 
 Choose what events on Reddit to listen for (e.g. private messages, or new posts 
 in certain subreddits) and graw will feed them to your bot. Here is a simple
