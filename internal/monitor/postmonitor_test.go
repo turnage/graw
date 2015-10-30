@@ -1,11 +1,8 @@
 package monitor
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
-	"github.com/turnage/graw/internal/monitor/internal/scanner"
 	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
@@ -19,52 +16,30 @@ func (m *mockPostHandler) Post(post *redditproto.Link) {
 }
 
 func TestPostMonitor(t *testing.T) {
-	pm := PostMonitor(
-		&operator.MockOperator{},
+	mon, err := PostMonitor(
+		&operator.MockOperator{
+			ScrapeLinksReturn: []*redditproto.Link{
+				&redditproto.Link{
+					Name: stringPointer("name"),
+				},
+			},
+		},
 		&mockPostHandler{},
 		[]string{"self", "aww"},
-	).(*postMonitor)
-	if pm.postHandler == nil {
-		t.Errorf("wanted postHandler set")
-	}
-}
-
-func TestPostMonitorUpdate(t *testing.T) {
-	pm := PostMonitor(
-		&operator.MockOperator{},
-		&mockPostHandler{},
-		[]string{"self"},
+		Forward,
 	)
-	mon := pm.(*postMonitor)
-	mon.postScanner = &scanner.MockScanner{
-		ScanErr: fmt.Errorf("an error"),
-	}
-	if err := pm.Update(); err == nil {
-		t.Errorf("wanted error for request failure")
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	bot := &mockPostHandler{}
-	pm = PostMonitor(
-		&operator.MockOperator{},
-		bot,
-		[]string{"self"},
-	)
-	mon = pm.(*postMonitor)
-	mon.postScanner = &scanner.MockScanner{
-		ScanLinksReturn: []*redditproto.Link{
-			&redditproto.Link{},
-			&redditproto.Link{},
-		},
+	pm := mon.(*postMonitor)
+	if pm.dir != Forward {
+		t.Errorf("got %d; wanted %d (Forward)", pm.dir, Forward)
 	}
-	if err := pm.Update(); err != nil {
-		t.Fatalf("error: %v", err)
+	if pm.handlePost == nil {
+		t.Errorf("wanted post handler set")
 	}
-
-	for i := 0; i < 100 && bot.Calls < 2; i++ {
-		time.Sleep(10 * time.Millisecond)
-	}
-
-	if bot.Calls != 2 {
-		t.Errorf("%d calls were made to mock bot; wanted 1", bot.Calls)
+	if pm.path != "/r/self+aww" {
+		t.Errorf("got %s; wanted /r/self+aww", pm.path)
 	}
 }
