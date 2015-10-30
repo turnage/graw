@@ -5,6 +5,7 @@ package monitor
 import (
 	"fmt"
 
+	"github.com/turnage/graw/internal/monitor/internal/handlers"
 	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
@@ -32,6 +33,50 @@ type Monitor interface {
 	// Update will check for new events, and send them to the Monitor's
 	// handler.
 	Update(operator.Operator) error
+}
+
+// Monitors returns all of the monitors suitable for the bot. Some monitors
+// can't be provided by this (such as user monitors) because the bot must
+// request them.
+func Monitors(
+	bot interface{},
+	subreddits []string,
+	op operator.Operator,
+	dir Direction,
+) ([]Monitor, error) {
+	monitors := []Monitor{}
+	if han, ok := bot.(handlers.PostHandler); ok && len(subreddits) > 0 {
+		mon, err := PostMonitor(op, han, subreddits, dir)
+		if err != nil {
+			return nil, err
+		}
+		monitors = append(monitors, mon)
+	}
+
+	messageHandler, _ := bot.(handlers.MessageHandler)
+	postReplyHandler, _ := bot.(handlers.PostReplyHandler)
+	commentReplyHandler, _ := bot.(handlers.CommentReplyHandler)
+	mentionHandler, _ := bot.(handlers.MentionHandler)
+
+	if messageHandler != nil ||
+		postReplyHandler != nil ||
+		commentReplyHandler != nil ||
+		mentionHandler != nil {
+		mon, err := InboxMonitor(
+			op,
+			messageHandler,
+			postReplyHandler,
+			commentReplyHandler,
+			mentionHandler,
+			dir,
+		)
+		if err != nil {
+			return nil, err
+		}
+		monitors = append(monitors, mon)
+	}
+
+	return monitors, nil
 }
 
 // redditThing is an interface for accessing attributes of Reddit types that

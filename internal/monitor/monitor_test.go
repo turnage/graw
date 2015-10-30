@@ -11,6 +11,12 @@ import (
 	"github.com/turnage/redditproto"
 )
 
+type noHandler struct{}
+
+type postHandler struct{}
+
+func (p *postHandler) Post(post *redditproto.Link) {}
+
 type handler struct {
 	calls        int
 	postCalls    int
@@ -39,6 +45,53 @@ func float64Pointer(val float64) *float64 {
 
 func stringPointer(val string) *string {
 	return &val
+}
+
+func TestMonitors(t *testing.T) {
+	mons, err := Monitors(
+		&postHandler{},
+		nil,
+		&operator.MockOperator{},
+		Forward,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(mons) != 0 {
+		t.Errorf("got %d monitors; wanted 0", len(mons))
+	}
+
+	mons, err = Monitors(
+		&mockInboxHandler{},
+		[]string{"self"},
+		&operator.MockOperator{},
+		Backward,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(mons) != 1 {
+		t.Fatalf("got %d monitors; wanted 1", len(mons))
+	}
+	if _, ok := mons[0].(*inboxMonitor); !ok {
+		t.Errorf("got %v; wanted an inbox monitor", mons[0])
+	}
+
+	mons, err = Monitors(
+		&mockPostHandler{},
+		[]string{"self"},
+		&operator.MockOperator{},
+		Backward,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(mons) != 1 {
+		t.Fatalf("got %d monitors; wanted 1", len(mons))
+	}
+	if _, ok := mons[0].(*postMonitor); !ok {
+		t.Errorf("got %v; wanted an inbox monitor", mons[0])
+	}
 }
 
 func TestMerge(t *testing.T) {
