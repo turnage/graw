@@ -35,11 +35,8 @@ var (
 
 // Operator makes api calls to Reddit.
 type Operator interface {
-	// Posts returns a listing of posts in a subreddit.
-	Posts(subreddit, after, before string, limit uint) ([]*redditproto.Link, error)
-	// UserContent returns a listing of posts and comments from a user's
-	// landing page.
-	UserContent(user, after, before string, limit uint) ([]*redditproto.Link, []*redditproto.Comment, error)
+	// Scrape returns the contents of a listing endpoint.
+	Scrape(path, after, before string, limit uint) ([]*redditproto.Link, []*redditproto.Comment, []*redditproto.Message, error)
 	// IsThereThing fetches a particular thing from reddit. Thing returns
 	// whether there is such a thing.
 	IsThereThing(id string) (bool, error)
@@ -72,13 +69,18 @@ func New(agent string) (Operator, error) {
 	return &operator{cli: cli}, nil
 }
 
-// Posts returns a list of posts in a subreddit.
-func (o *operator) Posts(
-	subreddit,
+// Scrape returns slices with the content of a listing endpoint.
+func (o *operator) Scrape(
+	path,
 	after,
 	before string,
 	limit uint,
-) ([]*redditproto.Link, error) {
+) (
+	[]*redditproto.Link,
+	[]*redditproto.Comment,
+	[]*redditproto.Message,
+	error,
+) {
 	bytes, err := o.exec(
 		http.Request{
 			Method:     "GET",
@@ -89,47 +91,17 @@ func (o *operator) Posts(
 			URL: &url.URL{
 				Scheme:   "https",
 				Host:     oauth2Host,
-				Path:     fmt.Sprintf("/r/%s/new", subreddit),
+				Path:     path,
 				RawQuery: listingParams(limit, after, before),
 			},
 			Host: oauth2Host,
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	return redditproto.ParseLinkListing(bytes)
-}
-
-// UserContent returns a list of content from a user's landing page.
-func (o *operator) UserContent(
-	user,
-	after,
-	before string,
-	limit uint,
-) ([]*redditproto.Link, []*redditproto.Comment, error) {
-	bytes, err := o.exec(
-		http.Request{
-			Method:     "GET",
-			Proto:      "HTTP/1.1",
-			ProtoMajor: 1,
-			ProtoMinor: 1,
-			Close:      true,
-			URL: &url.URL{
-				Scheme:   "https",
-				Host:     oauth2Host,
-				Path:     fmt.Sprintf("/u/%s.json", user),
-				RawQuery: listingParams(limit, after, before),
-			},
-			Host: oauth2Host,
-		},
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return redditproto.ParseComboListing(bytes)
+	return redditproto.ParseListing(bytes)
 }
 
 // IsThereThing returns whether a thing by the given id exists.
@@ -157,7 +129,7 @@ func (o *operator) IsThereThing(id string) (bool, error) {
 		return false, err
 	}
 
-	links, comments, err := redditproto.ParseComboListing(bytes)
+	links, comments, messages, err := redditproto.ParseListing(bytes)
 	if err != nil {
 		return false, err
 	}
@@ -168,6 +140,10 @@ func (o *operator) IsThereThing(id string) (bool, error) {
 
 	if len(comments) == 1 {
 		return comments[0].GetAuthor() != deletedAuthor, nil
+	}
+
+	if len(messages) == 1 {
+		return true, nil
 	}
 
 	return false, nil
@@ -219,7 +195,8 @@ func (o *operator) Inbox() ([]*redditproto.Message, error) {
 		return nil, err
 	}
 
-	return redditproto.ParseMessageListing(bytes)
+	_, _, messages, err := redditproto.ParseListing(bytes)
+	return messages, err
 }
 
 // MarkAsRead marks inbox items as read, so they are no longer returned by calls

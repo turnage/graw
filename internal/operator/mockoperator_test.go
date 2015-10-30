@@ -56,29 +56,7 @@ func TestMockSubmit(t *testing.T) {
 	}
 }
 
-func TestMockPosts(t *testing.T) {
-	expectedErr := fmt.Errorf("an error")
-	title := "title"
-	expected := []*redditproto.Link{
-		&redditproto.Link{Title: &title},
-	}
-	mock := Operator(
-		&MockOperator{
-			PostsErr:    expectedErr,
-			PostsReturn: expected,
-		},
-	)
-	actual, err := mock.Posts("", "", "", 1)
-	if !reflect.DeepEqual(actual, expected) {
-		t.Errorf("got %v; wanted %v", actual, expected)
-	}
-
-	if err != expectedErr {
-		t.Errorf("got %v; wanted %v", err, expectedErr)
-	}
-}
-
-func TestMockUserContent(t *testing.T) {
+func TestMockScrape(t *testing.T) {
 	expectedErr := fmt.Errorf("an error")
 	title := "title"
 	expectedLinks := []*redditproto.Link{
@@ -88,20 +66,33 @@ func TestMockUserContent(t *testing.T) {
 	expectedComments := []*redditproto.Comment{
 		&redditproto.Comment{Body: &body},
 	}
+	expectedMessages := []*redditproto.Message{
+		&redditproto.Message{Body: &body},
+	}
 	mock := Operator(
 		&MockOperator{
-			UserContentErr:            expectedErr,
-			UserContentLinksReturn:    expectedLinks,
-			UserContentCommentsReturn: expectedComments,
+			ScrapeErr:            expectedErr,
+			ScrapeLinksReturn:    expectedLinks,
+			ScrapeCommentsReturn: expectedComments,
+			ScrapeMessagesReturn: expectedMessages,
 		},
 	)
-	actualLinks, actualComments, err := mock.UserContent("", "", "", 1)
+	actualLinks, actualComments, actualMessages, err := mock.Scrape(
+		"",
+		"",
+		"",
+		1,
+	)
 	if !reflect.DeepEqual(actualLinks, expectedLinks) {
 		t.Errorf("got %v; wanted %v", actualComments, expectedLinks)
 	}
 
 	if !reflect.DeepEqual(actualComments, expectedComments) {
 		t.Errorf("got %v; wanted %v", actualComments, expectedComments)
+	}
+
+	if !reflect.DeepEqual(actualMessages, expectedMessages) {
+		t.Errorf("got %v; wanted %v", actualMessages, expectedMessages)
 	}
 
 	if err != expectedErr {
