@@ -6,16 +6,14 @@ import (
 
 // MockOperator mocks Operator; it returns canned responses.
 type MockOperator struct {
-	// PostsErr is returned in the error field of Posts.
-	PostsErr error
-	// PostsReturn is returned by Posts.
-	PostsReturn []*redditproto.Link
-	// UserContentErr is returned in the error field of UserContent.
-	UserContentErr error
-	// UserContentLinksReturn is returned by UserContent.
-	UserContentLinksReturn []*redditproto.Link
-	// UserContentCommentsReturn is returned by UserContent.
-	UserContentCommentsReturn []*redditproto.Comment
+	// ScrapeErr is returned in the error field of Scrape.
+	ScrapeErr error
+	// ScrapeLinksReturn is returned by Scrape.
+	ScrapeLinksReturn []*redditproto.Link
+	// ScrapeCommentsReturn is returned by Scrape.
+	ScrapeCommentsReturn []*redditproto.Comment
+	// ScrapeMessagesReturn is returned by Scrape.
+	ScrapeMessagesReturn []*redditproto.Message
 	// IsThereThingErr is returned in the error field of IsThereThing.
 	IsThereThingErr error
 	// IsThereThingReturn is returned by IsThereThing.
@@ -38,24 +36,21 @@ type MockOperator struct {
 	ComposeErr error
 }
 
-func (m *MockOperator) Posts(
-	subreddit,
+func (m *MockOperator) Scrape(
+	path,
 	after,
 	before string,
 	limit uint,
-) ([]*redditproto.Link, error) {
-	return m.PostsReturn, m.PostsErr
-}
-
-func (m *MockOperator) UserContent(
-	user,
-	after,
-	before string,
-	limit uint,
-) ([]*redditproto.Link, []*redditproto.Comment, error) {
-	return m.UserContentLinksReturn,
-		m.UserContentCommentsReturn,
-		m.UserContentErr
+) (
+	[]*redditproto.Link,
+	[]*redditproto.Comment,
+	[]*redditproto.Message,
+	error,
+) {
+	return m.ScrapeLinksReturn,
+		m.ScrapeCommentsReturn,
+		m.ScrapeMessagesReturn,
+		m.ScrapeErr
 }
 
 func (m *MockOperator) IsThereThing(id string) (bool, error) {

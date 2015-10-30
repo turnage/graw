@@ -38,6 +38,12 @@ var (
 					"data": {
 						"body": "hello"
 					}
+				},
+				{
+					"kind": "t4",
+					"data": {
+						"body": "hello"
+					}
 				}
 			]
 		}
@@ -91,35 +97,12 @@ var (
 	}`
 )
 
-func TestPosts(t *testing.T) {
+func TestScrape(t *testing.T) {
 	op := &operator{
 		cli: client.NewMock("", fmt.Errorf("an error")),
 	}
 
-	if _, err := op.Posts("/r/self/new", "", "", 1); err == nil {
-		t.Errorf("wanted error for request error")
-	}
-
-	op = &operator{
-		cli: client.NewMock(linkListingJSON, nil),
-	}
-
-	posts, err := op.Posts("self", "", "", 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(posts) != 1 {
-		t.Errorf("got %d posts; wanted 1", len(posts))
-	}
-}
-
-func TestUserContent(t *testing.T) {
-	op := &operator{
-		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if _, _, err := op.UserContent("user", "", "", 1); err == nil {
+	if _, _, _, err := op.Scrape("path", "", "", 1); err == nil {
 		t.Errorf("wanted error for request error")
 	}
 
@@ -127,7 +110,7 @@ func TestUserContent(t *testing.T) {
 		cli: client.NewMock(comboListingJSON, nil),
 	}
 
-	posts, comments, err := op.UserContent("user", "", "", 1)
+	posts, comments, messages, err := op.Scrape("path", "", "", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,6 +121,10 @@ func TestUserContent(t *testing.T) {
 
 	if len(comments) != 1 {
 		t.Errorf("got %d comments; wanted 1", len(comments))
+	}
+
+	if len(messages) != 1 {
+		t.Errorf("got %d messages; wanted 1", len(messages))
 	}
 }
 
