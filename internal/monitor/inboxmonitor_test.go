@@ -1,111 +1,101 @@
 package monitor
 
 import (
-	"fmt"
+	"reflect"
 	"testing"
-	"time"
 
 	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
 
 type mockInboxHandler struct {
-	MentionCalls      int
-	PostReplyCalls    int
-	CommentReplyCalls int
-	MessageCalls      int
+	mentionCalls      int
+	postReplyCalls    int
+	commentReplyCalls int
 }
 
-func (m *mockInboxHandler) Mention(msg *redditproto.Message) {
-	m.MentionCalls++
+func (m *mockInboxHandler) Mention(msg *redditproto.Comment) {
+	m.mentionCalls++
 }
 
-func (m *mockInboxHandler) PostReply(msg *redditproto.Message) {
-	m.PostReplyCalls++
+func (m *mockInboxHandler) PostReply(msg *redditproto.Comment) {
+	m.postReplyCalls++
 }
 
-func (m *mockInboxHandler) CommentReply(msg *redditproto.Message) {
-	m.CommentReplyCalls++
+func (m *mockInboxHandler) CommentReply(msg *redditproto.Comment) {
+	m.commentReplyCalls++
 }
 
-func (m *mockInboxHandler) Message(msg *redditproto.Message) {
-	m.MessageCalls++
-}
+func (m *mockInboxHandler) Message(msg *redditproto.Message) {}
 
 func TestInboxMonitor(t *testing.T) {
-	expectedOperator := &operator.MockOperator{}
-	im := InboxMonitor(
-		expectedOperator,
+	mon, err := InboxMonitor(
+		&operator.MockOperator{
+			ScrapeMessagesReturn: []*redditproto.Message{
+				&redditproto.Message{
+					Name: stringPointer("name"),
+				},
+			},
+		},
 		&mockInboxHandler{},
 		&mockInboxHandler{},
 		&mockInboxHandler{},
 		&mockInboxHandler{},
-	).(*inboxMonitor)
-
-	if im.op != expectedOperator {
-		t.Errorf("got %v; wanted %v", im.op, expectedOperator)
+		Forward,
+	)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	if im.messageHandler == nil ||
-		im.mentionHandler == nil ||
-		im.postReplyHandler == nil ||
-		im.commentReplyHandler == nil {
-		t.Errorf("got %v; wanted all fields set", im)
+	i := mon.(*inboxMonitor)
+
+	if i.mentionHandler == nil ||
+		i.postReplyHandler == nil ||
+		i.commentReplyHandler == nil {
+		t.Errorf("got %v; wanted all fields set", i)
+	}
+
+	if i.dir != Forward {
+		t.Errorf("got %d; wanted %d (Forward)", i.dir, Forward)
+	}
+
+	if i.path != "/message/inbox" {
+		t.Errorf("got %s; wanted /message/inbox", i.path)
+	}
+
+	if !reflect.DeepEqual(i.tip, []string{"name"}) {
+		t.Errorf("got %v; wanted %v", i.tip, []string{"name"})
 	}
 }
 
-func TestInboxMonitorUpdate(t *testing.T) {
-	im := InboxMonitor(
-		&operator.MockOperator{
-			InboxErr: fmt.Errorf("an error"),
+func TestInboxMonitorCommentDispatch(t *testing.T) {
+	han := &mockInboxHandler{}
+	i := &inboxMonitor{
+		postReplyHandler:    han,
+		commentReplyHandler: han,
+		mentionHandler:      han,
+	}
+
+	i.commentDispatch(
+		&redditproto.Comment{
+			Subject: stringPointer(mentionSubject),
 		},
-		&mockInboxHandler{},
-		&mockInboxHandler{},
-		&mockInboxHandler{},
-		&mockInboxHandler{},
 	)
-	if err := im.Update(); err == nil {
-		t.Errorf("wanted error for request failure")
+	if han.mentionCalls != 1 {
+		t.Errorf("got %d mention calls; wanted 1", han.mentionCalls)
 	}
 
-	mentionSubject := "username mention"
-	postReplySubject := "post reply"
-	tval := true
-	bot := &mockInboxHandler{}
-	im = InboxMonitor(
-		&operator.MockOperator{
-			InboxReturn: []*redditproto.Message{
-				{Subject: &mentionSubject},
-				{Subject: &postReplySubject},
-				{WasComment: &tval},
-				{},
-			},
+	i.commentDispatch(
+		&redditproto.Comment{
+			Subject: stringPointer(postReplySubject),
 		},
-		bot,
-		bot,
-		bot,
-		bot,
 	)
-	if err := im.Update(); err != nil {
-		t.Fatalf("error: %v", err)
+	if han.postReplyCalls != 1 {
+		t.Errorf("got %d postReply calls; wanted 1", han.postReplyCalls)
 	}
 
-	// Allow bot goroutines to work.
-	time.Sleep(20 * time.Millisecond)
-
-	if bot.MentionCalls != 1 {
-		t.Errorf("wanted a call to Mention()")
-	}
-
-	if bot.PostReplyCalls != 1 {
-		t.Errorf("wanted a call to PostReply()")
-	}
-
-	if bot.CommentReplyCalls != 1 {
-		t.Errorf("wanted a call to CommentReply()")
-	}
-
-	if bot.MessageCalls != 1 {
-		t.Errorf("wanted a call to Message()")
+	i.commentDispatch(&redditproto.Comment{})
+	if han.commentReplyCalls != 1 {
+		t.Errorf("got %d comment calls; wanted 1", han.commentReplyCalls)
 	}
 }
