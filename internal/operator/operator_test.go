@@ -245,7 +245,7 @@ func TestMarkAsRead(t *testing.T) {
 		cli: client.NewMock("", fmt.Errorf("an error")),
 	}
 
-	if err := op.MarkAsRead("id1", "id2"); err == nil {
+	if err := op.MarkAsRead(); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
@@ -253,7 +253,7 @@ func TestMarkAsRead(t *testing.T) {
 		cli: client.NewMock("", nil),
 	}
 
-	if err := op.MarkAsRead("id1", "id2"); err != nil {
+	if err := op.MarkAsRead(); err != nil {
 		t.Fatalf("error: %v", err)
 	}
 }

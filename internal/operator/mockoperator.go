@@ -65,7 +65,7 @@ func (m *MockOperator) Inbox() ([]*redditproto.Message, error) {
 	return m.InboxReturn, m.InboxErr
 }
 
-func (m *MockOperator) MarkAsRead(fullnames ...string) error {
+func (m *MockOperator) MarkAsRead() error {
 	return m.MarkAsReadErr
 }
 

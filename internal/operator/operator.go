@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/turnage/graw/internal/operator/internal/client"
 	"github.com/turnage/redditproto"
@@ -45,7 +44,7 @@ type Operator interface {
 	// Inbox fetches unread messages from the reddit inbox.
 	Inbox() ([]*redditproto.Message, error)
 	// MarkAsRead marks inbox items read.
-	MarkAsRead(fullnames ...string) error
+	MarkAsRead() error
 	// Reply replies to reddit item.
 	Reply(parent, content string) error
 	// Compose sends a private message to a user.
@@ -201,7 +200,7 @@ func (o *operator) Inbox() ([]*redditproto.Message, error) {
 
 // MarkAsRead marks inbox items as read, so they are no longer returned by calls
 // to Inbox().
-func (o *operator) MarkAsRead(fullnames ...string) error {
+func (o *operator) MarkAsRead() error {
 	req := http.Request{
 		Method:     "POST",
 		Proto:      "HTTP/1.1",
@@ -211,19 +210,11 @@ func (o *operator) MarkAsRead(fullnames ...string) error {
 		URL: &url.URL{
 			Scheme: "https",
 			Host:   oauth2Host,
-			Path:   "/api/read_message",
+			Path:   "/api/read_all_messages",
 		},
 		Header: formEncoding,
-		Body: ioutil.NopCloser(
-			bytes.NewBufferString(
-				url.Values{
-					"id": []string{
-						strings.Join(fullnames, ","),
-					},
-				}.Encode(),
-			),
-		),
-		Host: oauth2Host,
+		Body:   ioutil.NopCloser(bytes.NewBufferString("")),
+		Host:   oauth2Host,
 	}
 
 	_, err := o.cli.Do(&req)
