@@ -1,4 +1,4 @@
-package api
+package handlers
 
 import (
 	"github.com/turnage/redditproto"
@@ -37,7 +37,7 @@ type MessageHandler interface {
 type PostReplyHandler interface {
 	// Reply is called when the bot receives a reply to one of its
 	// submissions in its inbox. [Called as goroutine.]
-	PostReply(reply *redditproto.Message)
+	PostReply(reply *redditproto.Comment)
 }
 
 // CommentReplyHandler defines methods for bots that handle new comments made in
@@ -45,7 +45,7 @@ type PostReplyHandler interface {
 type CommentReplyHandler interface {
 	// CommentReply is called when the bot receives a reply to one of its
 	// comments in it its inbox. [Called as goroutine.]
-	CommentReply(reply *redditproto.Message)
+	CommentReply(reply *redditproto.Comment)
 }
 
 // MentionHandler defines methods for bots that handle username mentions. These
@@ -63,7 +63,7 @@ type CommentReplyHandler interface {
 type MentionHandler interface {
 	// Mention is called when the bot receives a username mention in its
 	// inbox. [Called as goroutine.]
-	Mention(mention *redditproto.Message)
+	Mention(mention *redditproto.Comment)
 }
 
 // UserHandler defines methods for bots that handle activity by monitored users.
