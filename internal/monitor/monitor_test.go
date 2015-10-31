@@ -11,8 +11,6 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-type noHandler struct{}
-
 type postHandler struct{}
 
 func (p *postHandler) Post(post *redditproto.Link) {}
@@ -70,11 +68,8 @@ func TestMonitors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(mons) != 1 {
+	if len(mons) != 4 {
 		t.Fatalf("got %d monitors; wanted 1", len(mons))
-	}
-	if _, ok := mons[0].(*inboxMonitor); !ok {
-		t.Errorf("got %v; wanted an inbox monitor", mons[0])
 	}
 
 	mons, err = Monitors(
@@ -89,8 +84,36 @@ func TestMonitors(t *testing.T) {
 	if len(mons) != 1 {
 		t.Fatalf("got %d monitors; wanted 1", len(mons))
 	}
-	if _, ok := mons[0].(*postMonitor); !ok {
-		t.Errorf("got %v; wanted an inbox monitor", mons[0])
+}
+
+func TestBaseFromPath(t *testing.T) {
+	mon, err := baseFromPath(
+		&operator.MockOperator{
+			ScrapeLinksReturn: []*redditproto.Link{
+				&redditproto.Link{
+					Name: stringPointer("name"),
+				},
+			},
+		},
+		"/r/self",
+		nil,
+		nil,
+		nil,
+		Forward,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b := mon.(*base)
+	if b.dir != Forward {
+		t.Errorf("got %d; wanted %d (Forward)", b.dir, Forward)
+	}
+	if b.handlePost != nil {
+		t.Errorf("wanted post handler unset")
+	}
+	if b.path != "/r/self" {
+		t.Errorf("got %s; wanted /r/self", b.path)
 	}
 }
 
