@@ -17,30 +17,14 @@ var (
 	}
 )
 
-type mockPostHandler struct{}
-
-func (m *mockPostHandler) Post(post *redditproto.Link) {}
-
-type mockUserHandler struct{}
-
-func (m *mockUserHandler) UserPost(post *redditproto.Link) {}
-
-func (m *mockUserHandler) UserComment(comment *redditproto.Comment) {}
-
-type mockInboxHandler struct{}
-
-func (m *mockInboxHandler) Mention(msg *redditproto.Comment) {}
-
-func (m *mockInboxHandler) PostReply(msg *redditproto.Comment) {}
-
-func (m *mockInboxHandler) CommentReply(msg *redditproto.Comment) {}
-
-func (m *mockInboxHandler) Message(msg *redditproto.Message) {}
+func post(post *redditproto.Link)          {}
+func comment(comment *redditproto.Comment) {}
+func message(message *redditproto.Message) {}
 
 func TestPostMonitor(t *testing.T) {
 	mon, err := PostMonitor(
 		mockForSync,
-		&mockPostHandler{},
+		post,
 		[]string{"self", "aww"},
 		Forward,
 	)
@@ -60,7 +44,8 @@ func TestPostMonitor(t *testing.T) {
 func TestUserMonitor(t *testing.T) {
 	mon, err := UserMonitor(
 		mockForSync,
-		&mockUserHandler{},
+		post,
+		comment,
 		"rob",
 		Forward,
 	)
@@ -83,7 +68,7 @@ func TestUserMonitor(t *testing.T) {
 func TestMessageMonitor(t *testing.T) {
 	mon, err := MessageMonitor(
 		mockForSync,
-		&mockInboxHandler{},
+		message,
 		Forward,
 	)
 	if err != nil {
@@ -102,7 +87,7 @@ func TestMessageMonitor(t *testing.T) {
 func TestCommentReplyMonitor(t *testing.T) {
 	mon, err := CommentReplyMonitor(
 		mockForSync,
-		&mockInboxHandler{},
+		comment,
 		Forward,
 	)
 	if err != nil {
@@ -121,7 +106,7 @@ func TestCommentReplyMonitor(t *testing.T) {
 func TestPostReplyMonitor(t *testing.T) {
 	mon, err := PostReplyMonitor(
 		mockForSync,
-		&mockInboxHandler{},
+		comment,
 		Forward,
 	)
 	if err != nil {
@@ -140,7 +125,7 @@ func TestPostReplyMonitor(t *testing.T) {
 func TestMentionMonitor(t *testing.T) {
 	mon, err := MentionMonitor(
 		mockForSync,
-		&mockInboxHandler{},
+		comment,
 		Forward,
 	)
 	if err != nil {

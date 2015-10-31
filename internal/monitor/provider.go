@@ -3,21 +3,20 @@ package monitor
 import (
 	"strings"
 
-	"github.com/turnage/graw/internal/monitor/internal/handlers"
 	"github.com/turnage/graw/internal/operator"
 )
 
 // PostMonitor returns a monitor for new posts in a subreddit(s).
 func PostMonitor(
 	op operator.Operator,
-	bot handlers.PostHandler,
+	handlePost postHandler,
 	subreddits []string,
 	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
 		op,
 		"/r/"+strings.Join(subreddits, "+"),
-		bot.Post,
+		handlePost,
 		nil,
 		nil,
 		dir,
@@ -27,15 +26,16 @@ func PostMonitor(
 // UserMonitor returns a monitor for new posts or comments by a user.
 func UserMonitor(
 	op operator.Operator,
-	bot handlers.UserHandler,
+	handlePost postHandler,
+	handleComment commentHandler,
 	user string,
 	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
 		op,
 		"/user/"+user,
-		bot.UserPost,
-		bot.UserComment,
+		handlePost,
+		handleComment,
 		nil,
 		dir,
 	)
@@ -44,7 +44,7 @@ func UserMonitor(
 // MessageMonitor returns a monitor for new private messages to the bot.
 func MessageMonitor(
 	op operator.Operator,
-	bot handlers.MessageHandler,
+	handleMessage messageHandler,
 	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
@@ -52,7 +52,7 @@ func MessageMonitor(
 		"/message/messages",
 		nil,
 		nil,
-		bot.Message,
+		handleMessage,
 		dir,
 	)
 }
@@ -60,14 +60,14 @@ func MessageMonitor(
 // CommentReplyMonitor returns a monitor for new replies to the bot's comments.
 func CommentReplyMonitor(
 	op operator.Operator,
-	bot handlers.CommentReplyHandler,
+	handleComment commentHandler,
 	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
 		op,
 		"/message/comments",
 		nil,
-		bot.CommentReply,
+		handleComment,
 		nil,
 		dir,
 	)
@@ -76,14 +76,14 @@ func CommentReplyMonitor(
 // PostReplyMonitor returns a monitor for new replies to the bot's posts.
 func PostReplyMonitor(
 	op operator.Operator,
-	bot handlers.PostReplyHandler,
+	handleComment commentHandler,
 	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
 		op,
 		"/message/selfreply",
 		nil,
-		bot.PostReply,
+		handleComment,
 		nil,
 		dir,
 	)
@@ -93,14 +93,14 @@ func PostReplyMonitor(
 // across Reddit.
 func MentionMonitor(
 	op operator.Operator,
-	bot handlers.MentionHandler,
+	handleComment commentHandler,
 	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
 		op,
 		"/message/mentions",
 		nil,
-		bot.Mention,
+		handleComment,
 		nil,
 		dir,
 	)
