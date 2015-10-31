@@ -11,10 +11,6 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-type postHandler struct{}
-
-func (p *postHandler) Post(post *redditproto.Link) {}
-
 type handler struct {
 	calls        int
 	postCalls    int
@@ -45,49 +41,37 @@ func stringPointer(val string) *string {
 	return &val
 }
 
-func TestMonitors(t *testing.T) {
-	mons, err := Monitors(
-		&postHandler{},
+func TestBaseFromPath(t *testing.T) {
+	han := &handler{}
+	mon, err := baseFromPath(
+		&operator.MockOperator{
+			ScrapeLinksReturn: []*redditproto.Link{
+				&redditproto.Link{
+					Name: stringPointer("name"),
+				},
+			},
+		},
+		"/r/self",
 		nil,
-		&operator.MockOperator{},
+		han.comment,
+		nil,
 		Forward,
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(mons) != 0 {
-		t.Errorf("got %d monitors; wanted 0", len(mons))
-	}
 
-	mons, err = Monitors(
-		&mockInboxHandler{},
-		[]string{"self"},
-		&operator.MockOperator{},
-		Backward,
-	)
-	if err != nil {
-		t.Fatal(err)
+	b := mon.(*base)
+	if b.dir != Forward {
+		t.Errorf("got %d; wanted %d (Forward)", b.dir, Forward)
 	}
-	if len(mons) != 4 {
-		t.Fatalf("got %d monitors; wanted 1", len(mons))
+	if b.handleComment == nil {
+		t.Errorf("wanted comment handler set")
 	}
-
-	mons, err = Monitors(
-		&mockPostHandler{},
-		[]string{"self"},
-		&operator.MockOperator{},
-		Backward,
-	)
-	if err != nil {
-		t.Fatal(err)
+	if b.path != "/r/self" {
+		t.Errorf("got %s; wanted /r/self", b.path)
 	}
-	if len(mons) != 1 {
-		t.Fatalf("got %d monitors; wanted 1", len(mons))
-	}
-}
-
-func TestBaseFromPath(t *testing.T) {
-	mon, err := baseFromPath(
+	mon, err = baseFromPath(
 		&operator.MockOperator{
 			ScrapeLinksReturn: []*redditproto.Link{
 				&redditproto.Link{
@@ -101,19 +85,8 @@ func TestBaseFromPath(t *testing.T) {
 		nil,
 		Forward,
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b := mon.(*base)
-	if b.dir != Forward {
-		t.Errorf("got %d; wanted %d (Forward)", b.dir, Forward)
-	}
-	if b.handlePost != nil {
-		t.Errorf("wanted post handler unset")
-	}
-	if b.path != "/r/self" {
-		t.Errorf("got %s; wanted /r/self", b.path)
+	if err == nil {
+		t.Errorf("wanted error if no handlers are provided")
 	}
 }
 

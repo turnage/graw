@@ -5,7 +5,6 @@ package monitor
 import (
 	"fmt"
 
-	"github.com/turnage/graw/internal/monitor/internal/handlers"
 	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
@@ -17,6 +16,10 @@ const (
 	Forward  = iota
 	Backward = iota
 )
+
+type commentHandler func(*redditproto.Comment)
+type postHandler func(*redditproto.Link)
+type messageHandler func(*redditproto.Message)
 
 const (
 	// The blank threshold is the amount of.s returning 0 new
@@ -35,59 +38,6 @@ type Monitor interface {
 	Update(operator.Operator) error
 }
 
-// Monitors returns all of the monitors suitable for the bot. Some monitors
-// can't be provided by this (such as user monitors) because the bot must
-// request them.
-func Monitors(
-	bot interface{},
-	subreddits []string,
-	op operator.Operator,
-	dir Direction,
-) ([]Monitor, error) {
-	monitors := []Monitor{}
-	if han, ok := bot.(handlers.PostHandler); ok && len(subreddits) > 0 {
-		mon, err := PostMonitor(op, han, subreddits, dir)
-		if err != nil {
-			return nil, err
-		}
-		monitors = append(monitors, mon)
-	}
-
-	if han, ok := bot.(handlers.MessageHandler); ok {
-		mon, err := MessageMonitor(op, han, dir)
-		if err != nil {
-			return nil, err
-		}
-		monitors = append(monitors, mon)
-	}
-
-	if han, ok := bot.(handlers.CommentReplyHandler); ok {
-		mon, err := CommentReplyMonitor(op, han, dir)
-		if err != nil {
-			return nil, err
-		}
-		monitors = append(monitors, mon)
-	}
-
-	if han, ok := bot.(handlers.PostReplyHandler); ok {
-		mon, err := PostReplyMonitor(op, han, dir)
-		if err != nil {
-			return nil, err
-		}
-		monitors = append(monitors, mon)
-	}
-
-	if han, ok := bot.(handlers.MentionHandler); ok {
-		mon, err := MentionMonitor(op, han, dir)
-		if err != nil {
-			return nil, err
-		}
-		monitors = append(monitors, mon)
-	}
-
-	return monitors, nil
-}
-
 // redditThing is an interface for accessing attributes of Reddit types that
 // implement the Redddit "Thing" class.
 type redditThing interface {
@@ -102,13 +52,13 @@ type redditThing interface {
 type base struct {
 	// handlePost is the function the monitor uses to handle new posts it
 	// finds.
-	handlePost func(*redditproto.Link)
+	handlePost postHandler
 	// handleComment is the function the monitor uses to handle new comments
 	// it finds.
-	handleComment func(*redditproto.Comment)
+	handleComment commentHandler
 	// handleMessage is the function the monitor uses to handle new messages
 	// it finds.
-	handleMessage func(*redditproto.Message)
+	handleMessage messageHandler
 	// dir is the direction in time the monitor monitors reddit.
 	dir Direction
 	// blanks is the number of. rounds that have turned up 0 new
@@ -130,15 +80,19 @@ type base struct {
 func baseFromPath(
 	op operator.Operator,
 	path string,
-	postHandler func(*redditproto.Link),
-	commentHandler func(*redditproto.Comment),
-	messageHandler func(*redditproto.Message),
+	handlePost postHandler,
+	handleComment commentHandler,
+	handleMessage messageHandler,
 	dir Direction,
 ) (Monitor, error) {
+	if handlePost == nil && handleComment == nil && handleMessage == nil {
+		return nil, fmt.Errorf("no handlers provided for events")
+	}
+
 	b := &base{
-		handlePost:    postHandler,
-		handleComment: commentHandler,
-		handleMessage: messageHandler,
+		handlePost:    handlePost,
+		handleComment: handleComment,
+		handleMessage: handleMessage,
 		dir:           dir,
 		path:          path,
 		tip:           []string{""},
