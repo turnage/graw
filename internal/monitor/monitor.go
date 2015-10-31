@@ -53,23 +53,32 @@ func Monitors(
 		monitors = append(monitors, mon)
 	}
 
-	messageHandler, _ := bot.(handlers.MessageHandler)
-	postReplyHandler, _ := bot.(handlers.PostReplyHandler)
-	commentReplyHandler, _ := bot.(handlers.CommentReplyHandler)
-	mentionHandler, _ := bot.(handlers.MentionHandler)
+	if han, ok := bot.(handlers.MessageHandler); ok {
+		mon, err := MessageMonitor(op, han, dir)
+		if err != nil {
+			return nil, err
+		}
+		monitors = append(monitors, mon)
+	}
 
-	if messageHandler != nil ||
-		postReplyHandler != nil ||
-		commentReplyHandler != nil ||
-		mentionHandler != nil {
-		mon, err := InboxMonitor(
-			op,
-			messageHandler,
-			postReplyHandler,
-			commentReplyHandler,
-			mentionHandler,
-			dir,
-		)
+	if han, ok := bot.(handlers.CommentReplyHandler); ok {
+		mon, err := CommentReplyMonitor(op, han, dir)
+		if err != nil {
+			return nil, err
+		}
+		monitors = append(monitors, mon)
+	}
+
+	if han, ok := bot.(handlers.PostReplyHandler); ok {
+		mon, err := PostReplyMonitor(op, han, dir)
+		if err != nil {
+			return nil, err
+		}
+		monitors = append(monitors, mon)
+	}
+
+	if han, ok := bot.(handlers.MentionHandler); ok {
+		mon, err := MentionMonitor(op, han, dir)
 		if err != nil {
 			return nil, err
 		}
@@ -115,6 +124,33 @@ type base struct {
 	// path is the listing endpoint the monitor monitors.This path is
 	// appended to the reddit base url (e.g./user/robert).
 	path string
+}
+
+// baseFromPath provides a monitor base from the listing endpoint.
+func baseFromPath(
+	op operator.Operator,
+	path string,
+	postHandler func(*redditproto.Link),
+	commentHandler func(*redditproto.Comment),
+	messageHandler func(*redditproto.Message),
+	dir Direction,
+) (Monitor, error) {
+	b := &base{
+		handlePost:    postHandler,
+		handleComment: commentHandler,
+		handleMessage: messageHandler,
+		dir:           dir,
+		path:          path,
+		tip:           []string{""},
+	}
+
+	if dir == Forward {
+		if err := b.sync(op); err != nil {
+			return nil, err
+		}
+	}
+
+	return b, nil
 }
 
 // dispatch starts goroutines of the appropriate handler function for all new
