@@ -2,8 +2,13 @@
 package graw
 
 import (
+	"github.com/turnage/graw/internal/api"
 	"github.com/turnage/graw/internal/engine"
 )
+
+// Engine is the interface bots can use to request things from the Engine, like
+// data from Reddit, that it makes a post, new event types, etc.
+type Engine api.Engine
 
 // Run runs a bot against live reddit.
 // agent should be the filename of a configured user agent protobuffer.
