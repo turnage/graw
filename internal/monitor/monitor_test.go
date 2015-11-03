@@ -122,7 +122,7 @@ func TestMerge(t *testing.T) {
 				Name:       stringPointer("five"),
 			},
 		},
-		Forward,
+		Backward,
 	)
 
 	if len(things) != 6 {
@@ -184,7 +184,7 @@ func TestMerge(t *testing.T) {
 				Name:       stringPointer("four"),
 			},
 		},
-		Backward,
+		Forward,
 	)
 
 	if len(things) != 6 {

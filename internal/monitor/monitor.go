@@ -272,7 +272,7 @@ func merge(
 
 	for i := 0; i < len(things); i++ {
 		for j := len(things) - 1; j > i; j-- {
-			if things[j].GetCreatedUtc() < things[j-1].GetCreatedUtc() {
+			if things[j].GetCreatedUtc() > things[j-1].GetCreatedUtc() {
 				if dir == Forward {
 					swap := things[j-1]
 					things[j-1] = things[j]
