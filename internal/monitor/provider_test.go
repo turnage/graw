@@ -36,8 +36,8 @@ func TestPostMonitor(t *testing.T) {
 	if pm.handlePost == nil {
 		t.Errorf("wanted post handler set")
 	}
-	if pm.path != "/r/self+aww" {
-		t.Errorf("got %s; wanted /r/self+aww", pm.path)
+	if pm.path != "/r/self+aww/new" {
+		t.Errorf("got %s; wanted /r/self+aww/new", pm.path)
 	}
 }
 

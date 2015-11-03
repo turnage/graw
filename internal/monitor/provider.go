@@ -15,7 +15,7 @@ func PostMonitor(
 ) (Monitor, error) {
 	return baseFromPath(
 		op,
-		"/r/"+strings.Join(subreddits, "+"),
+		"/r/"+strings.Join(subreddits, "+")+"/new",
 		handlePost,
 		nil,
 		nil,
