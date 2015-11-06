@@ -18,26 +18,39 @@ const (
 	// MaxLinks is the amount of posts reddit will return for a scrape
 	// query.
 	MaxLinks = 100
-	// baseURL is the url all requests extend from.
-	baseURL = "https://oauth.reddit.com"
-	// oauth2Host is the hostname of Reddit's OAuth2 server.
-	oauth2Host = "oauth.reddit.com"
 	// deletedAuthor is the author value if a post or comment was deleted.
 	deletedAuthor = "[deleted]"
 )
 
 var (
+	// formEncoding is the encoding format of parameters in the body of
+	// requests sent to Reddit.
 	formEncoding = map[string][]string{
 		"content-type": {"application/x-www-form-urlencoded"},
 	}
+	// domain is the domain Reddit lives on.
+	domain = "reddit.com"
+	// oauth2Host is the hostname of Reddit's OAuth2 server.
+	oauth2Host = "oauth." + domain
+	// baseURL is the url all requests extend from.
+	baseURL = "https://" + oauth2Host
 )
+
+// SetTestDomain is a test hook for end to end tests to specify an alternate,
+// test instance of Reddit to run against.
+func SetTestDomain(domain string) {
+	oauth2Host = "oauth." + domain
+	baseURL = "https://" + domain
+	client.TokenURL = "https://" + "www." + domain + "/api/v1/access_token"
+	client.TestMode = true
+}
 
 // Operator makes api calls to Reddit.
 type Operator interface {
 	// Scrape returns the contents of a listing endpoint.
 	Scrape(path, after, before string, limit uint) ([]*redditproto.Link, []*redditproto.Comment, []*redditproto.Message, error)
-	// IsThereThing fetches a particular thing from reddit. Thing returns
-	// whether there is such a thing.
+	// IsThereThing fetches a particular thing from reddit. IsThereThing
+	// returns whether there is such a thing.
 	IsThereThing(id string) (bool, error)
 	// Thread fetches a post and its comment tree.
 	Thread(permalink string) (*redditproto.Link, error)
