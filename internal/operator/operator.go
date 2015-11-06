@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/turnage/graw/internal/operator/internal/client"
 	"github.com/turnage/redditproto"
@@ -118,6 +119,15 @@ func (o *operator) Scrape(
 
 // IsThereThing returns whether a thing by the given id exists.
 func (o *operator) IsThereThing(id string) (bool, error) {
+	path := "/api/info.json"
+
+	// api/info doesn't provide message types; these need to be fetched from
+	// a different url.
+	if strings.HasPrefix(id, "t4_") {
+		id := strings.TrimPrefix(id, "t4_")
+		path = fmt.Sprintf("/message/messages/%s", id)
+	}
+
 	bytes, err := o.exec(
 		http.Request{
 			Method:     "GET",
@@ -128,7 +138,7 @@ func (o *operator) IsThereThing(id string) (bool, error) {
 			URL: &url.URL{
 				Scheme: "https",
 				Host:   oauth2Host,
-				Path:   "/api/info.json",
+				Path:   path,
 				RawQuery: url.Values{
 					"id": []string{id},
 				}.Encode(),

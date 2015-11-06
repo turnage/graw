@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/turnage/graw/internal/operator"
+	"github.com/turnage/redditproto"
 )
 
 // PostMonitor returns a monitor for new posts in a subreddit(s).
@@ -37,22 +38,6 @@ func UserMonitor(
 		handlePost,
 		handleComment,
 		nil,
-		dir,
-	)
-}
-
-// MessageMonitor returns a monitor for new private messages to the bot.
-func MessageMonitor(
-	op operator.Operator,
-	handleMessage messageHandler,
-	dir Direction,
-) (Monitor, error) {
-	return baseFromPath(
-		op,
-		"/message/messages",
-		nil,
-		nil,
-		handleMessage,
 		dir,
 	)
 }
@@ -104,4 +89,33 @@ func MentionMonitor(
 		nil,
 		dir,
 	)
+}
+
+type messageMonitor struct {
+	base
+	handleMessage messageHandler
+}
+
+// MessageMonitor returns a monitor for new private messages to the bot.
+func MessageMonitor(
+	op operator.Operator,
+	handleMessage messageHandler,
+	dir Direction,
+) (Monitor, error) {
+	return baseFromPath(
+		op,
+		"/message/inbox",
+		nil,
+		nil,
+		handleMessage,
+		dir,
+	)
+}
+
+// dispatchFilter only dispatches messages that were originally messages to the
+// message handler.
+func (m *messageMonitor) dispatchFilter(message *redditproto.Message) {
+	if !message.GetWasComment() {
+		m.handleMessage(message)
+	}
 }

@@ -75,12 +75,12 @@ func TestMessageMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m := mon.(*base)
+	m := mon.(*messageMonitor)
 	if m.handleMessage == nil {
 		t.Errorf("wanted message handler set")
 	}
-	if m.path != "/message/messages" {
-		t.Errorf("got %s; wanted /message/messages", m.path)
+	if m.path != "/message/inbox" {
+		t.Errorf("got %s; wanted /message/inbox", m.path)
 	}
 }
 
