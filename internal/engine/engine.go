@@ -19,14 +19,7 @@ const (
 	blockTime = time.Minute / 30
 )
 
-// Engine is the interface for the engine to the graw package.
-type Engine interface {
-	// Run runs the main engine loop, and returns an error if it encounters
-	// one it can't handle. This runs indefinitely.
-	Run() error
-}
-
-type base struct {
+type Engine struct {
 	// op is the operator the engine uses to make calls to Reddit.
 	op operator.Operator
 	// bot is the bot this engine runs.
@@ -49,89 +42,87 @@ type base struct {
 }
 
 // Reply submits a reply.
-func (b *base) Reply(parentName, text string) error {
-	return b.op.Reply(parentName, text)
+func (e *Engine) Reply(parentName, text string) error {
+	return e.op.Reply(parentName, text)
 }
 
 // SendMessage sends a private message.
-func (b *base) SendMessage(user, subject, text string) error {
-	return b.op.Compose(user, subject, text)
+func (e *Engine) SendMessage(user, subject, text string) error {
+	return e.op.Compose(user, subject, text)
 }
 
 // SelfPost makes a self (text) post to a subreddit.
-func (b *base) SelfPost(subreddit, title, text string) error {
-	return b.op.Submit(subreddit, "self", title, text)
+func (e *Engine) SelfPost(subreddit, title, text string) error {
+	return e.op.Submit(subreddit, "self", title, text)
 }
 
 // LinkPost makes a link post to a subreddit.
-func (b *base) LinkPost(subreddit, title, url string) error {
-	return b.op.Submit(subreddit, "link", title, url)
+func (e *Engine) LinkPost(subreddit, title, url string) error {
+	return e.op.Submit(subreddit, "link", title, url)
 }
 
-// WatchUser starts monitoring a useb.
-func (b *base) WatchUser(user string) error {
-	han, ok := b.bot.(botfaces.UserHandler)
+// WatchUser starts monitoring a user.
+func (e *Engine) WatchUser(user string) error {
+	han, ok := e.bot.(botfaces.UserHandler)
 	if !ok {
 		return fmt.Errorf("bot cannot handle user posts or comments")
 	}
 
 	mon, err := monitor.UserMonitor(
-		b.op,
+		e.op,
 		han.UserPost,
 		han.UserComment,
 		user,
-		b.dir,
+		e.dir,
 	)
 	if err != nil {
 		return err
 	}
 
-	b.Lock()
-	defer b.Unlock()
-	b.userMonitors[user] = b.monitors.PushBack(mon)
+	e.Lock()
+	defer e.Unlock()
+	e.userMonitors[user] = e.monitors.PushBack(mon)
 	return nil
 }
 
-// Unwatch users stops monitoring a useb.
-func (b *base) UnwatchUser(user string) error {
-	b.Lock()
-	defer b.Unlock()
+// Unwatch users stops monitoring a user.
+func (e *Engine) UnwatchUser(user string) error {
+	e.Lock()
+	defer e.Unlock()
 
-	if elem, ok := b.userMonitors[user]; ok {
-		b.monitors.Remove(elem)
-		delete(b.userMonitors, user)
+	if elem, ok := e.userMonitors[user]; ok {
+		e.monitors.Remove(elem)
+		delete(e.userMonitors, user)
 	}
 
 	return nil
 }
 
 // DigestThread returns a Link with a parsed comment tree.
-func (b *base) DigestThread(permalink string) (*redditproto.Link, error) {
-	return b.op.Thread(permalink)
+func (e *Engine) DigestThread(permalink string) (*redditproto.Link, error) {
+	return e.op.Thread(permalink)
 }
 
 // Stop stops the engine.
-func (b *base) Stop() {
-	b.stopSig <- true
+func (e *Engine) Stop() {
+	e.stopSig <- true
 }
 
-func (b *base) Run() error {
-	if actor, ok := b.bot.(botfaces.Actor); ok {
-		actor.TakeEngine(b)
-	}
-
-	if loader, ok := b.bot.(botfaces.Loader); ok {
-		loader.SetUp()
+func (e *Engine) Run() error {
+	if loader, ok := e.bot.(botfaces.Loader); ok {
+		if err := loader.SetUp(); err != nil {
+			return err
+		}
 		defer loader.TearDown()
 	}
 
-	for !b.stop {
+	for !e.stop {
 		select {
-		case <-b.stopSig:
-			b.stop = true
+		case <-e.stopSig:
+			e.stop = true
 		case <-time.After(blockTime):
-			if err := b.updateMonitors(); err != nil {
-				if failer, ok := b.bot.(botfaces.Failer); !(ok && !failer.Fail(err)) {
+			if err := e.updateMonitors(); err != nil {
+				if failer, ok := e.bot.(botfaces.Failer); !(ok && !failer.Fail(err)) {
 					return err
 				}
 			}
@@ -141,16 +132,16 @@ func (b *base) Run() error {
 	return nil
 }
 
-func (b *base) updateMonitors() error {
-	b.Lock()
+func (e *Engine) updateMonitors() error {
+	e.Lock()
 	monitors := []monitor.Monitor{}
-	for i := b.monitors.Front(); i != nil; i = i.Next() {
+	for i := e.monitors.Front(); i != nil; i = i.Next() {
 		monitors = append(monitors, i.Value.(monitor.Monitor))
 	}
-	b.Unlock()
+	e.Unlock()
 
 	for _, mon := range monitors {
-		if err := mon.Update(b.op); err != nil {
+		if err := mon.Update(e.op); err != nil {
 			return err
 		}
 	}

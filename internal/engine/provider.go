@@ -12,7 +12,7 @@ func RealTime(
 	bot interface{},
 	op operator.Operator,
 	subreddits []string,
-) (Engine, error) {
+) (*Engine, error) {
 	return baseFrom(bot, op, subreddits, monitor.Forward)
 }
 
@@ -20,7 +20,7 @@ func BackTime(
 	bot interface{},
 	op operator.Operator,
 	subreddits []string,
-) (Engine, error) {
+) (*Engine, error) {
 	return baseFrom(bot, op, subreddits, monitor.Backward)
 }
 
@@ -29,8 +29,8 @@ func baseFrom(
 	op operator.Operator,
 	subreddits []string,
 	dir monitor.Direction,
-) (Engine, error) {
-	b := &base{
+) (*Engine, error) {
+	e := &Engine{
 		op:           op,
 		bot:          bot,
 		dir:          dir,
@@ -43,7 +43,7 @@ func baseFrom(
 		if err != nil {
 			return nil, err
 		}
-		b.monitors.PushFront(mon)
+		e.monitors.PushFront(mon)
 	}
 
 	if han, ok := bot.(botfaces.MessageHandler); ok {
@@ -51,7 +51,7 @@ func baseFrom(
 		if err != nil {
 			return nil, err
 		}
-		b.monitors.PushFront(mon)
+		e.monitors.PushFront(mon)
 	}
 
 	if han, ok := bot.(botfaces.PostReplyHandler); ok {
@@ -59,7 +59,7 @@ func baseFrom(
 		if err != nil {
 			return nil, err
 		}
-		b.monitors.PushFront(mon)
+		e.monitors.PushFront(mon)
 	}
 
 	if han, ok := bot.(botfaces.CommentReplyHandler); ok {
@@ -71,7 +71,7 @@ func baseFrom(
 		if err != nil {
 			return nil, err
 		}
-		b.monitors.PushFront(mon)
+		e.monitors.PushFront(mon)
 	}
 
 	if han, ok := bot.(botfaces.MentionHandler); ok {
@@ -79,8 +79,8 @@ func baseFrom(
 		if err != nil {
 			return nil, err
 		}
-		b.monitors.PushFront(mon)
+		e.monitors.PushFront(mon)
 	}
 
-	return b, nil
+	return e, nil
 }
