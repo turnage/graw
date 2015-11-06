@@ -102,7 +102,11 @@ func MessageMonitor(
 	handleMessage messageHandler,
 	dir Direction,
 ) (Monitor, error) {
-	return baseFromPath(
+	mon := &messageMonitor{
+		handleMessage: handleMessage,
+	}
+
+	b, err := baseFromPath(
 		op,
 		"/message/inbox",
 		nil,
@@ -110,6 +114,12 @@ func MessageMonitor(
 		handleMessage,
 		dir,
 	)
+
+	if err == nil {
+		mon.base = *(b.(*base))
+	}
+
+	return mon, err
 }
 
 // dispatchFilter only dispatches messages that were originally messages to the
