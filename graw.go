@@ -2,14 +2,18 @@
 package graw
 
 import (
-	"github.com/turnage/graw/internal/api"
+	"sync"
+
 	"github.com/turnage/graw/internal/engine"
 	"github.com/turnage/graw/internal/operator"
 )
 
-// Engine is the interface bots can use to request things from the Engine, like
-// data from Reddit, that it makes a post, new event types, etc.
-type Engine api.Engine
+var (
+	// mu protects engines.
+	mu sync.Mutex
+	// engines is a map of <k,v>:<bot,engine>.
+	engines = map[interface{}]*engine.Engine{}
+)
 
 // Run runs a bot against live Reddit.
 // agent should be the filename of a configured user agent protobuffer.
@@ -28,7 +32,7 @@ func Run(agent string, bot interface{}, subreddits ...string) error {
 		return err
 	}
 
-	return eng.Run()
+	return runEngine(bot, eng)
 }
 
 // Scrape runs a bot against Reddit that has already happened, and moves
@@ -49,5 +53,34 @@ func Scrape(agent string, bot interface{}, subreddits ...string) error {
 		return err
 	}
 
-	return eng.Run()
+	return runEngine(bot, eng)
+}
+
+// GetEngine returns the engine running the given bot. The bot is used as a key
+// to look up the corresponding Engine. If there is no engine for the bot, nil
+// is returned.
+func GetEngine(bot interface{}) Engine {
+	mu.Lock()
+	defer mu.Unlock()
+	eng, ok := engines[bot]
+	if ok {
+		return eng
+	}
+
+	return nil
+}
+
+// runEngine runs an engine and manages its entry in the engine map.
+func runEngine(bot interface{}, eng *engine.Engine) error {
+	mu.Lock()
+	engines[bot] = eng
+	mu.Unlock()
+
+	err := eng.Run()
+
+	mu.Lock()
+	delete(engines, bot)
+	mu.Unlock()
+
+	return err
 }
