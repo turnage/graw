@@ -1,4 +1,4 @@
-package api
+package graw
 
 import (
 	"github.com/turnage/redditproto"
