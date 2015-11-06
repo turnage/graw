@@ -1,7 +1,9 @@
 graw
 --------------------------------------------------------------------------------
 
-Status: Pilot Program
+Version: 0.0.0
+
+Before depending on graw, please consult the [API Promise](promise.md).
 
 ![Build Status](https://travis-ci.org/turnage/graw.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/turnage/graw/badge.svg?branch=master&service=github)](https://coveralls.io/github/turnage/graw?branch=master)
@@ -29,3 +31,7 @@ graw provides all data from Reddit in the form of
 See graw's [proto definitions](https://github.com/turnage/redditproto/blob/master/reddit.proto).
 
 See the [wiki](https://github.com/turnage/graw/wiki) for a quick start.
+
+Here is an [example
+grawbot](https://gist.github.com/turnage/468f981f3b1e85bb19f2) that
+automatically replies to private messages.
