@@ -15,6 +15,11 @@ type Loader interface {
 	// load resources here. If an error is returned, the engine will not
 	// start, and the error will propagate up.
 	SetUp() error
+}
+
+// Tearer defines methods for bots that need to tear things down after their run
+// is finished.
+type Tearer interface {
 	// TearDown is the last method ever called on the bot, and all other
 	// method calls will finish before this method is called. Bots should
 	// unload resources here.

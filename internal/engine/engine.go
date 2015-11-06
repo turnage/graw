@@ -113,7 +113,10 @@ func (e *Engine) Run() error {
 		if err := loader.SetUp(); err != nil {
 			return err
 		}
-		defer loader.TearDown()
+	}
+
+	if tearer, ok := e.bot.(botfaces.Tearer); ok {
+		defer tearer.TearDown()
 	}
 
 	for !e.stop {
