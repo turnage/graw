@@ -170,11 +170,11 @@ func (b *base) sync(op operator.Operator) error {
 	}
 
 	things := merge(posts, messages, comments, b.dir)
-	if len(things) != 1 {
-		return fmt.Errorf("invalid path")
+	if len(things) == 1 {
+		b.tip = []string{things[0].GetName()}
+	} else {
+		b.tip = []string{""}
 	}
-
-	b.tip = []string{things[0].GetName()}
 
 	return nil
 }
