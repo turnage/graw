@@ -289,12 +289,12 @@ func TestUpdateTip(t *testing.T) {
 		t.Fatalf("got size %d tip log; wanted %d", len(b.tip), maxTipSize)
 	}
 
-	if b.tip[0] != "one" {
-		t.Errorf("got %s; wanted one", b.tip[0])
+	if b.tip[0] != "two" {
+		t.Errorf("got %s; wanted two", b.tip[0])
 	}
 
-	if b.tip[1] != "two" {
-		t.Errorf("got %s; wanted two", b.tip[1])
+	if b.tip[1] != "one" {
+		t.Errorf("got %s; wanted one", b.tip[1])
 	}
 
 	err = b.updateTip(
