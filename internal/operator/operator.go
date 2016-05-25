@@ -140,7 +140,8 @@ func (o *operator) IsThereThing(id string) (bool, error) {
 				Host:   oauth2Host,
 				Path:   path,
 				RawQuery: url.Values{
-					"id": []string{id},
+					"id":       []string{id},
+					"raw_json": []string{"1"},
 				}.Encode(),
 			},
 			Host: oauth2Host,
@@ -182,9 +183,10 @@ func (o *operator) Thread(permalink string) (*redditproto.Link, error) {
 			ProtoMinor: 1,
 			Close:      true,
 			URL: &url.URL{
-				Scheme: "https",
-				Host:   oauth2Host,
-				Path:   fmt.Sprintf("%s.json", permalink),
+				Scheme:   "https",
+				Host:     oauth2Host,
+				Path:     fmt.Sprintf("%s.json", permalink),
+				RawQuery: "raw_json=1",
 			},
 			Host: oauth2Host,
 		},
@@ -206,9 +208,10 @@ func (o *operator) Inbox() ([]*redditproto.Message, error) {
 			ProtoMinor: 1,
 			Close:      true,
 			URL: &url.URL{
-				Scheme: "https",
-				Host:   oauth2Host,
-				Path:   "/message/unread",
+				Scheme:   "https",
+				Host:     oauth2Host,
+				Path:     "/message/unread",
+				RawQuery: "raw_json=1",
 			},
 			Host: oauth2Host,
 		},
@@ -349,9 +352,10 @@ func (o *operator) exec(r http.Request) ([]byte, error) {
 // endpoint.
 func listingParams(limit uint, after, before string) string {
 	return url.Values{
-		"limit":  []string{strconv.Itoa(int(limit))},
-		"before": []string{before},
-		"after":  []string{after},
+		"limit":    []string{strconv.Itoa(int(limit))},
+		"before":   []string{before},
+		"after":    []string{after},
+		"raw_json": []string{"1"},
 	}.Encode()
 }
 
