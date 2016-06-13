@@ -16,7 +16,7 @@ import (
 const (
 	// blockTime is the amount of time to block between letting the next
 	// monitor update.
-	blockTime = time.Minute / 30
+	defaultBlockTime = time.Minute / 30
 )
 
 type Engine struct {
@@ -123,7 +123,7 @@ func (e *Engine) Run() error {
 		select {
 		case <-e.stopSig:
 			e.stop = true
-		case <-time.After(blockTime):
+		case <-time.After(e.blockTime()):
 			if err := e.updateMonitors(); err != nil {
 				if failer, ok := e.bot.(botfaces.Failer); !(ok && !failer.Fail(err)) {
 					return err
@@ -150,4 +150,14 @@ func (e *Engine) updateMonitors() error {
 	}
 
 	return nil
+}
+
+// If the bot specifies a blockTime by implementing BlockTimer, return its
+// value. Otherwise, fall back to defaultBlockTime.
+func (e *Engine) blockTime() time.Duration {
+	if blockTimer, ok := e.bot.(botfaces.BlockTimer); ok {
+		return blockTimer.BlockTime()
+	} else {
+		return defaultBlockTime
+	}
 }

@@ -5,6 +5,7 @@ package botfaces
 
 import (
 	"github.com/turnage/redditproto"
+	"time"
 )
 
 // Loader defines methods for bots that use external resources or need to do
@@ -109,4 +110,12 @@ type UserHandler interface {
 	// UserComment is called when the monitored user makes a comment in a
 	// subreddit the bot can view. [Called as goroutine.]
 	UserComment(comment *redditproto.Comment)
+}
+
+// BlockTimer defines methods that allow bots to specify the interval to block
+// between monitor updates.
+type BlockTimer interface {
+	// To comply with the reddit API rules, this should be >= 1*time.Second.
+	// Default: 2*time.Second
+	BlockTime() time.Duration
 }
