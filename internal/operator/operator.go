@@ -65,6 +65,8 @@ type Operator interface {
 	Compose(user, subject, content string) error
 	// Submit posts to Reddit.
 	Submit(subreddit, kind, title, content string) error
+	// GetInfo retrieves info about a link
+	GetInfo(id string) (*redditproto.Link, error)
 }
 
 // operator implements Operator.
@@ -115,6 +117,49 @@ func (o *operator) Scrape(
 	}
 
 	return redditproto.ParseListing(bytes)
+}
+
+// GetInfo retrieves info about a link
+func (o *operator) GetInfo(id string) (*redditproto.Link, error) {
+	path := "/api/info.json"
+
+	// api/info doesn't provide message types; these need to be fetched from
+	// a different url.
+
+	bytes, err := o.exec(
+		http.Request{
+			Method:     "GET",
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
+			Close:      true,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   oauth2Host,
+				Path:   path,
+				RawQuery: url.Values{
+					"id":       []string{id},
+					"raw_json": []string{"1"},
+				}.Encode(),
+			},
+			Host: oauth2Host,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	links, _, _, err := redditproto.ParseListing(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(links) >= 1 {
+		return links[0], nil
+	}
+
+	return nil, nil
 }
 
 // IsThereThing returns whether a thing by the given id exists.

@@ -42,4 +42,7 @@ type Engine interface {
 	// Stop stops the engine. If it implemented it, the bot's TearDown
 	// method will be called.
 	Stop()
+
+	// Info gets more up to date info about a link.
+	GetInfo(id string) (*redditproto.Link, error)
 }
