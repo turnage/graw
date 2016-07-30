@@ -15,8 +15,18 @@ var (
 	TestMode = false
 )
 
+type oauthTransport struct {
+	http.Transport
+	agent string
+}
+
+func (o *oauthTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	r.Header.Add("User-Agent", o.agent)
+	return o.Transport.RoundTrip(r)
+}
+
 // build returns an http client that has built in oauth2 handling.
-func build(id, secret, user, pass string) (*http.Client, *oauth2.Token, error) {
+func build(agent, id, secret, user, pass string) (*http.Client, *oauth2.Token, error) {
 	cfg := &oauth2.Config{
 		ClientID:     id,
 		ClientSecret: secret,
@@ -34,13 +44,14 @@ func build(id, secret, user, pass string) (*http.Client, *oauth2.Token, error) {
 		return buildTestClient(cfg, user, pass)
 	}
 
-	return buildProductionClient(cfg, user, pass)
+	return buildProductionClient(cfg, agent, user, pass)
 }
 
 // buildProductionClient returns a client equipped to make requests to
 // a production Reddit instance.
 func buildProductionClient(
 	cfg *oauth2.Config,
+	agent,
 	user,
 	pass string,
 ) (
@@ -48,7 +59,13 @@ func buildProductionClient(
 	*oauth2.Token,
 	error,
 ) {
-	token, err := cfg.PasswordCredentialsToken(oauth2.NoContext, user, pass)
+	cli := http.DefaultClient
+	cli.Transport = &oauthTransport{agent: agent}
+	token, err := cfg.PasswordCredentialsToken(
+		context.WithValue(oauth2.NoContext, oauth2.HTTPClient, cli),
+		user,
+		pass,
+	)
 	return cfg.Client(oauth2.NoContext, token), token, err
 }
 
