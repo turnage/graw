@@ -47,7 +47,7 @@ func (c *client) Do(r *http.Request) (io.ReadCloser, error) {
 	c.rateRequest()
 	if !c.token.Valid() {
 		var err error
-		c.cli, c.token, err = build(c.id, c.secret, c.user, c.pass)
+		c.cli, c.token, err = build(c.agent, c.id, c.secret, c.user, c.pass)
 		if err != nil {
 			return nil, err
 		}
