@@ -36,6 +36,7 @@ func baseFrom(
 		dir:          dir,
 		monitors:     list.New(),
 		userMonitors: make(map[string]*list.Element),
+		stopSig:      make(chan bool),
 	}
 
 	if han, ok := bot.(botfaces.PostHandler); ok && len(subreddits) > 0 {
