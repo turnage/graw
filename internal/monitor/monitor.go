@@ -5,16 +5,7 @@ package monitor
 import (
 	"fmt"
 
-	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
-)
-
-// Direction represents a direction in time (Forward, or Backward).
-type Direction int
-
-const (
-	Forward  = iota
-	Backward = iota
 )
 
 type commentHandler func(*redditproto.Comment)
@@ -22,7 +13,7 @@ type postHandler func(*redditproto.Link)
 type messageHandler func(*redditproto.Message)
 
 const (
-	// The blank threshold is the amount of.s returning 0 new
+	// The blank threshold is the amount of updates returning 0 new
 	// elements in the monitored listing the monitor will tolerate before
 	// suspecting the tip of the listing has been deleted.
 	blankThreshold = 2
@@ -31,11 +22,29 @@ const (
 	maxTipSize = 10
 )
 
+// Scraper defines a function that takes a Reddit listing path, and a an id of
+// an element within the listing, and returns all the elements following that
+// element. If limit is <= 0, as many elements as possible should be returned.
+type Scraper func(
+	path,
+	tip string,
+	limit int,
+) (
+	[]*redditproto.Link,
+	[]*redditproto.Comment,
+	[]*redditproto.Message,
+	error,
+)
+
+// Prober defines a function type that takes the id of a reddit thing and
+// returns whether it exists.
+type Prober func(id string) (bool, error)
+
 // Monitor defines the controls for a Monitor.
 type Monitor interface {
 	// Update will check for new events, and send them to the Monitor's
-	// handler.
-	Update(operator.Operator) error
+	// handlers.
+	Update(scrape Scraper, probe Prober) error
 }
 
 // redditThing is an interface for accessing attributes of Reddit types that
@@ -59,8 +68,6 @@ type base struct {
 	// handleMessage is the function the monitor uses to handle new messages
 	// it finds.
 	handleMessage messageHandler
-	// dir is the direction in time the monitor monitors reddit.
-	dir Direction
 	// blanks is the number of. rounds that have turned up 0 new
 	// elements at the listing endpoint.
 	blanks int
@@ -71,19 +78,18 @@ type base struct {
 	// the "tip", which the monitor uses to requests new posts by using it
 	// as a reference point (i.e.asks Reddit for posts "after" the tip).
 	tip []string
-	// path is the listing endpoint the monitor monitors.This path is
+	// path is the listing endpoint the monitor monitors. This path is
 	// appended to the reddit base url (e.g./user/robert).
 	path string
 }
 
 // baseFromPath provides a monitor base from the listing endpoint.
 func baseFromPath(
-	op operator.Operator,
+	scrape Scraper,
 	path string,
 	handlePost postHandler,
 	handleComment commentHandler,
 	handleMessage messageHandler,
-	dir Direction,
 ) (Monitor, error) {
 	if handlePost == nil && handleComment == nil && handleMessage == nil {
 		return nil, fmt.Errorf("no handlers provided for events")
@@ -93,15 +99,12 @@ func baseFromPath(
 		handlePost:    handlePost,
 		handleComment: handleComment,
 		handleMessage: handleMessage,
-		dir:           dir,
 		path:          path,
 		tip:           []string{""},
 	}
 
-	if dir == Forward {
-		if err := b.sync(op); err != nil {
-			return nil, err
-		}
+	if err := b.sync(scrape); err != nil {
+		return nil, err
 	}
 
 	return b, nil
@@ -137,39 +140,25 @@ func (b *base) dispatch(
 
 // Update checks for new content at the monitored listing endpoint and forwards
 // new content to the bot for processing.
-func (b *base) Update(op operator.Operator) error {
-	after := ""
-	before := ""
-
-	if b.dir == Forward {
-		before = b.tip[0]
-	} else if b.dir == Backward {
-		after = b.tip[0]
-	}
-
-	posts, comments, messages, err := op.Scrape(
-		b.path,
-		after,
-		before,
-		operator.MaxLinks,
-	)
+func (b *base) Update(scrape Scraper, probe Prober) error {
+	posts, comments, messages, err := scrape(b.path, b.tip[0], -1)
 	if err != nil {
 		return err
 	}
 
 	b.dispatch(posts, comments, messages)
-	return b.updateTip(posts, comments, messages, op)
+	return b.updateTip(posts, comments, messages, probe)
 }
 
 // sync fetches the current tip of a listing endpoint, so that grawbots crawling
 // forward in time don't treat it as a new post, or reprocess it when restarted.
-func (b *base) sync(op operator.Operator) error {
-	posts, messages, comments, err := op.Scrape(b.path, "", "", 1)
+func (b *base) sync(scrape Scraper) error {
+	posts, messages, comments, err := scrape(b.path, "", 1)
 	if err != nil {
 		return err
 	}
 
-	things := merge(posts, messages, comments, b.dir)
+	things := merge(posts, messages, comments)
 	if len(things) == 1 {
 		b.tip = []string{things[0].GetName()}
 	} else {
@@ -186,11 +175,11 @@ func (b *base) updateTip(
 	posts []*redditproto.Link,
 	comments []*redditproto.Comment,
 	messages []*redditproto.Message,
-	op operator.Operator,
+	probe Prober,
 ) error {
-	things := merge(posts, comments, messages, b.dir)
+	things := merge(posts, comments, messages)
 	if len(things) == 0 {
-		return b.healthCheck(op)
+		return b.healthCheck(probe)
 	}
 
 	names := make([]string, len(things))
@@ -207,11 +196,11 @@ func (b *base) updateTip(
 
 // healthCheck checks the health of the tip when nothing is returned from a
 // scrape enough times.
-func (b *base) healthCheck(op operator.Operator) error {
+func (b *base) healthCheck(probe Prober) error {
 	b.blanks++
 	if b.blanks > b.blankThreshold {
 		b.blanks = 0
-		broken, err := b.fixTip(op)
+		broken, err := b.fixTip(probe)
 		if err != nil {
 			return err
 		}
@@ -225,8 +214,8 @@ func (b *base) healthCheck(op operator.Operator) error {
 // fixTip checks that the fullname at the front of the tip is still valid (e.g.
 // not deleted).If it isn't, it shaves the tip.fixTip returns whether the tip
 // was broken.
-func (b *base) fixTip(op operator.Operator) (bool, error) {
-	exists, err := op.IsThereThing(b.tip[0])
+func (b *base) fixTip(probe Prober) (bool, error) {
+	exists, err := probe(b.tip[0])
 	if err != nil {
 		return false, err
 	}
@@ -249,14 +238,13 @@ func (b *base) shaveTip() {
 }
 
 // merge merges elements of multiple listings which implement redditThing into
-// one slice, ordered in creation time by dir.merge assumes all of the listings
-// provided are ordered by timestamp according to dir.In general the total
-// listing size will very rarely exceed 15 or so.
+// one slice, ordered in creation time. merge assumes all of the listings
+// provided are ordered independently by creation time. The total listing size
+// will very rarely exceed 15 or so.
 func merge(
 	posts []*redditproto.Link,
 	comments []*redditproto.Comment,
 	messages []*redditproto.Message,
-	dir Direction,
 ) []redditThing {
 	// Why is handling interface slices so painful?
 	things := []redditThing{}
@@ -273,12 +261,6 @@ func merge(
 	for i := 0; i < len(things); i++ {
 		for j := len(things) - 1; j > i; j-- {
 			if things[j].GetCreatedUtc() > things[j-1].GetCreatedUtc() {
-				if dir == Forward {
-					swap := things[j-1]
-					things[j-1] = things[j]
-					things[j] = swap
-				}
-			} else if dir == Backward {
 				swap := things[j-1]
 				things[j-1] = things[j]
 				things[j] = swap
