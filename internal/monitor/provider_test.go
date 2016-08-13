@@ -3,18 +3,17 @@ package monitor
 import (
 	"testing"
 
-	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
 
 var (
-	mockForSync = &operator.MockOperator{
-		ScrapeLinksReturn: []*redditproto.Link{
+	mockForSync = MockScraper(
+		[]*redditproto.Link{
 			&redditproto.Link{
 				Name: stringPointer("name"),
 			},
-		},
-	}
+		}, nil, nil, nil,
+	)
 )
 
 func post(post *redditproto.Link)          {}
@@ -26,7 +25,6 @@ func TestPostMonitor(t *testing.T) {
 		mockForSync,
 		post,
 		[]string{"self", "aww"},
-		Forward,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -47,7 +45,6 @@ func TestUserMonitor(t *testing.T) {
 		post,
 		comment,
 		"rob",
-		Forward,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -69,7 +66,6 @@ func TestMessageMonitor(t *testing.T) {
 	mon, err := MessageMonitor(
 		mockForSync,
 		message,
-		Forward,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +84,6 @@ func TestCommentReplyMonitor(t *testing.T) {
 	mon, err := CommentReplyMonitor(
 		mockForSync,
 		comment,
-		Forward,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -107,7 +102,6 @@ func TestPostReplyMonitor(t *testing.T) {
 	mon, err := PostReplyMonitor(
 		mockForSync,
 		comment,
-		Forward,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -126,7 +120,6 @@ func TestMentionMonitor(t *testing.T) {
 	mon, err := MentionMonitor(
 		mockForSync,
 		comment,
-		Forward,
 	)
 	if err != nil {
 		t.Fatal(err)
