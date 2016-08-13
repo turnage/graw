@@ -15,12 +15,12 @@ const (
 	rateLimit = 2 * time.Second
 )
 
-type client struct {
-	// agent is the client's User-Agent in http requests.
+type Client struct {
+	// agent is the Client's User-Agent in http requests.
 	agent string
-	// id is the bot's OAuth2 client id.
+	// id is the bot's OAuth2 Client id.
 	id string
-	// secret is the bot's OAuth2 client secret.
+	// secret is the bot's OAuth2 Client secret.
 	secret string
 	// user is the bot's username on reddit.
 	user string
@@ -29,7 +29,7 @@ type client struct {
 
 	// authMu protects authentication fields.
 	authMu sync.Mutex
-	// cli is the authenticated client to execute requests with.
+	// cli is the authenticated Client to execute requests with.
 	cli *http.Client
 	// token is the OAuth2 token cli uses to authenticate.
 	token *oauth2.Token
@@ -40,10 +40,27 @@ type client struct {
 	nextReq time.Time
 }
 
+// New returns a new Client from a user agent file.
+func New(filename string) (*Client, error) {
+	agent, err := load(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		agent:   agent.GetUserAgent(),
+		id:      agent.GetClientId(),
+		secret:  agent.GetClientSecret(),
+		user:    agent.GetUsername(),
+		pass:    agent.GetPassword(),
+		nextReq: time.Now(),
+	}, nil
+}
+
 // Do wraps the execution of http requests. It updates authentications and rate
 // limits requests to Reddit to comply with the API rules. It returns the
 // response body.
-func (c *client) Do(r *http.Request) (io.ReadCloser, error) {
+func (c *Client) Do(r *http.Request) (io.ReadCloser, error) {
 	c.rateRequest()
 	if !c.token.Valid() {
 		var err error
@@ -56,7 +73,7 @@ func (c *client) Do(r *http.Request) (io.ReadCloser, error) {
 }
 
 // exec executes an http request and returns the response body.
-func (c *client) exec(r *http.Request) (io.ReadCloser, error) {
+func (c *Client) exec(r *http.Request) (io.ReadCloser, error) {
 	resp, err := c.doRaw(r)
 	if err != nil {
 		return nil, err
@@ -76,9 +93,9 @@ func (c *client) exec(r *http.Request) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// doRaw executes an http Request using an authenticated client, and the configured
+// doRaw executes an http Request using an authenticated Client, and the configured
 // user agent.
-func (c *client) doRaw(r *http.Request) (*http.Response, error) {
+func (c *Client) doRaw(r *http.Request) (*http.Response, error) {
 	if r.Header == nil {
 		r.Header = make(http.Header)
 	}
@@ -87,7 +104,7 @@ func (c *client) doRaw(r *http.Request) (*http.Response, error) {
 }
 
 // rateRequest blocks until the rate limits have been abided by.
-func (c *client) rateRequest() {
+func (c *Client) rateRequest() {
 	c.rateMu.Lock()
 	defer c.rateMu.Unlock()
 
