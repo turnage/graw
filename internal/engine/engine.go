@@ -41,6 +41,11 @@ type Engine struct {
 	userMonitors map[string]*list.Element
 }
 
+// Info gets more up to date info about a link.
+func (e *Engine) GetInfo(id string) (*redditproto.Link, error) {
+	return e.op.GetInfo(id)
+}
+
 // Reply submits a reply.
 func (e *Engine) Reply(parentName, text string) error {
 	return e.op.Reply(parentName, text)
