@@ -1,14 +1,13 @@
-package operator
+package api
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
-
-	"github.com/turnage/graw/internal/operator/internal/client"
 )
 
 var (
-	linkListingJSON = `{
+	linkListingJSON = []byte(`{
 		"kind": "Listing",
 		"data": {
 			"children": [
@@ -21,8 +20,8 @@ var (
 				}
 			]
 		}
-	}`
-	comboListingJSON = `{
+	}`)
+	comboListingJSON = []byte(`{
 		"kind": "Listing",
 		"data": {
 			"children": [
@@ -47,8 +46,8 @@ var (
 				}
 			]
 		}
-	}`
-	threadJSON = `[
+	}`)
+	threadJSON = []byte(`[
 		{
 			"kind": "Listing",
 			"data": {
@@ -81,8 +80,8 @@ var (
 				]
 			}
 		}
-	]`
-	inboxJSON = `{
+	]`)
+	inboxJSON = []byte(`{
 		"kind": "Listing",
 		"data": {
 			"children" : [
@@ -94,116 +93,93 @@ var (
 				}
 			]
 		}
-	}`
+	}`)
+	errRequester = func(r *http.Request) ([]byte, error) {
+		return nil, fmt.Errorf("error")
+	}
 )
 
 func TestScrape(t *testing.T) {
-	op := &operator{
-		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if _, _, _, err := op.Scrape("path", "", "", 1); err == nil {
+	if _, _, _, err := Scrape(errRequester, "path", "", 1); err == nil {
 		t.Errorf("wanted error for request error")
 	}
 
-	op = &operator{
-		cli: client.NewMock(comboListingJSON, nil),
-	}
-
-	posts, comments, messages, err := op.Scrape("path", "", "", 1)
-	if err != nil {
+	if posts, comments, messages, err := Scrape(
+		func(r *http.Request) ([]byte, error) {
+			return comboListingJSON, nil
+		},
+		"path", "", 1,
+	); err != nil {
 		t.Fatal(err)
-	}
-
-	if len(posts) != 1 {
+	} else if len(posts) != 1 {
 		t.Errorf("got %d posts; wanted 1", len(posts))
-	}
-
-	if len(comments) != 1 {
+	} else if len(comments) != 1 {
 		t.Errorf("got %d comments; wanted 1", len(comments))
-	}
-
-	if len(messages) != 1 {
+	} else if len(messages) != 1 {
 		t.Errorf("got %d messages; wanted 1", len(messages))
 	}
 }
 
 func TestIsThereThing(t *testing.T) {
-	op := &operator{
-		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if _, err := op.IsThereThing("1"); err == nil {
+	if _, err := IsThereThing(errRequester, "1"); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
-	op = &operator{
-		cli: client.NewMock(linkListingJSON, nil),
-	}
-
-	exists, err := op.IsThereThing("1")
-	if err != nil {
+	if exists, err := IsThereThing(
+		func(r *http.Request) ([]byte, error) {
+			return linkListingJSON, nil
+		},
+		"1",
+	); err != nil {
 		t.Fatalf("error: %v", err)
-	}
-
-	if exists == false {
+	} else if exists == false {
 		t.Errorf("got false; wanted true")
 	}
 
-	// Bad responses should bubble an error up.
-	op = &operator{
-		cli: client.NewMock(
-			`{
+	// Malformed JSON responses should bubble an error up.
+	if _, err := IsThereThing(
+		func(r *http.Request) ([]byte, error) {
+			return []byte(`{
 				"data": {
 					"children": [
 						{"data": {"name": "charlie"}},
 					]
 				}
-			}`,
-			nil,
-		),
-	}
-	_, err = op.IsThereThing("1")
-	if err == nil {
+			}`), nil
+		},
+		"1",
+	); err == nil {
 		t.Errorf("wanted an error for a bad response")
 	}
 
 	// Missing Things should return nil.
-	op = &operator{
-		cli: client.NewMock(
-			`{
+	if exists, err := IsThereThing(
+		func(r *http.Request) ([]byte, error) {
+			return []byte(`{
 				"kind": "Listing",
 				"data": {
 					"children": []
 				}
-			}`,
-			nil,
-		),
-	}
-	exists, err = op.IsThereThing("1")
-	if err != nil {
+			}`), nil
+		},
+		"1",
+	); err != nil {
 		t.Fatalf("error: %v", err)
-	}
-
-	if exists != false {
+	} else if exists != false {
 		t.Errorf("got true; wanted false")
 	}
 }
 
 func TestThread(t *testing.T) {
-	op := &operator{
-		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if _, err := op.Thread("/thread"); err == nil {
+	if _, err := Thread(errRequester, "/thread"); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
-	op = &operator{
-		cli: client.NewMock(threadJSON, nil),
-	}
-
-	thread, err := op.Thread("/thread")
+	thread, err := Thread(
+		func(r *http.Request) ([]byte, error) {
+			return threadJSON, nil
+		},
+		"/thread")
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
@@ -214,100 +190,64 @@ func TestThread(t *testing.T) {
 }
 
 func TestInbox(t *testing.T) {
-	op := &operator{
-		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if _, err := op.Inbox(); err == nil {
+	if _, err := Inbox(errRequester); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
-	op = &operator{
-		cli: client.NewMock(inboxJSON, nil),
-	}
-
-	messages, err := op.Inbox()
-	if err != nil {
+	if messages, err := Inbox(
+		func(r *http.Request) ([]byte, error) {
+			return inboxJSON, nil
+		},
+	); err != nil {
 		t.Fatalf("error: %v", err)
-	}
-
-	if len(messages) != 1 {
+	} else if len(messages) != 1 {
 		t.Fatalf("got %d messages; wanted 1", len(messages))
-	}
-
-	if !messages[0].GetWasComment() {
+	} else if !messages[0].GetWasComment() {
 		t.Fatal("got non-comment inboxable; wanted comment inboxable")
 	}
 }
 
-func TestMarkAsRead(t *testing.T) {
-	op := &operator{
-		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if err := op.MarkAsRead(); err == nil {
-		t.Errorf("wanted error for request failure")
-	}
-
-	op = &operator{
-		cli: client.NewMock("", nil),
-	}
-
-	if err := op.MarkAsRead(); err != nil {
-		t.Fatalf("error: %v", err)
-	}
-}
-
 func TestReply(t *testing.T) {
-	op := &operator{
-		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if err := op.Reply("parent", "content"); err == nil {
+	if err := Reply(errRequester, "parent", "content"); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
-	op = &operator{
-		cli: client.NewMock("", nil),
-	}
-
-	if err := op.Reply("parent", "content"); err != nil {
+	if err := Reply(
+		func(r *http.Request) ([]byte, error) {
+			return []byte(""), nil
+		},
+		"parent", "content",
+	); err != nil {
 		t.Fatalf("error: %v", err)
 	}
 }
 
 func TestCompose(t *testing.T) {
-	op := &operator{
-		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if err := op.Compose("user", "subject", "body"); err == nil {
+	if err := Compose(errRequester, "user", "subject", "body"); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
-	op = &operator{
-		cli: client.NewMock("", nil),
-	}
-
-	if err := op.Compose("user", "subject", "body"); err != nil {
+	if err := Compose(
+		func(r *http.Request) ([]byte, error) {
+			return []byte(""), nil
+		},
+		"user", "subject", "body",
+	); err != nil {
 		t.Fatalf("error: %v", err)
 	}
 }
 
 func TestSubmit(t *testing.T) {
-	op := &operator{
-		cli: client.NewMock("", fmt.Errorf("an error")),
-	}
-
-	if err := op.Submit("aww", "self", "title", ""); err == nil {
+	if err := Submit(errRequester, "aww", "self", "title", ""); err == nil {
 		t.Errorf("wanted error for request failure")
 	}
 
-	op = &operator{
-		cli: client.NewMock("", nil),
-	}
-
-	if err := op.Submit("aww", "self", "title", ""); err != nil {
+	if err := Submit(
+		func(r *http.Request) ([]byte, error) {
+			return []byte(""), nil
+		},
+		"aww", "self", "title", "",
+	); err != nil {
 		t.Fatalf("error: %v", err)
 	}
 }

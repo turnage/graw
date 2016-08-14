@@ -1,24 +1,22 @@
-// Package operator makes api calls to Reddit.
-package operator
+// Package api makes api calls to Reddit.
+package api
 
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/turnage/graw/internal/operator/internal/client"
 	"github.com/turnage/redditproto"
 )
 
 const (
-	// MaxLinks is the amount of posts reddit will return for a scrape
+	// maxLinks is the amount of posts reddit will return for a scrape
 	// query.
-	MaxLinks = 100
+	maxLinks = 100
 	// deletedAuthor is the author value if a post or comment was deleted.
 	deletedAuthor = "[deleted]"
 )
@@ -37,75 +35,57 @@ var (
 	baseURL = "https://" + oauth2Host
 )
 
+// Requester executes and http.Request and returns the bytes in the body of the
+// response.
+type Requester func(*http.Request) ([]byte, error)
+
 // SetTestDomain is a test hook for end to end tests to specify an alternate,
 // test instance of Reddit to run against.
 func SetTestDomain(domain string) {
 	oauth2Host = "oauth." + domain
 	baseURL = "https://" + domain
-	client.TokenURL = "https://" + "www." + domain + "/api/v1/access_token"
-	client.TestMode = true
-}
-
-// Operator makes api calls to Reddit.
-type Operator interface {
-	// Scrape returns the contents of a listing endpoint.
-	Scrape(path, after, before string, limit uint) ([]*redditproto.Link, []*redditproto.Comment, []*redditproto.Message, error)
-	// IsThereThing fetches a particular thing from reddit. IsThereThing
-	// returns whether there is such a thing.
-	IsThereThing(id string) (bool, error)
-	// Thread fetches a post and its comment tree.
-	Thread(permalink string) (*redditproto.Link, error)
-	// Inbox fetches unread messages from the reddit inbox.
-	Inbox() ([]*redditproto.Message, error)
-	// MarkAsRead marks inbox items read.
-	MarkAsRead() error
-	// Reply replies to reddit item.
-	Reply(parent, content string) error
-	// Compose sends a private message to a user.
-	Compose(user, subject, content string) error
-	// Submit posts to Reddit.
-	Submit(subreddit, kind, title, content string) error
-}
-
-// operator implements Operator.
-type operator struct {
-	cli client.Client
-}
-
-// New returns a new operator which uses agent as its identity. agent should be
-// a filename of a file containing a UserAgent protobuffer.
-func New(agent string) (Operator, error) {
-	cli, err := client.New(agent)
-	if err != nil {
-		return nil, err
-	}
-	return &operator{cli: cli}, nil
 }
 
 // Scrape returns slices with the content of a listing endpoint.
-func (o *operator) Scrape(
+func Scrape(
+	r Requester,
 	path,
-	after,
-	before string,
-	limit uint,
+	after string,
+	limit int,
 ) (
 	[]*redditproto.Link,
 	[]*redditproto.Comment,
 	[]*redditproto.Message,
 	error,
 ) {
-	bytes, err := o.exec(
-		http.Request{
-			Method:     "GET",
-			Proto:      "HTTP/1.1",
-			ProtoMajor: 1,
-			ProtoMinor: 1,
-			Close:      true,
+	if limit <= 0 {
+		limit = maxLinks
+	}
+
+	bytes, err := r(
+		&http.Request{
+			Method: "GET",
+			Close:  true,
 			URL: &url.URL{
-				Scheme:   "https",
-				Host:     oauth2Host,
-				Path:     path,
-				RawQuery: listingParams(limit, after, before),
+				Scheme: "https",
+				Host:   oauth2Host,
+				Path:   path,
+				RawQuery: url.Values{
+					"limit": []string{strconv.Itoa(int(limit))},
+					// This looks like a mistake but it
+					// isn't. Reddit thinks of listings
+					// reverse-chronologically. What graw
+					// calls "after" refers to things posted
+					// at a time later than the reference
+					// point. What Reddit calls "after"
+					// refers to things that come up in the
+					// listing later, assuming the head is
+					// the latest post. I don't think the
+					// Reddit naming makes sense so I hide
+					// it except for this line.
+					"before":   []string{after},
+					"raw_json": []string{"1"},
+				}.Encode(),
 			},
 			Host: oauth2Host,
 		},
@@ -118,7 +98,7 @@ func (o *operator) Scrape(
 }
 
 // IsThereThing returns whether a thing by the given id exists.
-func (o *operator) IsThereThing(id string) (bool, error) {
+func IsThereThing(r Requester, id string) (bool, error) {
 	path := "/api/info.json"
 
 	// api/info doesn't provide message types; these need to be fetched from
@@ -128,13 +108,10 @@ func (o *operator) IsThereThing(id string) (bool, error) {
 		path = fmt.Sprintf("/message/messages/%s", id)
 	}
 
-	bytes, err := o.exec(
-		http.Request{
-			Method:     "GET",
-			Proto:      "HTTP/1.1",
-			ProtoMajor: 1,
-			ProtoMinor: 1,
-			Close:      true,
+	bytes, err := r(
+		&http.Request{
+			Method: "GET",
+			Close:  true,
 			URL: &url.URL{
 				Scheme: "https",
 				Host:   oauth2Host,
@@ -174,14 +151,11 @@ func (o *operator) IsThereThing(id string) (bool, error) {
 
 // Thread returns a link; the Comments field will be filled with the comment
 // tree. Browse each comment's reply tree from the ReplyTree field.
-func (o *operator) Thread(permalink string) (*redditproto.Link, error) {
-	bytes, err := o.exec(
-		http.Request{
-			Method:     "GET",
-			Proto:      "HTTP/1.1",
-			ProtoMajor: 1,
-			ProtoMinor: 1,
-			Close:      true,
+func Thread(r Requester, permalink string) (*redditproto.Link, error) {
+	bytes, err := r(
+		&http.Request{
+			Method: "GET",
+			Close:  true,
 			URL: &url.URL{
 				Scheme:   "https",
 				Host:     oauth2Host,
@@ -199,14 +173,11 @@ func (o *operator) Thread(permalink string) (*redditproto.Link, error) {
 }
 
 // Inbox returns unread inbox items.
-func (o *operator) Inbox() ([]*redditproto.Message, error) {
-	bytes, err := o.exec(
-		http.Request{
-			Method:     "GET",
-			Proto:      "HTTP/1.1",
-			ProtoMajor: 1,
-			ProtoMinor: 1,
-			Close:      true,
+func Inbox(r Requester) ([]*redditproto.Message, error) {
+	bytes, err := r(
+		&http.Request{
+			Method: "GET",
+			Close:  true,
 			URL: &url.URL{
 				Scheme:   "https",
 				Host:     oauth2Host,
@@ -224,146 +195,84 @@ func (o *operator) Inbox() ([]*redditproto.Message, error) {
 	return messages, err
 }
 
-// MarkAsRead marks inbox items as read, so they are no longer returned by calls
-// to Inbox().
-func (o *operator) MarkAsRead() error {
-	req := http.Request{
-		Method:     "POST",
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Close:      true,
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   oauth2Host,
-			Path:   "/api/read_all_messages",
-		},
-		Header: formEncoding,
-		Body:   ioutil.NopCloser(bytes.NewBufferString("")),
-		Host:   oauth2Host,
-	}
-
-	_, err := o.cli.Do(&req)
-	return err
-}
-
 // Reply replies to a post, message, or comment.
-func (o *operator) Reply(parent, content string) error {
-	req := http.Request{
-		Method:     "POST",
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Close:      true,
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   oauth2Host,
-			Path:   "/api/comment",
-		},
-		Header: formEncoding,
-		Body: ioutil.NopCloser(
-			bytes.NewBufferString(
-				url.Values{
-					"thing_id": []string{parent},
-					"text":     []string{content},
-				}.Encode(),
+func Reply(r Requester, parent, content string) error {
+	_, err := r(
+		&http.Request{
+			Method: "POST",
+			Close:  true,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   oauth2Host,
+				Path:   "/api/comment",
+			},
+			Header: formEncoding,
+			Body: ioutil.NopCloser(
+				bytes.NewBufferString(
+					url.Values{
+						"thing_id": []string{parent},
+						"text":     []string{content},
+					}.Encode(),
+				),
 			),
-		),
-		Host: oauth2Host,
-	}
-
-	_, err := o.cli.Do(&req)
+			Host: oauth2Host,
+		},
+	)
 	return err
 }
 
 // Compose sends a private message to a user.
-func (o *operator) Compose(user, subject, content string) error {
-	req := http.Request{
-		Method:     "POST",
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Close:      true,
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   oauth2Host,
-			Path:   "/api/compose",
-		},
-		Header: formEncoding,
-		Body: ioutil.NopCloser(
-			bytes.NewBufferString(
-				url.Values{
-					"to":      []string{user},
-					"subject": []string{subject},
-					"text":    []string{content},
-				}.Encode(),
+func Compose(r Requester, user, subject, content string) error {
+	_, err := r(
+		&http.Request{
+			Method: "POST",
+			Close:  true,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   oauth2Host,
+				Path:   "/api/compose",
+			},
+			Header: formEncoding,
+			Body: ioutil.NopCloser(
+				bytes.NewBufferString(
+					url.Values{
+						"to":      []string{user},
+						"subject": []string{subject},
+						"text":    []string{content},
+					}.Encode(),
+				),
 			),
-		),
-		Host: oauth2Host,
-	}
-
-	_, err := o.cli.Do(&req)
+			Host: oauth2Host,
+		},
+	)
 	return err
 }
 
 // Submit submits a post.
-func (o *operator) Submit(subreddit, kind, title, content string) error {
-	req := http.Request{
-		Method:     "POST",
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Close:      true,
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   oauth2Host,
-			Path:   "/api/submit",
-		},
-		Header: formEncoding,
-		Body: ioutil.NopCloser(
-			bytes.NewBufferString(
-				url.Values{
-					"sr":    []string{subreddit},
-					"kind":  []string{kind},
-					"title": []string{title},
-					"url":   []string{content},
-					"text":  []string{content},
-				}.Encode(),
+func Submit(r Requester, subreddit, kind, title, content string) error {
+	_, err := r(
+		&http.Request{
+			Method: "POST",
+			Close:  true,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   oauth2Host,
+				Path:   "/api/submit",
+			},
+			Header: formEncoding,
+			Body: ioutil.NopCloser(
+				bytes.NewBufferString(
+					url.Values{
+						"sr":    []string{subreddit},
+						"kind":  []string{kind},
+						"title": []string{title},
+						"url":   []string{content},
+						"text":  []string{content},
+					}.Encode(),
+				),
 			),
-		),
-		Host: oauth2Host,
-	}
-
-	_, err := o.cli.Do(&req)
+			Host: oauth2Host,
+		},
+	)
 	return err
-}
-
-// exec executes a request and returns the response body bytes.
-func (o *operator) exec(r http.Request) ([]byte, error) {
-	response, err := o.cli.Do(&r)
-	if err != nil {
-		return nil, err
-	}
-
-	return responseBytes(response)
-}
-
-// listingParams returns encoded values for parameters to a Reddit listing
-// endpoint.
-func listingParams(limit uint, after, before string) string {
-	return url.Values{
-		"limit":    []string{strconv.Itoa(int(limit))},
-		"before":   []string{before},
-		"after":    []string{after},
-		"raw_json": []string{"1"},
-	}.Encode()
-}
-
-// responseBytes returns a slice of bytes from a response body.
-func responseBytes(response io.ReadCloser) ([]byte, error) {
-	var buffer bytes.Buffer
-	if _, err := buffer.ReadFrom(response); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
 }
