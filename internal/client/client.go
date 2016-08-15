@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -60,8 +61,9 @@ func New(filename string) (*Client, error) {
 // Do wraps the execution of http requests. It updates authentications and rate
 // limits requests to Reddit to comply with the API rules. It returns the
 // response body.
-func (c *Client) Do(r *http.Request) (io.ReadCloser, error) {
+func (c *Client) Do(r *http.Request) ([]byte, error) {
 	c.rateRequest()
+
 	if !c.token.Valid() {
 		var err error
 		c.cli, c.token, err = build(c.agent, c.id, c.secret, c.user, c.pass)
@@ -69,7 +71,13 @@ func (c *Client) Do(r *http.Request) (io.ReadCloser, error) {
 			return nil, err
 		}
 	}
-	return c.exec(r)
+
+	body, err := c.exec(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return responseBytes(body)
 }
 
 // exec executes an http request and returns the response body.
@@ -116,4 +124,13 @@ func (c *Client) rateRequest() {
 	currentReq := c.nextReq
 	c.nextReq = currentReq.Add(rateLimit)
 	<-time.After(currentReq.Sub(time.Now()))
+}
+
+// responseBytes returns a slice of bytes from a response body.
+func responseBytes(response io.ReadCloser) ([]byte, error) {
+	var buffer bytes.Buffer
+	if _, err := buffer.ReadFrom(response); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
