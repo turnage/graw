@@ -7,9 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/turnage/graw/internal/api"
 	"github.com/turnage/graw/internal/botfaces"
+	"github.com/turnage/graw/internal/client"
 	"github.com/turnage/graw/internal/monitor"
-	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
 
@@ -20,12 +21,10 @@ const (
 )
 
 type Engine struct {
-	// op is the operator the engine uses to make calls to Reddit.
-	op operator.Operator
+	// cli is the http client this engine uses to communicate with Reddit.
+	cli client.Client
 	// bot is the bot this engine runs.
 	bot interface{}
-	// dir is the direction in time this engine runs the bot.
-	dir monitor.Direction
 	// stopSig is a channel over which bots can send a signal to the engine
 	// to stop.
 	stopSig chan bool
@@ -43,22 +42,22 @@ type Engine struct {
 
 // Reply submits a reply.
 func (e *Engine) Reply(parentName, text string) error {
-	return e.op.Reply(parentName, text)
+	return api.Reply(e.cli.Do, parentName, text)
 }
 
 // SendMessage sends a private message.
 func (e *Engine) SendMessage(user, subject, text string) error {
-	return e.op.Compose(user, subject, text)
+	return api.Compose(e.cli.Do, user, subject, text)
 }
 
 // SelfPost makes a self (text) post to a subreddit.
 func (e *Engine) SelfPost(subreddit, title, text string) error {
-	return e.op.Submit(subreddit, "self", title, text)
+	return api.Submit(e.cli.Do, subreddit, "self", title, text)
 }
 
 // LinkPost makes a link post to a subreddit.
 func (e *Engine) LinkPost(subreddit, title, url string) error {
-	return e.op.Submit(subreddit, "link", title, url)
+	return api.Submit(e.cli.Do, subreddit, "link", title, url)
 }
 
 // WatchUser starts monitoring a user.
@@ -69,11 +68,17 @@ func (e *Engine) WatchUser(user string) error {
 	}
 
 	mon, err := monitor.UserMonitor(
-		e.op,
+		func(path, tip string, limit int) (
+			[]*redditproto.Link,
+			[]*redditproto.Comment,
+			[]*redditproto.Message,
+			error,
+		) {
+			return api.Scrape(e.cli.Do, path, tip, limit)
+		},
 		han.UserPost,
 		han.UserComment,
 		user,
-		e.dir,
 	)
 	if err != nil {
 		return err
@@ -100,7 +105,7 @@ func (e *Engine) UnwatchUser(user string) error {
 
 // DigestThread returns a Link with a parsed comment tree.
 func (e *Engine) DigestThread(permalink string) (*redditproto.Link, error) {
-	return e.op.Thread(permalink)
+	return api.Thread(e.cli.Do, permalink)
 }
 
 // Stop stops the engine.
@@ -144,7 +149,19 @@ func (e *Engine) updateMonitors() error {
 	e.Unlock()
 
 	for _, mon := range monitors {
-		if err := mon.Update(e.op); err != nil {
+		if err := mon.Update(
+			func(path, tip string, limit int) (
+				[]*redditproto.Link,
+				[]*redditproto.Comment,
+				[]*redditproto.Message,
+				error,
+			) {
+				return api.Scrape(e.cli.Do, path, tip, limit)
+			},
+			func(id string) (bool, error) {
+				return api.IsThereThing(e.cli.Do, id)
+			},
+		); err != nil {
 			return err
 		}
 	}
