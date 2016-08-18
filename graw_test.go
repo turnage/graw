@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/turnage/graw/internal/operator"
+	"github.com/turnage/graw/internal/api"
 	"github.com/turnage/redditproto"
 )
 
@@ -209,7 +209,7 @@ func TestMain(m *testing.M) {
 		os.Exit(0)
 	}
 
-	operator.SetTestDomain(domain)
+	api.SetTestDomain(domain)
 	errors := make(chan error)
 	go func() {
 		err := <-errors
