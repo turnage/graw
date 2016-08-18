@@ -81,19 +81,6 @@ var (
 			}
 		}
 	]`)
-	inboxJSON = []byte(`{
-		"kind": "Listing",
-		"data": {
-			"children" : [
-				{
-					"kind": "t4",
-					"data": {
-						"was_comment": true
-					}
-				}
-			]
-		}
-	}`)
 	errRequester = func(r *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("error")
 	}
@@ -186,24 +173,6 @@ func TestThread(t *testing.T) {
 
 	if len(thread.GetComments()) != 2 {
 		t.Errorf("got %d comments; wanted 2", len(thread.GetComments()))
-	}
-}
-
-func TestInbox(t *testing.T) {
-	if _, err := Inbox(errRequester); err == nil {
-		t.Errorf("wanted error for request failure")
-	}
-
-	if messages, err := Inbox(
-		func(r *http.Request) ([]byte, error) {
-			return inboxJSON, nil
-		},
-	); err != nil {
-		t.Fatalf("error: %v", err)
-	} else if len(messages) != 1 {
-		t.Fatalf("got %d messages; wanted 1", len(messages))
-	} else if !messages[0].GetWasComment() {
-		t.Fatal("got non-comment inboxable; wanted comment inboxable")
 	}
 }
 
