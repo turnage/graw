@@ -172,29 +172,6 @@ func Thread(r Requester, permalink string) (*redditproto.Link, error) {
 	return redditproto.ParseThread(bytes)
 }
 
-// Inbox returns unread inbox items.
-func Inbox(r Requester) ([]*redditproto.Message, error) {
-	bytes, err := r(
-		&http.Request{
-			Method: "GET",
-			Close:  true,
-			URL: &url.URL{
-				Scheme:   "https",
-				Host:     oauth2Host,
-				Path:     "/message/unread",
-				RawQuery: "raw_json=1",
-			},
-			Host: oauth2Host,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	_, _, messages, err := redditproto.ParseListing(bytes)
-	return messages, err
-}
-
 // Reply replies to a post, message, or comment.
 func Reply(r Requester, parent, content string) error {
 	_, err := r(
