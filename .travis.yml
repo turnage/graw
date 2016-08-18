@@ -8,7 +8,7 @@ before_install:
   - if ! go get code.google.com/p/go.tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 script:
   - go test -coverprofile=monitor.coverprofile ./internal/monitor
-  - go test -coverprofile=operator.coverprofile ./internal/operator
-  - go test -coverprofile=client.coverprofile ./internal/operator/internal/client
+  - go test -coverprofile=operator.coverprofile ./internal/api
+  - go test -coverprofile=operator.coverprofile ./internal/client
   - $HOME/gopath/bin/gover
   - $HOME/gopath/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci
