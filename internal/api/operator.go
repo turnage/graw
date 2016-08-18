@@ -64,8 +64,9 @@ func Scrape(
 
 	bytes, err := r(
 		&http.Request{
-			Method: "GET",
-			Close:  true,
+			Method:     "GET",
+			ProtoMajor: 2,
+			ProtoMinor: 0,
 			URL: &url.URL{
 				Scheme: "https",
 				Host:   oauth2Host,
@@ -110,8 +111,9 @@ func IsThereThing(r Requester, id string) (bool, error) {
 
 	bytes, err := r(
 		&http.Request{
-			Method: "GET",
-			Close:  true,
+			Method:     "GET",
+			ProtoMajor: 2,
+			ProtoMinor: 0,
 			URL: &url.URL{
 				Scheme: "https",
 				Host:   oauth2Host,
@@ -154,8 +156,9 @@ func IsThereThing(r Requester, id string) (bool, error) {
 func Thread(r Requester, permalink string) (*redditproto.Link, error) {
 	bytes, err := r(
 		&http.Request{
-			Method: "GET",
-			Close:  true,
+			Method:     "GET",
+			ProtoMajor: 2,
+			ProtoMinor: 0,
 			URL: &url.URL{
 				Scheme:   "https",
 				Host:     oauth2Host,
@@ -176,8 +179,9 @@ func Thread(r Requester, permalink string) (*redditproto.Link, error) {
 func Reply(r Requester, parent, content string) error {
 	_, err := r(
 		&http.Request{
-			Method: "POST",
-			Close:  true,
+			Method:     "POST",
+			ProtoMajor: 2,
+			ProtoMinor: 0,
 			URL: &url.URL{
 				Scheme: "https",
 				Host:   oauth2Host,
@@ -202,8 +206,9 @@ func Reply(r Requester, parent, content string) error {
 func Compose(r Requester, user, subject, content string) error {
 	_, err := r(
 		&http.Request{
-			Method: "POST",
-			Close:  true,
+			Method:     "POST",
+			ProtoMajor: 2,
+			ProtoMinor: 0,
 			URL: &url.URL{
 				Scheme: "https",
 				Host:   oauth2Host,
@@ -229,8 +234,9 @@ func Compose(r Requester, user, subject, content string) error {
 func Submit(r Requester, subreddit, kind, title, content string) error {
 	_, err := r(
 		&http.Request{
-			Method: "POST",
-			Close:  true,
+			Method:     "POST",
+			ProtoMajor: 2,
+			ProtoMinor: 0,
 			URL: &url.URL{
 				Scheme: "https",
 				Host:   oauth2Host,
