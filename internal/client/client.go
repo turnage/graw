@@ -16,12 +16,16 @@ const (
 	rateLimit = 2 * time.Second
 )
 
-type Client struct {
-	// agent is the Client's User-Agent in http requests.
+type Client interface {
+	Do(*http.Request) ([]byte, error)
+}
+
+type client struct {
+	// agent is the client's User-Agent in http requests.
 	agent string
-	// id is the bot's OAuth2 Client id.
+	// id is the bot's OAuth2 client id.
 	id string
-	// secret is the bot's OAuth2 Client secret.
+	// secret is the bot's OAuth2 client secret.
 	secret string
 	// user is the bot's username on reddit.
 	user string
@@ -30,7 +34,7 @@ type Client struct {
 
 	// authMu protects authentication fields.
 	authMu sync.Mutex
-	// cli is the authenticated Client to execute requests with.
+	// cli is the authenticated client to execute requests with.
 	cli *http.Client
 	// token is the OAuth2 token cli uses to authenticate.
 	token *oauth2.Token
@@ -41,14 +45,21 @@ type Client struct {
 	nextReq time.Time
 }
 
-// New returns a new Client from a user agent file.
-func New(filename string) (*Client, error) {
+// SetTestDomain prepares the client package to provide clients ready for end to
+// end test against the given domain.
+func SetTestDomain(domain string) {
+	TokenURL = "https://www." + domain + "/api/access_token"
+	TestMode = true
+}
+
+// New returns a new client from a user agent file.
+func New(filename string) (Client, error) {
 	agent, err := load(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Client{
+	return &client{
 		agent:   agent.GetUserAgent(),
 		id:      agent.GetClientId(),
 		secret:  agent.GetClientSecret(),
@@ -61,7 +72,7 @@ func New(filename string) (*Client, error) {
 // Do wraps the execution of http requests. It updates authentications and rate
 // limits requests to Reddit to comply with the API rules. It returns the
 // response body.
-func (c *Client) Do(r *http.Request) ([]byte, error) {
+func (c *client) Do(r *http.Request) ([]byte, error) {
 	c.rateRequest()
 
 	if !c.token.Valid() {
@@ -81,7 +92,7 @@ func (c *Client) Do(r *http.Request) ([]byte, error) {
 }
 
 // exec executes an http request and returns the response body.
-func (c *Client) exec(r *http.Request) (io.ReadCloser, error) {
+func (c *client) exec(r *http.Request) (io.ReadCloser, error) {
 	resp, err := c.doRaw(r)
 	if err != nil {
 		return nil, err
@@ -101,9 +112,9 @@ func (c *Client) exec(r *http.Request) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// doRaw executes an http Request using an authenticated Client, and the configured
+// doRaw executes an http Request using an authenticated client, and the configured
 // user agent.
-func (c *Client) doRaw(r *http.Request) (*http.Response, error) {
+func (c *client) doRaw(r *http.Request) (*http.Response, error) {
 	if r.Header == nil {
 		r.Header = make(http.Header)
 	}
@@ -112,7 +123,7 @@ func (c *Client) doRaw(r *http.Request) (*http.Response, error) {
 }
 
 // rateRequest blocks until the rate limits have been abided by.
-func (c *Client) rateRequest() {
+func (c *client) rateRequest() {
 	c.rateMu.Lock()
 	defer c.rateMu.Unlock()
 
