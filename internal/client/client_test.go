@@ -10,7 +10,7 @@ import (
 )
 
 func TestExec(t *testing.T) {
-	cli := &Client{cli: http.DefaultClient}
+	cli := &client{cli: http.DefaultClient}
 	responseCode := 200
 	expectedBody := `{"key": "value"}`
 
@@ -71,7 +71,7 @@ func TestDoRaw(t *testing.T) {
 			},
 		),
 	)
-	cli := &Client{
+	cli := &client{
 		agent: "expected",
 		cli:   http.DefaultClient,
 	}
