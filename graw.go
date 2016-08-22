@@ -27,7 +27,7 @@ func Run(agent string, bot interface{}, subreddits ...string) error {
 		return err
 	}
 
-	eng, err := engine.RealTime(bot, cli, subreddits)
+	eng, err := engine.New(bot, cli, subreddits)
 	if err != nil {
 		return err
 	}

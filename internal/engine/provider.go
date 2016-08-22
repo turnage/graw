@@ -10,23 +10,7 @@ import (
 	"github.com/turnage/redditproto"
 )
 
-func RealTime(
-	bot interface{},
-	cli client.Client,
-	subreddits []string,
-) (*Engine, error) {
-	return baseFrom(bot, cli, subreddits)
-}
-
-func BackTime(
-	bot interface{},
-	cli client.Client,
-	subreddits []string,
-) (*Engine, error) {
-	return baseFrom(bot, cli, subreddits)
-}
-
-func baseFrom(
+func New(
 	bot interface{},
 	cli client.Client,
 	subreddits []string,
