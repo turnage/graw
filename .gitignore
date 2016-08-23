@@ -1,3 +1,5 @@
 *.cover
 *.swp
+res/one
+res/two
 useragent.protobuf
