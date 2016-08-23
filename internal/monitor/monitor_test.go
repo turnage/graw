@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
 
@@ -41,30 +40,43 @@ func stringPointer(val string) *string {
 	return &val
 }
 
+func MockScraper(
+	links []*redditproto.Link,
+	comments []*redditproto.Comment,
+	messages []*redditproto.Message,
+	err error,
+) Scraper {
+	return func(id, tip string, limit int) (
+		[]*redditproto.Link,
+		[]*redditproto.Comment,
+		[]*redditproto.Message,
+		error,
+	) {
+		return links, comments, messages, err
+	}
+}
+
 func TestBaseFromPath(t *testing.T) {
 	han := &handler{}
 	mon, err := baseFromPath(
-		&operator.MockOperator{
-			ScrapeLinksReturn: []*redditproto.Link{
+		MockScraper(
+			[]*redditproto.Link{
 				&redditproto.Link{
 					Name: stringPointer("name"),
 				},
 			},
-		},
+			nil, nil, nil,
+		),
 		"/r/self",
 		nil,
 		han.comment,
 		nil,
-		Forward,
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	b := mon.(*base)
-	if b.dir != Forward {
-		t.Errorf("got %d; wanted %d (Forward)", b.dir, Forward)
-	}
 	if b.handleComment == nil {
 		t.Errorf("wanted comment handler set")
 	}
@@ -72,18 +84,17 @@ func TestBaseFromPath(t *testing.T) {
 		t.Errorf("got %s; wanted /r/self", b.path)
 	}
 	mon, err = baseFromPath(
-		&operator.MockOperator{
-			ScrapeLinksReturn: []*redditproto.Link{
+		MockScraper(
+			[]*redditproto.Link{
 				&redditproto.Link{
 					Name: stringPointer("name"),
 				},
-			},
-		},
+			}, nil, nil, nil,
+		),
 		"/r/self",
 		nil,
 		nil,
 		nil,
-		Forward,
 	)
 	if err == nil {
 		t.Errorf("wanted error if no handlers are provided")
@@ -94,68 +105,6 @@ func TestMerge(t *testing.T) {
 	things := merge(
 		[]*redditproto.Link{
 			&redditproto.Link{
-				CreatedUtc: float64Pointer(1),
-				Name:       stringPointer("one"),
-			},
-			&redditproto.Link{
-				CreatedUtc: float64Pointer(2),
-				Name:       stringPointer("two"),
-			},
-		},
-		[]*redditproto.Comment{
-			&redditproto.Comment{
-				CreatedUtc: float64Pointer(0),
-				Name:       stringPointer("zero"),
-			},
-			&redditproto.Comment{
-				CreatedUtc: float64Pointer(3),
-				Name:       stringPointer("three"),
-			},
-		},
-		[]*redditproto.Message{
-			&redditproto.Message{
-				CreatedUtc: float64Pointer(4),
-				Name:       stringPointer("four"),
-			},
-			&redditproto.Message{
-				CreatedUtc: float64Pointer(5),
-				Name:       stringPointer("five"),
-			},
-		},
-		Backward,
-	)
-
-	if len(things) != 6 {
-		t.Fatalf("got %d things; wanted 6", len(things))
-	}
-
-	if things[0].GetName() != "zero" {
-		t.Errorf("got %s; wanted zero", things[0].GetName())
-	}
-
-	if things[1].GetName() != "one" {
-		t.Errorf("got %s; wanted one", things[1].GetName())
-	}
-
-	if things[2].GetName() != "two" {
-		t.Errorf("got %s; wanted two", things[2].GetName())
-	}
-
-	if things[3].GetName() != "three" {
-		t.Errorf("got %s; wanted three", things[3].GetName())
-	}
-
-	if things[4].GetName() != "four" {
-		t.Errorf("got %s; wanted four", things[4].GetName())
-	}
-
-	if things[5].GetName() != "five" {
-		t.Errorf("got %s; wanted five", things[5].GetName())
-	}
-
-	things = merge(
-		[]*redditproto.Link{
-			&redditproto.Link{
 				CreatedUtc: float64Pointer(2),
 				Name:       stringPointer("two"),
 			},
@@ -184,7 +133,6 @@ func TestMerge(t *testing.T) {
 				Name:       stringPointer("four"),
 			},
 		},
-		Forward,
 	)
 
 	if len(things) != 6 {
@@ -240,8 +188,8 @@ func TestFixTip(t *testing.T) {
 	}
 
 	broken, err := b.fixTip(
-		&operator.MockOperator{
-			IsThereThingErr: fmt.Errorf("an error"),
+		func(id string) (bool, error) {
+			return false, fmt.Errorf("an error")
 		},
 	)
 	if err == nil {
@@ -249,8 +197,8 @@ func TestFixTip(t *testing.T) {
 	}
 
 	broken, err = b.fixTip(
-		&operator.MockOperator{
-			IsThereThingReturn: false,
+		func(id string) (bool, error) {
+			return false, nil
 		},
 	)
 	if !broken {
@@ -259,9 +207,7 @@ func TestFixTip(t *testing.T) {
 }
 
 func TestUpdateTip(t *testing.T) {
-	b := &base{
-		dir: Forward,
-	}
+	b := &base{}
 	for i := 0; i < maxTipSize; i++ {
 		b.tip = append(b.tip, strconv.Itoa(i))
 	}
@@ -301,8 +247,8 @@ func TestUpdateTip(t *testing.T) {
 		nil,
 		nil,
 		nil,
-		&operator.MockOperator{
-			IsThereThingErr: fmt.Errorf("an error"),
+		func(id string) (bool, error) {
+			return false, fmt.Errorf("an error")
 		},
 	)
 	if err == nil {
@@ -315,7 +261,11 @@ func TestHealthCheck(t *testing.T) {
 		blankThreshold: blankThreshold,
 		tip:            []string{""},
 	}
-	err := b.healthCheck(&operator.MockOperator{})
+	err := b.healthCheck(
+		func(id string) (bool, error) {
+			return false, nil
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,8 +275,8 @@ func TestHealthCheck(t *testing.T) {
 
 	b.blanks = b.blankThreshold
 	err = b.healthCheck(
-		&operator.MockOperator{
-			IsThereThingReturn: true,
+		func(id string) (bool, error) {
+			return true, nil
 		},
 	)
 	if err != nil {
@@ -341,8 +291,8 @@ func TestHealthCheck(t *testing.T) {
 
 	b.blanks = b.blankThreshold
 	err = b.healthCheck(
-		&operator.MockOperator{
-			IsThereThingErr: fmt.Errorf("an error"),
+		func(id string) (bool, error) {
+			return false, fmt.Errorf("an error")
 		},
 	)
 	if err == nil {

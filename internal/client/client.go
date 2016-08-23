@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,12 +9,18 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+
+	"github.com/turnage/graw/grerr"
 )
 
 const (
 	// rateLimit is the wait time between requests to Reddit.
 	rateLimit = 2 * time.Second
 )
+
+type Client interface {
+	Do(*http.Request) ([]byte, error)
+}
 
 type client struct {
 	// agent is the client's User-Agent in http requests.
@@ -40,11 +47,36 @@ type client struct {
 	nextReq time.Time
 }
 
+// SetTestDomain prepares the client package to provide clients ready for end to
+// end test against the given domain.
+func SetTestDomain(domain string) {
+	TokenURL = "https://www." + domain + "/api/access_token"
+	TestMode = true
+}
+
+// New returns a new client from a user agent file.
+func New(filename string) (Client, error) {
+	agent, err := load(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	return &client{
+		agent:   agent.GetUserAgent(),
+		id:      agent.GetClientId(),
+		secret:  agent.GetClientSecret(),
+		user:    agent.GetUsername(),
+		pass:    agent.GetPassword(),
+		nextReq: time.Now(),
+	}, nil
+}
+
 // Do wraps the execution of http requests. It updates authentications and rate
 // limits requests to Reddit to comply with the API rules. It returns the
 // response body.
-func (c *client) Do(r *http.Request) (io.ReadCloser, error) {
+func (c *client) Do(r *http.Request) ([]byte, error) {
 	c.rateRequest()
+
 	if !c.token.Valid() {
 		var err error
 		c.cli, c.token, err = build(c.agent, c.id, c.secret, c.user, c.pass)
@@ -52,7 +84,13 @@ func (c *client) Do(r *http.Request) (io.ReadCloser, error) {
 			return nil, err
 		}
 	}
-	return c.exec(r)
+
+	body, err := c.exec(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return responseBytes(body)
 }
 
 // exec executes an http request and returns the response body.
@@ -62,11 +100,22 @@ func (c *client) exec(r *http.Request) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad response code: %d\n"+
-			"request was: %v\n",
+	switch resp.StatusCode {
+	case 200:
+	case 403:
+		return nil, grerr.PermissionDenied
+	case 503:
+		return nil, grerr.Busy
+	case 429:
+		return nil, grerr.RateLimit
+	default:
+		return nil, fmt.Errorf(
+			"bad response code: %d\n request was: %v\n"+
+				"response was: %v\n",
 			resp.StatusCode,
-			r)
+			r,
+			resp,
+		)
 	}
 
 	if resp.Body == nil {
@@ -99,4 +148,13 @@ func (c *client) rateRequest() {
 	currentReq := c.nextReq
 	c.nextReq = currentReq.Add(rateLimit)
 	<-time.After(currentReq.Sub(time.Now()))
+}
+
+// responseBytes returns a slice of bytes from a response body.
+func responseBytes(response io.ReadCloser) ([]byte, error) {
+	var buffer bytes.Buffer
+	if _, err := buffer.ReadFrom(response); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
