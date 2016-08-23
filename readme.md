@@ -1,7 +1,7 @@
 graw
 --------------------------------------------------------------------------------
 
-Version: 0.2.2
+Version: 0.4.0
 
 Before depending on graw, please consult the [API Promise](promise.md).
 
