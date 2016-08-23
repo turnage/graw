@@ -100,9 +100,12 @@ func (c *client) exec(r *http.Request) (io.ReadCloser, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("bad response code: %d\n"+
-			"request was: %v\n",
+			"request was: %v\n"+
+			"response was: %v\n",
 			resp.StatusCode,
-			r)
+			r,
+			resp,
+		)
 	}
 
 	if resp.Body == nil {
