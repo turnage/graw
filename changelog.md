@@ -1,4 +1,14 @@
-#### 0.3.0 August 23rd, 2016
+#### 0.4.0 August 23rd, 2016
+
+Added two public packages:
+
+graw/grerr defines values for common errors so bots can define scenarios for
+them.
+
+graw/botfaces defines the interfaces graw looks for in bots so users can type
+assert their bots and verify their own implementations.
+
+#### 0.3.0 August 21st, 2016
 
 Removed ````Scrape()```` from api.
 

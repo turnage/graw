@@ -1,11 +1,20 @@
 // Package botfaces defines the interfaces a bot can have, visibile to the graw
 // engine. These interfaces allow graw to infer what events the bot cares about
 // and can handle.
+//
+// Typeassert bots against these interfaces to verify that they are implemented:
+//
+//     if _, ok := bot.(Loader); !ok {
+//         // bot does not implement interface
+//     } else {
+//         // bot implements interface
+//     }
 package botfaces
 
 import (
-	"github.com/turnage/redditproto"
 	"time"
+
+	"github.com/turnage/redditproto"
 )
 
 // Loader defines methods for bots that use external resources or need to do
