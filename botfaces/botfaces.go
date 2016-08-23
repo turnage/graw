@@ -40,18 +40,6 @@ type Failer interface {
 	Fail(err error) bool
 }
 
-// It is recommended, though not required, to implement all inbox handlers if
-// one is implemented. All unread inbox items are fetched in updates (Reddit
-// does not offer filtering by type (mentions, post replies, etc)).
-//
-// Ex. If Mentions are handled, but not Messages, any unread messages will be
-// wasting your network data. graw will not mark an unhandled inbox item as
-// read.
-//
-// It shouldn't be a concern if your bot cannot receive the events it does not
-// handle. If it does not submit, it cannot receive post replies. If it does not
-// comment, it cannot receive comment replies.
-
 // PostHandler defines methods for bots that handle new posts in
 // subreddits they monitor.
 type PostHandler interface {
