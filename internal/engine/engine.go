@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/turnage/graw/botfaces"
 	"github.com/turnage/graw/internal/api"
-	"github.com/turnage/graw/internal/botfaces"
 	"github.com/turnage/graw/internal/client"
 	"github.com/turnage/graw/internal/monitor"
 	"github.com/turnage/redditproto"
