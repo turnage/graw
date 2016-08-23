@@ -1,3 +1,7 @@
+#### 0.3.0 August 23rd, 2016
+
+Removed ````Scrape()```` from api.
+
 #### 0.2.2 August 11th, 2016
 
 Fixed [issue](https://github.com/turnage/graw/issues/13) reported by [silviucm](https://github.com/silviucm).
