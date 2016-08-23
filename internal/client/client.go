@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+
+	"github.com/turnage/graw/grerr"
 )
 
 const (
@@ -98,10 +100,18 @@ func (c *client) exec(r *http.Request) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad response code: %d\n"+
-			"request was: %v\n"+
-			"response was: %v\n",
+	switch resp.StatusCode {
+	case 200:
+	case 403:
+		return nil, grerr.PermissionDenied
+	case 503:
+		return nil, grerr.Busy
+	case 429:
+		return nil, grerr.RateLimit
+	default:
+		return nil, fmt.Errorf(
+			"bad response code: %d\n request was: %v\n"+
+				"response was: %v\n",
 			resp.StatusCode,
 			r,
 			resp,

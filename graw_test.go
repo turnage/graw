@@ -135,7 +135,7 @@ func TestSendMessage(t *testing.T) {
 	if err := one.eng.SendMessage(*user2, "test", "different"); err != nil {
 		t.Fatalf("/u/%s failed to send a message to /u/%s: %v", *user1, *user2, err)
 	} else {
-		t.Logf("/u/%s failed to send a message to /u/%s.\n", *user1, *user2)
+		t.Logf("/u/%s sent a message to /u/%s.\n", *user1, *user2)
 	}
 }
 
