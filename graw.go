@@ -4,8 +4,8 @@ package graw
 import (
 	"sync"
 
+	"github.com/turnage/graw/internal/client"
 	"github.com/turnage/graw/internal/engine"
-	"github.com/turnage/graw/internal/operator"
 )
 
 var (
@@ -22,33 +22,12 @@ var (
 // For more information, see
 // https://github.com/turnage/graw/wiki
 func Run(agent string, bot interface{}, subreddits ...string) error {
-	op, err := operator.New(agent)
+	cli, err := client.New(agent)
 	if err != nil {
 		return err
 	}
 
-	eng, err := engine.RealTime(bot, op, subreddits)
-	if err != nil {
-		return err
-	}
-
-	return runEngine(bot, eng)
-}
-
-// Scrape runs a bot against Reddit that has already happened, and moves
-// backward in time.
-// agent should be the filename of a configured user agent protobuffer.
-// graw will scrape all provided subreddits.
-//
-// For more information, see
-// https://github.com/turnage/graw/wiki
-func Scrape(agent string, bot interface{}, subreddits ...string) error {
-	op, err := operator.New(agent)
-	if err != nil {
-		return err
-	}
-
-	eng, err := engine.BackTime(bot, op, subreddits)
+	eng, err := engine.New(bot, cli, subreddits)
 	if err != nil {
 		return err
 	}

@@ -1,235 +1,200 @@
 package graw
 
 import (
-	"fmt"
+	"flag"
+	"log"
 	"os"
-	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/turnage/graw/internal/operator"
+	"github.com/turnage/graw/botfaces"
 	"github.com/turnage/redditproto"
 )
 
-// End to end test configuration.
 const (
-	agentFile        = "test.agent"
-	testSubredditKey = "GRAW_TEST_SUBREDDIT"
-	testRedditKey    = "GRAW_TEST_REDDIT"
+	agent1 = "res/one"
+	agent2 = "res/two"
 )
 
-const (
-	// eventTimeout is the amount of time that a test should wait for an
-	// event to register with a bot.
-	eventTimeout = time.Second * 20
-)
-
-// Globals for tests.
 var (
-	bot           = &testBot{}
-	testSubreddit = ""
-	agent         = &redditproto.UserAgent{}
+	user1 = flag.String("user1", "", "username of the first bot")
+	user2 = flag.String("user2", "", "username of the second bot")
+	sub   = flag.String("subreddit", "", "subreddit to test in")
+)
+
+var (
+	one = newTestBot()
+	two = newTestBot()
 )
 
 type testBot struct {
+	commentReplies chan *redditproto.Comment
+	postReplies    chan *redditproto.Comment
+	userPosts      chan *redditproto.Link
+	userComments   chan *redditproto.Comment
+	posts          chan *redditproto.Link
+	messages       chan *redditproto.Message
+	comments       chan *redditproto.Comment
+	mentions       chan *redditproto.Comment
+	setupCalls     chan bool
+	teardownCalls  chan bool
+	failures       chan error
 	eng            Engine
-	posts          uint64
-	userPosts      uint64
-	userComments   uint64
-	messages       uint64
-	firstMessage   *redditproto.Message
-	postReplies    uint64
-	commentReplies uint64
-	mentions       uint64
-	events         uint64
+}
+
+func newTestBot() *testBot {
+	return &testBot{
+		commentReplies: make(chan *redditproto.Comment),
+		postReplies:    make(chan *redditproto.Comment),
+		userPosts:      make(chan *redditproto.Link),
+		userComments:   make(chan *redditproto.Comment),
+		posts:          make(chan *redditproto.Link),
+		messages:       make(chan *redditproto.Message),
+		comments:       make(chan *redditproto.Comment),
+		mentions:       make(chan *redditproto.Comment),
+		setupCalls:     make(chan bool),
+		teardownCalls:  make(chan bool),
+		failures:       make(chan error),
+	}
 }
 
 func (t *testBot) SetUp() error {
+	t.setupCalls <- true
 	t.eng = GetEngine(t)
 	return nil
 }
 
-func (t *testBot) TearDown() {}
+func (t *testBot) TearDown() {
+	t.teardownCalls <- true
+}
+
+func (t *testBot) Fail(err error) bool {
+	t.failures <- err
+	return true
+}
+
+func (t *testBot) BlockTime() time.Duration {
+	return 2 * time.Second
+}
+
+func (t *testBot) CommentReply(reply *redditproto.Comment) {
+	t.commentReplies <- reply
+}
+
+func (t *testBot) PostReply(reply *redditproto.Comment) {
+	t.postReplies <- reply
+}
+
+func (t *testBot) Mention(mention *redditproto.Comment) {
+	t.mentions <- mention
+}
+
+func (t *testBot) Message(msg *redditproto.Message) {
+	t.messages <- msg
+}
 
 func (t *testBot) Post(post *redditproto.Link) {
-	atomic.AddUint64(&t.posts, 1)
-	atomic.AddUint64(&t.events, 1)
+	t.posts <- post
 }
 
 func (t *testBot) UserPost(post *redditproto.Link) {
-	atomic.AddUint64(&t.userPosts, 1)
-	atomic.AddUint64(&t.events, 1)
+	t.userPosts <- post
 }
 
 func (t *testBot) UserComment(comment *redditproto.Comment) {
-	atomic.AddUint64(&t.userComments, 1)
-	atomic.AddUint64(&t.events, 1)
+	t.userComments <- comment
 }
 
-func (t *testBot) Message(message *redditproto.Message) {
-	if atomic.LoadUint64(&t.messages) == 0 {
-		t.firstMessage = message
+func TestSelfPost(t *testing.T) {
+	t.Parallel()
+	if err := one.eng.SelfPost(*sub, "Test Self Post", "body"); err != nil {
+		t.Fatalf("/u/%s failed to make a self post in /r/%s: %v", *user1, *sub, err)
+	} else {
+		t.Logf("/u/%s made a self post in /r/%s.\n", *user1, *sub)
 	}
-	atomic.AddUint64(&t.messages, 1)
-	atomic.AddUint64(&t.events, 1)
 }
 
-func (t *testBot) PostReply(comment *redditproto.Comment) {
-	atomic.AddUint64(&t.postReplies, 1)
-	atomic.AddUint64(&t.events, 1)
-}
-
-func (t *testBot) CommentReply(comment *redditproto.Comment) {
-	atomic.AddUint64(&t.commentReplies, 1)
-	atomic.AddUint64(&t.events, 1)
-}
-
-func (t *testBot) Mention(comment *redditproto.Comment) {
-	atomic.AddUint64(&t.mentions, 1)
-	atomic.AddUint64(&t.events, 1)
-}
-
-// e2eParams returns whether the environment is configured for end to end tests,
-// and the parameters for them.
-func e2eParams() (bool, string, string) {
-	reddit := os.Getenv(testRedditKey)
-	subreddit := os.Getenv(testSubredditKey)
-	if subreddit == "" || reddit == "" {
-		return false, "", ""
-	}
-
-	return true, reddit, subreddit
-}
-
-func launchBot(errors chan<- error, agent string) *testBot {
-	bot := &testBot{}
-	go func() {
-		if err := Run(agent, bot, testSubreddit); err != nil {
-			errors <- err
-		}
-	}()
-	return bot
-}
-
-// wait returns true if a condition evaluates to true within the timeout.
-func wait(condition func() bool, timeout time.Duration) bool {
-	kill := make(chan bool)
-	event := make(chan bool)
-	go func() {
-		stop := false
-		for !stop {
-			select {
-			case <-kill:
-				stop = true
-			case <-time.After(10 * time.Millisecond):
-				if condition() {
-					event <- true
-				}
-			}
-		}
-	}()
-	defer func() { kill <- true }()
-
+func TestReceivePostFromWatchedUser(t *testing.T) {
+	t.Parallel()
 	select {
-	case <-event:
-		return true
-	case <-time.After(timeout):
-		return false
-	}
-
-	return false
-}
-
-func TestPostStreamAndSubmissions(t *testing.T) {
-	if err := bot.eng.SelfPost(testSubreddit, "title", "content"); err != nil {
-		t.Fatal(err)
-	}
-	if !wait(
-		func() bool { return atomic.LoadUint64(&bot.posts) == 1 },
-		eventTimeout,
-	) {
-		t.Errorf("the new post did not register with the bot")
+	case <-two.userPosts:
+	case <-time.After(2 * time.Minute):
 	}
 }
 
-func TestInboxAndReply(t *testing.T) {
-	if err := bot.eng.SendMessage(agent.GetUsername(), "subject", "text"); err != nil {
-		t.Fatal(err)
-	}
-	if !wait(
-		func() bool { return atomic.LoadUint64(&bot.messages) == 1 },
-		eventTimeout,
-	) {
-		t.Fatalf("the new message did not register with the bot")
-	}
-	if err := bot.eng.Reply(bot.firstMessage.GetName(), "text"); err != nil {
-		t.Fatal(err)
-	}
-	if !wait(
-		func() bool { return atomic.LoadUint64(&bot.messages) == 2 },
-		eventTimeout,
-	) {
-		t.Errorf("the new message did not register with the bot")
+func TestReceivePostFromWathedSubreddit(t *testing.T) {
+	t.Parallel()
+	select {
+	case <-two.posts:
+	case <-time.After(2 * time.Minute):
 	}
 }
 
-func TestUserWatch(t *testing.T) {
-	if err := bot.eng.WatchUser(agent.GetUsername()); err != nil {
-		t.Fatal(err)
+func TestSendMessage(t *testing.T) {
+	t.Parallel()
+	if err := one.eng.SendMessage(*user2, "test", "different"); err != nil {
+		t.Fatalf("/u/%s failed to send a message to /u/%s: %v", *user1, *user2, err)
+	} else {
+		t.Logf("/u/%s sent a message to /u/%s.\n", *user1, *user2)
 	}
-	if err := bot.eng.SelfPost(testSubreddit, "title", "content"); err != nil {
-		t.Fatal(err)
-	}
-	if !wait(
-		func() bool { return atomic.LoadUint64(&bot.userPosts) == 1 },
-		eventTimeout,
-	) {
-		t.Fatalf("the new watched user post did not register with the bot")
-	}
-	if err := bot.eng.SelfPost(testSubreddit, "title", "content"); err != nil {
-		t.Fatal(err)
-	}
-	if err := bot.eng.UnwatchUser(agent.GetUsername()); err != nil {
-		t.Fatal(err)
-	}
-	if wait(
-		func() bool { return atomic.LoadUint64(&bot.userPosts) == 2 },
-		eventTimeout,
-	) {
-		t.Errorf("an event was generated from an unwatched user")
+}
+
+func TestReceiveMessage(t *testing.T) {
+	t.Parallel()
+	select {
+	case <-two.messages:
+	case <-time.After(2 * time.Minute):
 	}
 }
 
 func TestMain(m *testing.M) {
-	var configured bool
-	var domain string
-	configured, domain, testSubreddit = e2eParams()
-	if !configured {
-		fmt.Printf("End to end tests not configured; skipping.\n")
+	flag.Parse()
+
+	var bot interface{} = one
+	if _, ok := bot.(botfaces.Loader); !ok {
+		log.Panic("Test bot does not implement Loader.")
+	} else if _, ok := bot.(botfaces.Tearer); !ok {
+		log.Panic("Test bot does not implement Tearer.")
+	} else if _, ok := bot.(botfaces.PostHandler); !ok {
+		log.Panic("Test bot does not implement PostHandler.")
+	} else if _, ok := bot.(botfaces.CommentReplyHandler); !ok {
+		log.Panic("Test bot does not implement CommentReplyHandler.")
+	} else if _, ok := bot.(botfaces.PostReplyHandler); !ok {
+		log.Panic("Test bot does not implement PostReplyHandler.")
+	} else if _, ok := bot.(botfaces.MessageHandler); !ok {
+		log.Panic("Test bot does not implement MessageHandler.")
+	} else if _, ok := bot.(botfaces.BlockTimer); !ok {
+		log.Panic("Test bot does not implement BlockTimer.")
+	} else if _, ok := bot.(botfaces.MentionHandler); !ok {
+		log.Panic("Test bot does not implement MentionHandler.")
+	} else if _, ok := bot.(botfaces.UserHandler); !ok {
+		log.Panic("Test bot does not implement UserHandler.")
+	}
+
+	if *sub == "" || *user1 == "" || *user2 == "" {
 		os.Exit(0)
 	}
 
-	operator.SetTestDomain(domain)
-	errors := make(chan error)
-	go func() {
-		err := <-errors
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(-1)
-	}()
-
-	var err error
-	agent, err = redditproto.Load(agentFile)
-	if err != nil {
-		fmt.Printf("Failed to load test user agent file.\n")
-		os.Exit(-1)
+	runner := func(agent string, bot interface{}, sub string) {
+		if err := Run(agent, bot, sub); err != nil {
+			log.Printf("Bot %s encountered an error: %v\n", agent, err)
+			os.Exit(-1)
+		}
 	}
 
-	bot = launchBot(errors, agentFile)
-	if !wait(func() bool { return bot.eng != nil }, eventTimeout) {
-		fmt.Printf("the bot did not receive the engine in time")
-		os.Exit(-1)
+	go runner(agent1, one, *sub)
+	go runner(agent2, two, *sub)
+
+	<-one.setupCalls
+	<-two.setupCalls
+
+	if err := one.eng.WatchUser(*user2); err != nil {
+		log.Panicf("/u/%s failed to watch /u/%s.\n", *user1, *user2)
 	}
 
-	defer bot.eng.Stop()
+	if err := two.eng.WatchUser(*user1); err != nil {
+		log.Panicf("/u/%s failed to watch /u/%s.\n", *user2, *user1)
+	}
+
 	os.Exit(m.Run())
 }

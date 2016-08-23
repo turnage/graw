@@ -3,91 +3,80 @@ package monitor
 import (
 	"strings"
 
-	"github.com/turnage/graw/internal/operator"
 	"github.com/turnage/redditproto"
 )
 
 // PostMonitor returns a monitor for new posts in a subreddit(s).
 func PostMonitor(
-	op operator.Operator,
+	scrape Scraper,
 	handlePost postHandler,
 	subreddits []string,
-	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
-		op,
+		scrape,
 		"/r/"+strings.Join(subreddits, "+")+"/new",
 		handlePost,
 		nil,
 		nil,
-		dir,
 	)
 }
 
 // UserMonitor returns a monitor for new posts or comments by a user.
 func UserMonitor(
-	op operator.Operator,
+	scrape Scraper,
 	handlePost postHandler,
 	handleComment commentHandler,
 	user string,
-	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
-		op,
+		scrape,
 		"/user/"+user,
 		handlePost,
 		handleComment,
 		nil,
-		dir,
 	)
 }
 
 // CommentReplyMonitor returns a monitor for new replies to the bot's comments.
 func CommentReplyMonitor(
-	op operator.Operator,
+	scrape Scraper,
 	handleComment commentHandler,
-	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
-		op,
+		scrape,
 		"/message/comments",
 		nil,
 		handleComment,
 		nil,
-		dir,
 	)
 }
 
 // PostReplyMonitor returns a monitor for new replies to the bot's posts.
 func PostReplyMonitor(
-	op operator.Operator,
+	scrape Scraper,
 	handleComment commentHandler,
-	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
-		op,
+		scrape,
 		"/message/selfreply",
 		nil,
 		handleComment,
 		nil,
-		dir,
 	)
 }
 
 // MentionMonitor returns a monitor for new mentions of the bot's username
 // across Reddit.
 func MentionMonitor(
-	op operator.Operator,
+	scrape Scraper,
 	handleComment commentHandler,
-	dir Direction,
 ) (Monitor, error) {
 	return baseFromPath(
-		op,
+		scrape,
 		"/message/mentions",
 		nil,
 		handleComment,
 		nil,
-		dir,
 	)
 }
 
@@ -98,21 +87,19 @@ type messageMonitor struct {
 
 // MessageMonitor returns a monitor for new private messages to the bot.
 func MessageMonitor(
-	op operator.Operator,
+	scrape Scraper,
 	handleMessage messageHandler,
-	dir Direction,
 ) (Monitor, error) {
 	mon := &messageMonitor{
 		handleMessage: handleMessage,
 	}
 
 	b, err := baseFromPath(
-		op,
+		scrape,
 		"/message/inbox",
 		nil,
 		nil,
 		handleMessage,
-		dir,
 	)
 
 	if err == nil {

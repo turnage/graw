@@ -1,11 +1,20 @@
 // Package botfaces defines the interfaces a bot can have, visibile to the graw
 // engine. These interfaces allow graw to infer what events the bot cares about
 // and can handle.
+//
+// Typeassert bots against these interfaces to verify that they are implemented:
+//
+//     if _, ok := bot.(Loader); !ok {
+//         // bot does not implement interface
+//     } else {
+//         // bot implements interface
+//     }
 package botfaces
 
 import (
-	"github.com/turnage/redditproto"
 	"time"
+
+	"github.com/turnage/redditproto"
 )
 
 // Loader defines methods for bots that use external resources or need to do
@@ -39,18 +48,6 @@ type Failer interface {
 	// (e.g. pause for three hours to respond to Reddit down time).
 	Fail(err error) bool
 }
-
-// It is recommended, though not required, to implement all inbox handlers if
-// one is implemented. All unread inbox items are fetched in updates (Reddit
-// does not offer filtering by type (mentions, post replies, etc)).
-//
-// Ex. If Mentions are handled, but not Messages, any unread messages will be
-// wasting your network data. graw will not mark an unhandled inbox item as
-// read.
-//
-// It shouldn't be a concern if your bot cannot receive the events it does not
-// handle. If it does not submit, it cannot receive post replies. If it does not
-// comment, it cannot receive comment replies.
 
 // PostHandler defines methods for bots that handle new posts in
 // subreddits they monitor.

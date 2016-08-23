@@ -1,3 +1,17 @@
+#### 0.4.0 August 23rd, 2016
+
+Added two public packages:
+
+graw/grerr defines values for common errors so bots can define scenarios for
+them.
+
+graw/botfaces defines the interfaces graw looks for in bots so users can type
+assert their bots and verify their own implementations.
+
+#### 0.3.0 August 21st, 2016
+
+Removed ````Scrape()```` from api.
+
 #### 0.2.2 August 11th, 2016
 
 Fixed [issue](https://github.com/turnage/graw/issues/13) reported by [silviucm](https://github.com/silviucm).
