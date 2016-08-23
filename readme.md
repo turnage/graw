@@ -32,6 +32,7 @@ See graw's [proto definitions](https://github.com/turnage/redditproto/blob/maste
 
 See the [wiki](https://github.com/turnage/graw/wiki) for a quick start.
 
-Here is an [example
-grawbot](https://gist.github.com/turnage/468f981f3b1e85bb19f2) that
+Here is an [example grawbot](https://gist.github.com/turnage/468f981f3b1e85bb19f2#file-announcer-go) that announces all of the new posts in /r/all.
+
+Here is an [example grawbot](https://gist.github.com/turnage/468f981f3b1e85bb19f2#file-replier-go) that
 automatically replies to private messages.
