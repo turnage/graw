@@ -2,13 +2,8 @@ language: go
 go:
 - tip
 before_install:
-- go get github.com/axw/gocov/gocov
-- go get github.com/modocache/gover
+- go get github.com/philwinder/gocoverage
 - go get github.com/mattn/goveralls
-- if ! go get code.google.com/p/go.tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 script:
-- go test -coverprofile=monitor.coverprofile ./internal/monitor
-- go test -coverprofile=operator.coverprofile ./internal/api
-- go test -coverprofile=operator.coverprofile ./internal/client
-- "$HOME/gopath/bin/gover"
-- "$HOME/gopath/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci"
+- "$HOME/gopath/bin/gocoverage -output=cover_profile"
+- "$HOME/gopath/bin/goveralls -coverprofile=cover_profile -service=travis-ci"
