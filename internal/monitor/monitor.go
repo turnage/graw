@@ -116,7 +116,7 @@ func (b *base) dispatch(
 	posts []*redditproto.Link,
 	comments []*redditproto.Comment,
 	messages []*redditproto.Message,
-) error {
+) {
 	if b.handlePost != nil {
 		for _, post := range posts {
 			go b.handlePost(post)
@@ -134,8 +134,6 @@ func (b *base) dispatch(
 			go b.handleMessage(message)
 		}
 	}
-
-	return nil
 }
 
 // Update checks for new content at the monitored listing endpoint and forwards
