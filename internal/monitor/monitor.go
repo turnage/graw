@@ -4,6 +4,7 @@ package monitor
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/turnage/redditproto"
 )
@@ -256,15 +257,7 @@ func merge(
 		things = append(things, message)
 	}
 
-	for i := 0; i < len(things); i++ {
-		for j := len(things) - 1; j > i; j-- {
-			if things[j].GetCreatedUtc() > things[j-1].GetCreatedUtc() {
-				swap := things[j-1]
-				things[j-1] = things[j]
-				things[j] = swap
-			}
-		}
-	}
+	sort.Sort(byCreationTime{things})
 
 	return things
 }
