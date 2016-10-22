@@ -55,6 +55,16 @@ func propagateThingMetadataDown(t *thing) {
 	t.Data["name"] = t.Name
 }
 
+// parseRawListing parses a listing json blob and returns the elements in it.
+func parseUser(blob json.RawMessage) ([]*Comment, []*Post, []*Message, error) {
+	var activityListing thing
+	if err := json.Unmarshal(blob, &activityListing); err != nil {
+		return nil, nil, nil, err
+	}
+
+	return parseListing(&activityListing)
+}
+
 // parseThread parses a post from a thread json blob returned by Reddit.
 //
 // Reddit structures this as two things in an array, the first thing being a
@@ -65,12 +75,7 @@ func parseThread(blob json.RawMessage) (*Post, error) {
 		return nil, err
 	}
 
-	_, posts, err := parseListing(&listings[0])
-	if err != nil {
-		return nil, err
-	}
-
-	comments, _, err := parseListing(&listings[1])
+	_, posts, _, err := parseListing(&listings[0])
 	if err != nil {
 		return nil, err
 	}
@@ -79,23 +84,29 @@ func parseThread(blob json.RawMessage) (*Post, error) {
 		return nil, fmt.Errorf("expected 1 post; found %d", len(posts))
 	}
 
+	comments, _, _, err := parseListing(&listings[1])
+	if err != nil {
+		return nil, err
+	}
+
 	posts[0].Replies = comments
 	return posts[0], nil
 }
 
 // parseListing parses a Reddit listing type and returns the elements inside it.
-func parseListing(t *thing) ([]*Comment, []*Post, error) {
+func parseListing(t *thing) ([]*Comment, []*Post, []*Message, error) {
 	if t.Kind != listingKind {
-		return nil, nil, thingKindError(t.Kind, listingKind)
+		return nil, nil, nil, thingKindError(t.Kind, listingKind)
 	}
 
 	l := &listing{}
 	if err := mapstructure.Decode(t.Data, l); err != nil {
-		return nil, nil, mapDecodeError(err, t.Data)
+		return nil, nil, nil, mapDecodeError(err, t.Data)
 	}
 
 	comments := []*Comment{}
 	posts := []*Post{}
+	msgs := []*Message{}
 	err := error(nil)
 
 	for _, c := range l.Children {
@@ -105,6 +116,7 @@ func parseListing(t *thing) ([]*Comment, []*Post, error) {
 
 		var comment *Comment
 		var post *Post
+		var msg *Message
 		switch c.Kind {
 		case commentKind:
 			comment, err = parseComment(&c)
@@ -112,18 +124,17 @@ func parseListing(t *thing) ([]*Comment, []*Post, error) {
 		case postKind:
 			post, err = parsePost(&c)
 			posts = append(posts, post)
+		case messageKind:
+			msg, err = parseMessage(&c)
+			msgs = append(msgs, msg)
 		}
 	}
 
-	return comments, posts, err
+	return comments, posts, msgs, err
 }
 
 // parseComment parses a comment into the user facing Comment struct.
 func parseComment(t *thing) (*Comment, error) {
-	if t.Kind != commentKind {
-		return nil, thingKindError(t.Kind, commentKind)
-	}
-
 	// Reddit makes the replies field a string if it is empty, just to make
 	// it harder for programmers who like static type systems.
 	value, present := t.Data["replies"]
@@ -140,7 +151,7 @@ func parseComment(t *thing) (*Comment, error) {
 
 	var err error
 	if c.Replies.Kind == listingKind {
-		c.Comment.Replies, _, err = parseListing(&c.Replies)
+		c.Comment.Replies, _, _, err = parseListing(&c.Replies)
 	}
 
 	c.Comment.Deleted = c.Comment.Body == deletedKey
@@ -149,10 +160,6 @@ func parseComment(t *thing) (*Comment, error) {
 
 // parsePost parses a post into the user facing Post struct.
 func parsePost(t *thing) (*Post, error) {
-	if t.Kind != postKind {
-		return nil, thingKindError(t.Kind, postKind)
-	}
-
 	p := &Post{}
 	if err := mapstructure.Decode(t.Data, p); err != nil {
 		return nil, mapDecodeError(err, t.Data)
@@ -160,4 +167,10 @@ func parsePost(t *thing) (*Post, error) {
 
 	p.Deleted = p.SelfText == deletedKey
 	return p, nil
+}
+
+// parseMessage parses a message into the user facing Message struct.
+func parseMessage(t *thing) (*Message, error) {
+	m := &Message{}
+	return m, mapstructure.Decode(t.Data, m)
 }
