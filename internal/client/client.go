@@ -1,5 +1,5 @@
-// Package reaper reaps http Requests which require OAuth2 authorization.
-package reaper
+// Package client reaps http Requests which require OAuth2 authorization.
+package client
 
 import (
 	"bytes"
@@ -16,10 +16,10 @@ var (
 	RateLimitErr        = fmt.Errorf("service rate limiting requests")
 )
 
-// Config holds all the information needed to define Reaper behavior, such as
-// who the reaper will identify as externally and where to authorize.
+// Config holds all the information needed to define Client behavior, such as
+// who the client will identify as externally and where to authorize.
 type Config struct {
-	// Agent is the user agent set in all requests made by the Reaper.
+	// Agent is the user agent set in all requests made by the Client.
 	Agent string
 
 	// ID and Secret are used to claim an OAuth2 grant the users are
@@ -35,42 +35,43 @@ type Config struct {
 	TokenURL string
 }
 
-// Reaper executes http Requests and invisibly handles OAuth2 authorization.
-type Reaper interface {
+// Client executes http Requests and invisibly handles OAuth2 authorization.
+type Client interface {
+	Do(*http.Request) ([]byte, error)
 }
 
-type reaper struct {
+type client struct {
 	cli *http.Client
 }
 
-func (r *reaper) reap(req *http.Request) (string, error) {
+func (r *client) Do(req *http.Request) ([]byte, error) {
 	resp, err := r.cli.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusForbidden:
-		return "", PermissionDeniedErr
+		return nil, PermissionDeniedErr
 	case http.StatusServiceUnavailable:
-		return "", BusyErr
+		return nil, BusyErr
 	case http.StatusTooManyRequests:
-		return "", RateLimitErr
+		return nil, RateLimitErr
 	default:
-		return "", fmt.Errorf("bad response code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("bad response code: %d", resp.StatusCode)
 	}
 
 	var buf bytes.Buffer
 	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return buf.String(), nil
+	return buf.Bytes(), nil
 }
 
-// New returns a new Reaper using the given user to reap requests.
-func New(c Config) (Reaper, error) {
+// New returns a new Client using the given user to make requests.
+func New(c Config) (Client, error) {
 	transport := &agentForwarder{agent: c.Agent}
 	cli := &http.Client{Transport: transport}
 	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, cli)
@@ -88,5 +89,5 @@ func New(c Config) (Reaper, error) {
 	}
 
 	token, err := cfg.PasswordCredentialsToken(ctx, c.Username, c.Password)
-	return &reaper{cfg.Client(ctx, token)}, err
+	return &client{cfg.Client(ctx, token)}, err
 }
