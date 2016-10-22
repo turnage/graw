@@ -1,6 +1,6 @@
 // Data types defined here all derive from Reddit's definitions. See the Reddit
 // documentation for more context: https://github.com/reddit/reddit/wiki/JSON
-package graw
+package data
 
 // Comment represents a comment on Reddit (Reddit type t1_).
 type Comment struct {
@@ -81,6 +81,7 @@ type Post struct {
 	Stickied      bool   `mapstructure:"stickied"`
 }
 
+// Message represents messages on Reddit (Reddit type t4_).
 type Message struct {
 	ID   string `mapstructure:"id"`
 	Name string `mapstructure:"name"`

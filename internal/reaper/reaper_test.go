@@ -54,7 +54,7 @@ func TestReap(t *testing.T) {
 			t.Fatalf("failed to prepare request for test: %v", err)
 		}
 
-		if body, err := r.Reap(req); err != test.err {
+		if body, err := r.reap(req); err != test.err {
 			t.Errorf("unexpected error: %v", err)
 		} else if reflect.DeepEqual(body, test.body) == false {
 			t.Errorf("body got %s; wanted %s", body, test.body)

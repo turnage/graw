@@ -1,4 +1,4 @@
-package graw
+package data
 
 import (
 	"encoding/json"
@@ -42,8 +42,8 @@ func mapDecodeError(err error, val interface{}) error {
 	)
 }
 
-// parse parses any Reddit response and provides the elements in it.
-func parse(
+// Parse parses any Reddit response and provides the elements in it.
+func Parse(
 	blob json.RawMessage,
 ) ([]*Comment, []*Post, []*Message, error) {
 	comments, posts, msgs, listingErr := parseRawListing(blob)

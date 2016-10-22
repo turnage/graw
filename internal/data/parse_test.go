@@ -5,7 +5,7 @@
 // think there are likely to be issues.
 //
 // Find the result expecations in internal/testdata/*.json
-package graw
+package data
 
 import (
 	"strings"
@@ -21,7 +21,7 @@ func TestParse(t *testing.T) {
 		testdata.MustAsset("subreddit.json"),
 		testdata.MustAsset("inbox.json"),
 	} {
-		if _, _, _, err := parse(input); err != nil {
+		if _, _, _, err := Parse(input); err != nil {
 			t.Errorf("failed to parse input %d: %v", i, err)
 		}
 	}

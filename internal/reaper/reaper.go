@@ -37,14 +37,13 @@ type Config struct {
 
 // Reaper executes http Requests and invisibly handles OAuth2 authorization.
 type Reaper interface {
-	Reap(r *http.Request) (string, error)
 }
 
 type reaper struct {
 	cli *http.Client
 }
 
-func (r *reaper) Reap(req *http.Request) (string, error) {
+func (r *reaper) reap(req *http.Request) (string, error) {
 	resp, err := r.cli.Do(req)
 	if err != nil {
 		return "", err
