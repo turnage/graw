@@ -35,14 +35,30 @@ type comment struct {
 	Replies thing `mapstructure:"replies"`
 }
 
-func thingKindError(actual, wanted string) error {
-	return fmt.Errorf("got kind %s; wanted kind %s", actual, wanted)
-}
-
 func mapDecodeError(err error, val interface{}) error {
 	return fmt.Errorf(
 		"failed to decode json map into struct: %v; value: %v",
 		err, val,
+	)
+}
+
+// parse parses any Reddit response and provides the elements in it.
+func parse(
+	blob json.RawMessage,
+) ([]*Comment, []*Post, []*Message, error) {
+	comments, posts, msgs, listingErr := parseRawListing(blob)
+	if listingErr == nil {
+		return comments, posts, msgs, nil
+	}
+
+	post, threadErr := parseThread(blob)
+	if threadErr == nil {
+		return nil, []*Post{post}, nil, nil
+	}
+
+	return nil, nil, nil, fmt.Errorf(
+		"failed to parse as listing [%v] or thread [%v]",
+		listingErr, threadErr,
 	)
 }
 
@@ -89,7 +105,7 @@ func parseThread(blob json.RawMessage) (*Post, error) {
 // parseListing parses a Reddit listing type and returns the elements inside it.
 func parseListing(t *thing) ([]*Comment, []*Post, []*Message, error) {
 	if t.Kind != listingKind {
-		return nil, nil, nil, thingKindError(t.Kind, listingKind)
+		return nil, nil, nil, fmt.Errorf("thing is not listing")
 	}
 
 	l := &listing{}

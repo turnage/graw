@@ -14,6 +14,19 @@ import (
 	"github.com/turnage/graw/internal/testdata"
 )
 
+func TestParse(t *testing.T) {
+	for i, input := range [][]byte{
+		testdata.MustAsset("thread.json"),
+		testdata.MustAsset("user.json"),
+		testdata.MustAsset("subreddit.json"),
+		testdata.MustAsset("inbox.json"),
+	} {
+		if _, _, _, err := parse(input); err != nil {
+			t.Errorf("failed to parse input %d: %v", i, err)
+		}
+	}
+}
+
 func TestParseThread(t *testing.T) {
 	post, err := parseThread(testdata.MustAsset("thread.json"))
 	if err != nil {
