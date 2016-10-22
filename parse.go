@@ -20,8 +20,6 @@ const deletedKey = "[deleted]"
 
 // thing is a Reddit type that holds all of their subtypes.
 type thing struct {
-	ID   string                 `json:"id,omitempty"`
-	Name string                 `json:"name,omitempty"`
 	Kind string                 `json:"kind"`
 	Data map[string]interface{} `json:"data"`
 }
@@ -48,15 +46,10 @@ func mapDecodeError(err error, val interface{}) error {
 	)
 }
 
-// propagateThingMetadataDown takes fields from thing and adds them to the child
-// map so the child knows when it was created and what its full name is.
-func propagateThingMetadataDown(t *thing) {
-	t.Data["id"] = t.ID
-	t.Data["name"] = t.Name
-}
-
 // parseRawListing parses a listing json blob and returns the elements in it.
-func parseUser(blob json.RawMessage) ([]*Comment, []*Post, []*Message, error) {
+func parseRawListing(
+	blob json.RawMessage,
+) ([]*Comment, []*Post, []*Message, error) {
 	var activityListing thing
 	if err := json.Unmarshal(blob, &activityListing); err != nil {
 		return nil, nil, nil, err
@@ -117,16 +110,21 @@ func parseListing(t *thing) ([]*Comment, []*Post, []*Message, error) {
 		var comment *Comment
 		var post *Post
 		var msg *Message
-		switch c.Kind {
-		case commentKind:
-			comment, err = parseComment(&c)
-			comments = append(comments, comment)
-		case postKind:
-			post, err = parsePost(&c)
-			posts = append(posts, post)
-		case messageKind:
+
+		// Reddit sets the "Kind" field of comments in the inbox, which
+		// have only Message and not Comment fields, to commentKind. The
+		// give away in this case is that comments in message form have
+		// a field called "was_comment". Reddit does this because they
+		// hate programmers.
+		if c.Kind == messageKind || c.Data["was_comment"] != nil {
 			msg, err = parseMessage(&c)
 			msgs = append(msgs, msg)
+		} else if c.Kind == commentKind {
+			comment, err = parseComment(&c)
+			comments = append(comments, comment)
+		} else if c.Kind == postKind {
+			post, err = parsePost(&c)
+			posts = append(posts, post)
 		}
 	}
 

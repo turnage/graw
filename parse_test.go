@@ -1,3 +1,10 @@
+// parse_test uses actual Reddit data, selected at human-random, to test that
+// the parser can extract the information from them. The selected information I
+// test isn't a full check because that would take a long time to write and I
+// don't think it is that worthwhile. Instead some things are poked where I
+// think there are likely to be issues.
+//
+// Find the result expecations in internal/testdata/*.json
 package graw
 
 import (
@@ -49,5 +56,76 @@ func TestParseThread(t *testing.T) {
 			"sub reply had incorrect author: %s",
 			post.Replies[0].Replies[0].Author,
 		)
+	}
+}
+
+func TestParseUserFeed(t *testing.T) {
+	comments, posts, _, err := parseRawListing(
+		testdata.MustAsset("user.json"),
+	)
+	if err != nil {
+		t.Fatalf("failed to parse user feed: %v", err)
+	}
+
+	if len(comments) < 1 {
+		t.Fatalf("found no comments in user feed")
+	}
+
+	if len(posts) < 1 {
+		t.Fatalf("found no posts in user feed")
+	}
+
+	if comments[0].LinkTitle != "Dreamworks LLC!!!" {
+		t.Errorf(
+			"user feed comment had unexpected link title: %s",
+			comments[0].LinkTitle,
+		)
+	}
+
+	if posts[0].Score != 417 {
+		t.Errorf(
+			"user feed post had unexpected score: %d",
+			posts[0].Score,
+		)
+	}
+}
+
+func TestParseSubredditFeed(t *testing.T) {
+	_, posts, _, err := parseRawListing(testdata.MustAsset("subreddit.json"))
+	if err != nil {
+		t.Fatalf("failed to parse subreddit feed: %v", err)
+	}
+
+	if len(posts) != 27 {
+		t.Fatalf(
+			"failed to parse all posts; found %d; wanted %d",
+			len(posts), 27,
+		)
+	}
+
+	if posts[0].Name != "t3_552rz1" {
+		t.Errorf("failed to parse post name; found: %s", posts[0].Name)
+	}
+
+	if posts[26].LinkFlairCSSClass != "black" {
+		t.Errorf(
+			"failed to parse link flair css; found: %s",
+			posts[26].LinkFlairCSSClass,
+		)
+	}
+}
+
+func TestParseInboxFeed(t *testing.T) {
+	_, _, msgs, err := parseRawListing(testdata.MustAsset("inbox.json"))
+	if err != nil {
+		t.Fatalf("failed to parse inbox feed: %v", err)
+	}
+
+	if len(msgs) != 5 {
+		t.Fatalf("found unexpected number of messages: %v", len(msgs))
+	}
+
+	if msgs[0].Name != "t1_cwup4dd" {
+		t.Errorf("first message had unexpected name: %s", msgs[0].Name)
 	}
 }
