@@ -1,4 +1,4 @@
-package reaper
+package client
 
 import (
 	"net/http"
