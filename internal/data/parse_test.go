@@ -15,13 +15,14 @@ import (
 )
 
 func TestParse(t *testing.T) {
+	p := NewParser()
 	for i, input := range [][]byte{
 		testdata.MustAsset("thread.json"),
 		testdata.MustAsset("user.json"),
 		testdata.MustAsset("subreddit.json"),
 		testdata.MustAsset("inbox.json"),
 	} {
-		if _, _, _, err := Parse(input); err != nil {
+		if _, _, _, err := p.Parse(input); err != nil {
 			t.Errorf("failed to parse input %d: %v", i, err)
 		}
 	}

@@ -35,15 +35,20 @@ type comment struct {
 	Replies thing `mapstructure:"replies"`
 }
 
-func mapDecodeError(err error, val interface{}) error {
-	return fmt.Errorf(
-		"failed to decode json map into struct: %v; value: %v",
-		err, val,
-	)
+// Parser parses Reddit responses..
+type Parser interface {
+	// Parse parses any Reddit response and provides the elements in it.
+	Parse(blob json.RawMessage) ([]*Comment, []*Post, []*Message, error)
 }
 
-// Parse parses any Reddit response and provides the elements in it.
-func Parse(
+type parser struct{}
+
+func NewParser() Parser {
+	return &parser{}
+}
+
+// parse parses any Reddit response and provides the elements in it.
+func (p *parser) Parse(
 	blob json.RawMessage,
 ) ([]*Comment, []*Post, []*Message, error) {
 	comments, posts, msgs, listingErr := parseRawListing(blob)
@@ -187,4 +192,11 @@ func parsePost(t *thing) (*Post, error) {
 func parseMessage(t *thing) (*Message, error) {
 	m := &Message{}
 	return m, mapstructure.Decode(t.Data, m)
+}
+
+func mapDecodeError(err error, val interface{}) error {
+	return fmt.Errorf(
+		"failed to decode json map into struct: %v; value: %v",
+		err, val,
+	)
 }
