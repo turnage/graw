@@ -66,7 +66,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestReaper(t *testing.T) {
+func TestReap(t *testing.T) {
 	for i, test := range []struct {
 		path    string
 		values  map[string]string
@@ -74,33 +74,33 @@ func TestReaper(t *testing.T) {
 	}{
 		{"", nil, http.Request{
 			Method: "GET",
+			Host:   "reddit.com",
 			URL: &url.URL{
 				Scheme:   "http",
-				Host:     "",
+				Host:     "reddit.com",
 				Path:     "",
 				RawQuery: "",
 			},
-			Host: "",
 		}},
 		{"", map[string]string{"key": "value"}, http.Request{
 			Method: "GET",
+			Host:   "reddit.com",
 			URL: &url.URL{
 				Scheme:   "http",
-				Host:     "",
+				Host:     "reddit.com",
 				Path:     "",
 				RawQuery: "key=value",
 			},
-			Host: "",
 		}},
 		{"path", nil, http.Request{
 			Method: "GET",
+			Host:   "reddit.com",
 			URL: &url.URL{
 				Scheme:   "http",
-				Host:     "",
+				Host:     "reddit.com",
 				Path:     "path",
 				RawQuery: "",
 			},
-			Host: "",
 		}},
 	} {
 		expected := Harvest{
@@ -122,9 +122,10 @@ func TestReaper(t *testing.T) {
 		}
 		c := &mockClient{}
 		r := &reaper{
-			cli:    c,
-			parser: parserWhich(expected),
-			scheme: "http",
+			cli:      c,
+			parser:   parserWhich(expected),
+			hostname: "reddit.com",
+			scheme:   "http",
 		}
 
 		harvest, err := r.Reap(test.path, test.values)
@@ -134,6 +135,64 @@ func TestReaper(t *testing.T) {
 
 		if diff := pretty.Compare(harvest, expected); diff != "" {
 			t.Errorf("harvest incorrect; diff: %s", diff)
+		}
+
+		if diff := pretty.Compare(c.request, test.correct); diff != "" {
+			t.Errorf("request incorrect; diff: %s", diff)
+		}
+	}
+}
+
+func TestSow(t *testing.T) {
+	for i, test := range []struct {
+		path    string
+		values  map[string]string
+		correct http.Request
+	}{
+		{"", nil, http.Request{
+			Method: "POST",
+			Header: formEncoding,
+			Host:   "reddit.com",
+			URL: &url.URL{
+				Scheme:   "http",
+				Host:     "reddit.com",
+				Path:     "",
+				RawQuery: "",
+			},
+		}},
+		{"", map[string]string{"key": "value"}, http.Request{
+			Method: "POST",
+			Header: formEncoding,
+			Host:   "reddit.com",
+			URL: &url.URL{
+				Scheme:   "http",
+				Host:     "reddit.com",
+				Path:     "",
+				RawQuery: "key=value",
+			},
+		}},
+		{"path", nil, http.Request{
+			Method: "POST",
+			Header: formEncoding,
+			Host:   "reddit.com",
+			URL: &url.URL{
+				Scheme:   "http",
+				Host:     "reddit.com",
+				Path:     "path",
+				RawQuery: "",
+			},
+		}},
+	} {
+		c := &mockClient{}
+		r := &reaper{
+			cli:      c,
+			parser:   &mockParser{},
+			hostname: "reddit.com",
+			scheme:   "http",
+		}
+
+		if err := r.Sow(test.path, test.values); err != nil {
+			t.Errorf("Error reaping input %d: %v", i, err)
 		}
 
 		if diff := pretty.Compare(c.request, test.correct); diff != "" {

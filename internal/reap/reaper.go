@@ -84,7 +84,16 @@ func (r *reaper) Reap(path string, values map[string]string) (Harvest, error) {
 }
 
 func (r *reaper) Sow(path string, values map[string]string) error {
-	return nil
+	_, err := r.cli.Do(
+		&http.Request{
+			Method: "POST",
+			Header: formEncoding,
+			Host:   r.hostname,
+			URL:    r.url(path, values),
+		},
+	)
+
+	return err
 }
 
 func (r *reaper) url(path string, values map[string]string) *url.URL {
