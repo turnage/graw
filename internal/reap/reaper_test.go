@@ -1,4 +1,4 @@
-package reaper
+package reap
 
 import (
 	"encoding/json"

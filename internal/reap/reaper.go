@@ -1,5 +1,5 @@
-// Package reaper provides an high level interface for Reddit HTTP requests.
-package reaper
+// Package reap provides an high level interface for Reddit HTTP requests.
+package reap
 
 import (
 	"net/http"
