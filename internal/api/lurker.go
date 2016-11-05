@@ -20,7 +20,7 @@ var listingParams = withDefaults(map[string]string{"limit": "100"})
 // Reddit.
 type Lurker interface {
 	// Listing returns a harvest from a listing endpoint at Reddit.
-	Listing(subreddit, after string) (reap.Harvest, error)
+	Listing(path, after string) (reap.Harvest, error)
 	// Thread returns a Reddit post with a full parsed comment tree. The
 	// permalink can be used as the path.
 	Thread(path string) (*data.Post, error)
@@ -38,8 +38,8 @@ func NewLurker(r reap.Reaper) Lurker {
 	return &lurker{r: r}
 }
 
-func (l *lurker) Listing(subreddit, after string) (reap.Harvest, error) {
-	return l.r.Reap("/r/"+subreddit, listingParams)
+func (l *lurker) Listing(path, after string) (reap.Harvest, error) {
+	return l.r.Reap(path, listingParams)
 }
 
 func (l *lurker) Thread(path string) (*data.Post, error) {
