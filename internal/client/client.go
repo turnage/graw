@@ -5,9 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 )
 
 var (
@@ -22,17 +19,9 @@ type Config struct {
 	// Agent is the user agent set in all requests made by the Client.
 	Agent string
 
-	// ID and Secret are used to claim an OAuth2 grant the users are
-	// previously authorized.
-	ID     string
-	Secret string
-
-	// Username and Password are used to authorize with the endpoint.
-	Username string
-	Password string
-
-	// TokenURL is the url of the token request location for OAuth2.
-	TokenURL string
+	// If all fields in App are set, this client will attempt to identify as
+	// a registered Reddit app using the credentials.
+	App App
 }
 
 // Client executes http Requests and invisibly handles OAuth2 authorization.
@@ -40,12 +29,12 @@ type Client interface {
 	Do(*http.Request) ([]byte, error)
 }
 
-type client struct {
+type base struct {
 	cli *http.Client
 }
 
-func (r *client) Do(req *http.Request) ([]byte, error) {
-	resp, err := r.cli.Do(req)
+func (b *base) Do(req *http.Request) ([]byte, error) {
+	resp, err := b.cli.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -72,22 +61,9 @@ func (r *client) Do(req *http.Request) ([]byte, error) {
 
 // New returns a new Client using the given user to make requests.
 func New(c Config) (Client, error) {
-	transport := &agentForwarder{agent: c.Agent}
-	cli := &http.Client{Transport: transport}
-	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, cli)
-	cfg := &oauth2.Config{
-		ClientID:     c.ID,
-		ClientSecret: c.Secret,
-		Endpoint:     oauth2.Endpoint{TokenURL: c.TokenURL},
-		Scopes: []string{
-			"identity",
-			"read",
-			"privatemessages",
-			"submit",
-			"history",
-		},
+	if c.App.configured() {
+		return newAppClient(c)
 	}
 
-	token, err := cfg.PasswordCredentialsToken(ctx, c.Username, c.Password)
-	return &client{cfg.Client(ctx, token)}, err
+	return &base{clientWithAgent(c.Agent)}, nil
 }

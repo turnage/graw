@@ -16,3 +16,7 @@ func (a *agentForwarder) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Add("User-Agent", a.agent)
 	return a.Transport.RoundTrip(r)
 }
+
+func clientWithAgent(agent string) *http.Client {
+	return &http.Client{Transport: &agentForwarder{agent: agent}}
+}

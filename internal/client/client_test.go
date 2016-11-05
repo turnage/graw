@@ -17,24 +17,48 @@ func serverWhich(body []byte, code int) *httptest.Server {
 	)
 }
 
-func TestNew(t *testing.T) {
+func TestNewAppClient(t *testing.T) {
 	serv := serverWhich([]byte(`{
-		"access_token": aksjdsakjd,
+		"access_token": "aksjdsakjd",
 		"token_type": "bearer",
 		"expires_in": 100,
 		"scope": "*",
-		"refresh_token": sidfnsidfnsd 
+		"refresh_token": "sidfnsidfnsd" 
 	}`), http.StatusOK)
 
-	if client, err := New(Config{TokenURL: serv.URL}); err != nil {
+	if client, err := New(
+		Config{
+			App: App{
+				TokenURL: serv.URL,
+				ID:       "id",
+				Secret:   "secret",
+				Username: "user",
+				Password: "password",
+			},
+		},
+	); err != nil {
 		t.Errorf("failed to fetch token: %v", err)
 	} else if client == nil {
 		t.Errorf("client was nil")
+	} else if app, ok := client.(*appClient); !ok {
+		t.Errorf("client was not an appClient")
+	} else if app.token == nil {
+		t.Errorf("appClient's token was not set")
+	}
+}
+
+func TestNewAnonClient(t *testing.T) {
+	if client, err := New(Config{}); err != nil {
+		t.Errorf("error making anon client")
+	} else if client == nil {
+		t.Errorf("anon client was nil")
+	} else if _, ok := client.(*base); !ok {
+		t.Errorf("anon client was not a base implementation")
 	}
 }
 
 func TestDo(t *testing.T) {
-	r := &client{cli: &http.Client{}}
+	r := &base{cli: &http.Client{}}
 	for _, test := range []struct {
 		body []byte
 		code int
