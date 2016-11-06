@@ -110,6 +110,8 @@ func (m *monitor) updateTip(h reap.Harvest) {
 	names := m.sorter.Sort(h)
 	if len(names) > 0 {
 		m.blanks = 0
+	} else {
+		m.blanks++
 	}
 
 	m.tip = append(names, m.tip...)
@@ -121,17 +123,15 @@ func (m *monitor) updateTip(h reap.Harvest) {
 // healthCheck checks the health of the tip when nothing is returned from a
 // scrape enough times.
 func (m *monitor) healthCheck() error {
-	m.blanks++
-	if m.blanks > m.blankThreshold {
-		m.blanks = 0
-		broken, err := m.fixTip()
-		if err != nil {
-			return err
-		}
-		if !broken {
-			m.blankThreshold *= 2
-		}
+	m.blanks = 0
+	broken, err := m.fixTip()
+	if err != nil {
+		return err
 	}
+	if !broken {
+		m.blankThreshold *= 2
+	}
+
 	return nil
 }
 
