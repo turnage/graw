@@ -14,8 +14,6 @@ const deletedAuthor = "[deleted]"
 // DoesNotExistErr indicates a value did not exist at an endpoint.
 var DoesNotExistErr = fmt.Errorf("did not find expected values at endpoint")
 
-var listingParams = withDefaults(map[string]string{"limit": "100"})
-
 // Lurker provides a high level interface for information fetching api calls to
 // Reddit.
 type Lurker interface {
@@ -39,7 +37,14 @@ func NewLurker(r reap.Reaper) Lurker {
 }
 
 func (l *lurker) Listing(path, after string) (reap.Harvest, error) {
-	return l.r.Reap(path, listingParams)
+	return l.r.Reap(
+		path, withDefaults(
+			map[string]string{
+				"limit":  "100",
+				"before": after,
+			},
+		),
+	)
 }
 
 func (l *lurker) Thread(path string) (*data.Post, error) {
