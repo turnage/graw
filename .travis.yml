@@ -5,5 +5,7 @@ before_install:
 - go get github.com/philwinder/gocoverage
 - go get github.com/mattn/goveralls
 script:
+- go get ./...
+- go generate ./...
 - "$HOME/gopath/bin/gocoverage -output=cover_profile"
 - "$HOME/gopath/bin/goveralls -coverprofile=cover_profile -service=travis-ci"
