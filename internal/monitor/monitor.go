@@ -76,12 +76,13 @@ func New(c Config) (Monitor, error) {
 // Update checks for new content at the monitored listing endpoint and forwards
 // new content to the bot for processing.
 func (m *monitor) Update() (reap.Harvest, error) {
-	harvest, err := m.lurker.Listing(m.path, m.tip[0])
-	if err != nil {
-		return harvest, err
+	if m.blanks == m.blankThreshold {
+		return reap.Harvest{}, m.healthCheck()
 	}
 
-	return harvest, m.updateTip(harvest)
+	harvest, err := m.lurker.Listing(m.path, m.tip[0])
+	m.updateTip(harvest)
+	return harvest, err
 }
 
 // sync fetches the current tip of a listing endpoint, so that grawbots crawling
@@ -105,11 +106,9 @@ func (m *monitor) sync() error {
 // updateTip updates the monitor's list of names from the endpoint listing it
 // uses to keep track of its position in the monitored listing (e.g. a user's
 // page or its position in a subreddit's history).
-func (m *monitor) updateTip(h reap.Harvest) error {
+func (m *monitor) updateTip(h reap.Harvest) {
 	names := m.sorter.Sort(h)
-	if len(names) == 0 {
-		return m.healthCheck()
-	} else {
+	if len(names) > 0 {
 		m.blanks = 0
 	}
 
@@ -117,8 +116,6 @@ func (m *monitor) updateTip(h reap.Harvest) error {
 	if len(m.tip) > maxTipSize {
 		m.tip = m.tip[0:maxTipSize]
 	}
-
-	return nil
 }
 
 // healthCheck checks the health of the tip when nothing is returned from a

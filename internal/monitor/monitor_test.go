@@ -74,7 +74,7 @@ func TestShaveTip(t *testing.T) {
 
 func TestStoreTip(t *testing.T) {
 	m := &monitor{
-		blanks:         1,
+		blanks:         0,
 		blankThreshold: 1,
 		tip:            []string{"1", "2"},
 		lurker:         &mockLurker{},
