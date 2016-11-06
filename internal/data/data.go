@@ -8,8 +8,8 @@ type Comment struct {
 	Name      string `mapstructure:"name"`
 	Permalink string `mapstructure:"permalink"`
 
-	CreatedUTC float64 `mapstructure:"created_utc"`
-	Deleted    bool    `mapstructure:"deleted"`
+	CreatedUTC uint64 `mapstructure:"created_utc"`
+	Deleted    bool   `mapstructure:"deleted"`
 
 	Ups   int32 `mapstructure:"ups"`
 	Downs int32 `mapstructure:"downs"`
@@ -42,8 +42,8 @@ type Post struct {
 	Name      string `mapstructure:"name"`
 	Permalink string `mapstructure:"permalink"`
 
-	CreatedUTC float64 `mapstructure:"created_utc"`
-	Deleted    bool    `mapstructure:"deleted"`
+	CreatedUTC uint64 `mapstructure:"created_utc"`
+	Deleted    bool   `mapstructure:"deleted"`
 
 	Ups   int32 `mapstructure:"ups"`
 	Downs int32 `mapstructure:"downs"`
@@ -85,6 +85,8 @@ type Post struct {
 type Message struct {
 	ID   string `mapstructure:"id"`
 	Name string `mapstructure:"name"`
+
+	CreatedUTC uint64 `mapstructure:"created_utc"`
 
 	Author   string `mapstructure:"author"`
 	Subject  string `mapstructure:"subject"`
