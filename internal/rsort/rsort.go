@@ -10,6 +10,24 @@ import (
 	"github.com/turnage/graw/internal/reap"
 )
 
+// Sorter sorts Reddit element harvests.
+type Sorter interface {
+	// Sort sorts a Reddit element harvest and returns its fullnames in the
+	// order of their creation (younger names first).
+	Sort(h reap.Harvest) []string
+}
+
+type sorter struct{}
+
+func (s *sorter) Sort(h reap.Harvest) []string {
+	return sortHarvest(h)
+}
+
+// New returns a new sorter implementation.
+func New() Sorter {
+	return &sorter{}
+}
+
 // redditThing is named after the Reddit class "Thing", from which all items
 // with a full name and creation time inherit.
 type redditThing interface {
@@ -17,9 +35,9 @@ type redditThing interface {
 	Birth() uint64
 }
 
-// Sort returns the list of names of Reddit elements in a harvest sorted by
-// creation time to the younger elements appear first in the slice.
-func Sort(h reap.Harvest) []string {
+// sortHarvest returns the list of names of Reddit elements in a harvest sorted
+// by creation time to the younger elements appear first in the slice.
+func sortHarvest(h reap.Harvest) []string {
 	things := merge(
 		postsAsThings(h.Posts),
 		commentsAsThings(h.Comments),
