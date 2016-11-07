@@ -52,6 +52,9 @@ func (e *engine) Run() error {
 	for {
 		select {
 		case <-e.rate:
+			if len(e.ds) == 0 {
+				break
+			}
 			if err := e.ds[i()].Dispatch(); err != nil {
 				return err
 			}
