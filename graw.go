@@ -1,30 +1,13 @@
 package graw
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/turnage/graw/internal/api"
 	"github.com/turnage/graw/internal/client"
 	"github.com/turnage/graw/internal/data"
 	"github.com/turnage/graw/internal/dispatcher"
 	"github.com/turnage/graw/internal/engine"
-	"github.com/turnage/graw/internal/handlers"
-	"github.com/turnage/graw/internal/monitor"
 	"github.com/turnage/graw/internal/reap"
-	"github.com/turnage/graw/internal/rsort"
-)
-
-var (
-	subredditHandlerErr = fmt.Errorf(
-		"Config requests subreddit events, but bot does not " +
-			"implement SubredditHandler interface.",
-	)
-
-	userHandlerErr = fmt.Errorf(
-		"Config requests user events, but bot does not implement " +
-			"UserHandler interface.",
-	)
 )
 
 // minimumInterval is the minimum interval between requests a bot is allowed in
@@ -43,7 +26,7 @@ var (
 )
 
 func Run(c Config, bot interface{}) error {
-	reaper, isUser, err := buildReaper(c)
+	reaper, loggedIn, err := buildReaper(c)
 	if err != nil {
 		return err
 	}
@@ -51,54 +34,47 @@ func Run(c Config, bot interface{}) error {
 	dispatchers := []dispatcher.Dispatcher{}
 
 	if len(c.Subreddits) > 0 {
-		if _, ok := bot.(SubredditHandler); !ok {
-			return subredditHandlerErr
-		}
-
-		path := subredditsPath(c.Subreddits)
-		if !isUser {
-			path = logPathsOut([]string{path})[0]
-		}
-
-		if mon, err := monitor.New(
-			monitor.Config{
-				Path:   path,
-				Lurker: api.NewLurker(reaper),
-				Sorter: rsort.New(),
-			},
+		if d, err := subredditStream(
+			c.Subreddits,
+			loggedIn,
+			reaper,
+			bot,
 		); err != nil {
 			return err
 		} else {
-			handler := handlers.PostHandlerFunc(
-				func(p *data.Post) error {
-					return bot.(SubredditHandler).Post(
-						(*Post)(p),
-					)
-				},
-			)
-			dispatchers = append(
-				dispatchers, dispatcher.New(
-					dispatcher.Config{
-						Monitor:     mon,
-						PostHandler: handler,
-					},
-				),
-			)
+			dispatchers = append(dispatchers, d)
+		}
+	}
+
+	if len(c.Users) > 0 {
+		if d, err := userStreams(
+			c.Users,
+			loggedIn,
+			reaper,
+			bot,
+		); err != nil {
+			return err
+		} else {
+			dispatchers = append(dispatchers, d...)
 		}
 	}
 
 	return engine.New(
 		engine.Config{
 			Dispatchers: dispatchers,
-			Rate:        rateLimit(c.Rate),
+			Rate:        rateLimit(c.Rate, loggedIn),
 		},
 	).Run()
 }
 
 // rateLimit returns a rate limiter compliant with the Reddit API.
-func rateLimit(interval time.Duration) <-chan time.Time {
-	if interval < minimumInterval {
-		interval = minimumInterval
+func rateLimit(interval time.Duration, loggedIn bool) <-chan time.Time {
+	minimum := minimumInterval
+	if !loggedIn {
+		minimum *= 2
+	}
+	if interval < minimum {
+		interval = minimum
 	}
 	return time.Tick(interval)
 }
