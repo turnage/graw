@@ -60,21 +60,24 @@ func (d *dispatcher) dispatch(h reap.Harvest) error {
 	// LOL NO GENERICS
 
 	if d.ph != nil {
-		for _, p := range h.Posts {
+		for i := range h.Posts {
+			p := h.Posts[i]
 			wrap := func() error { return d.ph.HandlePost(p) }
 			g.Go(wrap)
 		}
 	}
 
 	if d.ch != nil {
-		for _, c := range h.Comments {
+		for i := range h.Comments {
+			c := h.Comments[i]
 			wrap := func() error { return d.ch.HandleComment(c) }
 			g.Go(wrap)
 		}
 	}
 
 	if d.mh != nil {
-		for _, m := range h.Messages {
+		for i := range h.Messages {
+			m := h.Messages[i]
 			wrap := func() error { return d.mh.HandleMessage(m) }
 			g.Go(wrap)
 		}
