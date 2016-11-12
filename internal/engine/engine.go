@@ -129,14 +129,10 @@ func (e *Engine) Run() error {
 	}
 
 	for !e.stop {
-		select {
-		case <-e.stopSig:
-			e.stop = true
-		case <-time.After(e.blockTime()):
-			if err := e.updateMonitors(); err != nil {
-				if failer, ok := e.bot.(botfaces.Failer); !(ok && !failer.Fail(err)) {
-					return err
-				}
+		<-time.After(e.blockTime())
+		if err := e.updateMonitors(); err != nil {
+			if failer, ok := e.bot.(botfaces.Failer); !(ok && !failer.Fail(err)) {
+				return err
 			}
 		}
 	}
