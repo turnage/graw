@@ -114,6 +114,10 @@ func (e *Engine) Stop() {
 }
 
 func (e *Engine) Run() error {
+	go func() {
+		e.stop = <-e.stopSig
+	}()
+
 	if loader, ok := e.bot.(botfaces.Loader); ok {
 		if err := loader.SetUp(); err != nil {
 			return err
