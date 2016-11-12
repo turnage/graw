@@ -2,8 +2,10 @@
 package engine
 
 import (
+	"log"
 	"time"
 
+	"github.com/turnage/graw/internal/client"
 	"github.com/turnage/graw/internal/dispatcher"
 )
 
@@ -13,6 +15,8 @@ type Config struct {
 	Dispatchers []dispatcher.Dispatcher
 	// Rate limits the rate at which dispatchers run.
 	Rate <-chan time.Time
+	// Logger logs events and errors.
+	Logger *log.Logger
 }
 
 // Engine controls disptachers.
@@ -26,17 +30,19 @@ type Engine interface {
 }
 
 type engine struct {
-	ds   []dispatcher.Dispatcher
-	rate <-chan time.Time
-	stop chan bool
+	logger *log.Logger
+	ds     []dispatcher.Dispatcher
+	rate   <-chan time.Time
+	stop   chan bool
 }
 
 // New returns an Engine implementation.
 func New(c Config) Engine {
 	return &engine{
-		ds:   c.Dispatchers,
-		rate: c.Rate,
-		stop: make(chan bool, 100),
+		logger: c.Logger,
+		ds:     c.Dispatchers,
+		rate:   c.Rate,
+		stop:   make(chan bool, 100),
 	}
 }
 
@@ -55,7 +61,14 @@ func (e *engine) Run() error {
 			if len(e.ds) == 0 {
 				break
 			}
-			if err := e.ds[i()].Dispatch(); err != nil {
+			err := e.ds[i()].Dispatch()
+			switch err {
+			case client.BusyErr:
+				e.logger.Printf("503: Busy from Reddit; ignoring")
+			case client.GatewayErr:
+				e.logger.Printf("502: Bad Gateway from Reddit; ignoring")
+			case nil:
+			default:
 				return err
 			}
 		case <-e.stop:

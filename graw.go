@@ -1,6 +1,8 @@
 package graw
 
 import (
+	"log"
+	"os"
 	"time"
 
 	"github.com/turnage/graw/internal/client"
@@ -63,6 +65,7 @@ func Run(c Config, bot interface{}) error {
 		engine.Config{
 			Dispatchers: dispatchers,
 			Rate:        rateLimit(c.Rate, loggedIn),
+			Logger:      log.New(os.Stderr, "", log.LstdFlags),
 		},
 	).Run()
 }
