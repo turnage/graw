@@ -9,8 +9,9 @@ import (
 
 var (
 	PermissionDeniedErr = fmt.Errorf("unauthorized access to endpoint")
-	BusyErr             = fmt.Errorf("service is busy right now")
-	RateLimitErr        = fmt.Errorf("service rate limiting requests")
+	BusyErr             = fmt.Errorf("Reddit is busy right now")
+	RateLimitErr        = fmt.Errorf("Reddit is rate limiting requests")
+	GatewayErr          = fmt.Errorf("502 bad gateway code from Reddit")
 )
 
 // Config holds all the information needed to define Client behavior, such as
@@ -47,6 +48,8 @@ func (b *base) Do(req *http.Request) ([]byte, error) {
 		return nil, BusyErr
 	case http.StatusTooManyRequests:
 		return nil, RateLimitErr
+	case http.StatusBadGateway:
+		return nil, GatewayErr
 	default:
 		return nil, fmt.Errorf("bad response code: %d", resp.StatusCode)
 	}
