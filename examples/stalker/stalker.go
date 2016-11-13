@@ -41,6 +41,7 @@ func main() {
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		flag.Usage()
+		os.Exit(-1)
 	}
 
 	fmt.Printf(
