@@ -52,7 +52,7 @@ func main() {
 		log.Fatalf("Failed to create monitor: %v\n", err)
 	}
 
-	for _ = range time.Tick(time.Second) {
+	for range time.Tick(time.Second) {
 		harvest, err := m.Update()
 		if err != nil {
 			log.Fatalf("Monitoring error: %v\n", err)
