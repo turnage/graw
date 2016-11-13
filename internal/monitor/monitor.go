@@ -144,7 +144,7 @@ func (m *monitor) fixTip() (bool, error) {
 		return false, err
 	}
 
-	if exists == false {
+	if !exists {
 		m.shaveTip()
 	}
 
