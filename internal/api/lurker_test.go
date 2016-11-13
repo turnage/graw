@@ -22,7 +22,7 @@ func TestListing(t *testing.T) {
 
 	actual, err := l.Listing("/messages", "")
 	if err != nil {
-		t.Errorf("error lurking listing: %v")
+		t.Errorf("error lurking listing: %v", err)
 	}
 
 	if diff := pretty.Compare(&h, &actual); diff != "" {
