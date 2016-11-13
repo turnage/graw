@@ -1,8 +1,9 @@
 package graw
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
-	"os"
 	"time"
 
 	"github.com/turnage/graw/internal/client"
@@ -61,11 +62,28 @@ func Run(c Config, bot interface{}) error {
 		}
 	}
 
+	if c.Inbox {
+		if !loggedIn {
+			return fmt.Errorf("You must log in for inbox events.")
+		}
+
+		if d, err := inboxStream(reaper, bot); err != nil {
+			return err
+		} else {
+			dispatchers = append(dispatchers, d)
+		}
+	}
+
+	logger := log.New(ioutil.Discard, "", 0)
+	if c.Logger != nil {
+		logger = c.Logger
+	}
+
 	return engine.New(
 		engine.Config{
 			Dispatchers: dispatchers,
 			Rate:        rateLimit(c.Rate, loggedIn),
-			Logger:      log.New(os.Stderr, "", log.LstdFlags),
+			Logger:      logger,
 		},
 	).Run()
 }

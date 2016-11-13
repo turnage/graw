@@ -22,6 +22,11 @@ var (
 		"Config requests user events, but bot does not implement " +
 			"UserHandler interface.",
 	)
+
+	inboxHandlerErr = fmt.Errorf(
+		"Config requests user events, but bot does not implement " +
+			"InboxHandler interface.",
+	)
 )
 
 func subredditStream(
@@ -111,4 +116,44 @@ func userStreams(
 	}
 
 	return dispatchers, nil
+}
+
+func inboxStream(
+	reaper reap.Reaper,
+	bot interface{},
+) (dispatcher.Dispatcher, error) {
+	h, ok := bot.(InboxHandler)
+	if !ok {
+		return nil, inboxHandlerErr
+	}
+
+	mon, err := monitor.New(
+		monitor.Config{
+			Path:   "/message/inbox",
+			Lurker: api.NewLurker(reaper),
+			Sorter: rsort.New(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	router := func(m *data.Message) error {
+		if m.Subject == "comment reply" && m.WasComment {
+			return h.CommentReply((*Message)(m))
+		} else if m.Subject == "post reply" && m.WasComment {
+			return h.PostReply((*Message)(m))
+		} else if m.Subject == "username mention" && m.WasComment {
+			return h.Mention((*Message)(m))
+		}
+
+		return h.Message((*Message)(m))
+	}
+
+	return dispatcher.New(
+		dispatcher.Config{
+			Monitor:        mon,
+			MessageHandler: handlers.MessageHandlerFunc(router),
+		},
+	), nil
 }
