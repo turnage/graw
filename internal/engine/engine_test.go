@@ -2,6 +2,8 @@ package engine
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -23,7 +25,8 @@ func TestRun(t *testing.T) {
 	d1 := &mockDispatcher{nil, make(chan bool)}
 	d2 := &mockDispatcher{nil, make(chan bool)}
 	rate := make(chan time.Time)
-	e := New(Config{[]dispatcher.Dispatcher{d1, d2}, rate})
+	logger := log.New(os.Stderr, "", log.LstdFlags)
+	e := New(Config{[]dispatcher.Dispatcher{d1, d2}, rate, logger})
 
 	var err error
 	var wg sync.WaitGroup
@@ -57,7 +60,8 @@ func TestErrBubble(t *testing.T) {
 	expectedErr := fmt.Errorf("an error")
 	d := &mockDispatcher{expectedErr, make(chan bool)}
 	rate := make(chan time.Time)
-	e := New(Config{[]dispatcher.Dispatcher{d}, rate})
+	logger := log.New(os.Stderr, "", log.LstdFlags)
+	e := New(Config{[]dispatcher.Dispatcher{d}, rate, logger})
 
 	var err error
 	var wg sync.WaitGroup
