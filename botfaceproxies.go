@@ -7,6 +7,7 @@ package graw
 
 import (
 	"github.com/turnage/graw/internal/data"
+	"github.com/turnage/graw/internal/handlers"
 )
 
 type subredditHandlerProxy struct {
@@ -17,8 +18,24 @@ func (s *subredditHandlerProxy) Post(p *data.Post) error {
 	return s.sh.Post((*Post)(p))
 }
 
+func subredditProxy(s SubredditHandler) handlers.SubredditHandler {
+	if s == nil {
+		return nil
+	}
+
+	return &subredditHandlerProxy{s}
+}
+
 type userHandlerProxy struct {
 	uh UserHandler
+}
+
+func userProxy(u UserHandler) handlers.UserHandler {
+	if u == nil {
+		return nil
+	}
+
+	return &userHandlerProxy{u}
 }
 
 func (u *userHandlerProxy) UserPost(p *data.Post) error {
@@ -31,6 +48,14 @@ func (u *userHandlerProxy) UserComment(c *data.Comment) error {
 
 type inboxHandlerProxy struct {
 	ih InboxHandler
+}
+
+func inboxProxy(i InboxHandler) handlers.InboxHandler {
+	if i == nil {
+		return nil
+	}
+
+	return &inboxHandlerProxy{i}
 }
 
 func (i *inboxHandlerProxy) Message(m *data.Message) error {
