@@ -1,16 +1,15 @@
 package graw
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
 
 	"github.com/turnage/graw/internal/client"
 	"github.com/turnage/graw/internal/data"
-	"github.com/turnage/graw/internal/dispatcher"
 	"github.com/turnage/graw/internal/engine"
 	"github.com/turnage/graw/internal/reap"
+	"github.com/turnage/graw/internal/streams"
 )
 
 // minimumInterval is the minimum interval between requests a bot is allowed in
@@ -34,44 +33,25 @@ func Run(c Config, bot interface{}) error {
 		return err
 	}
 
-	dispatchers := []dispatcher.Dispatcher{}
+	sh, _ := bot.(SubredditHandler)
+	uh, _ := bot.(UserHandler)
+	ih, _ := bot.(InboxHandler)
 
-	if len(c.Subreddits) > 0 {
-		if d, err := subredditStream(
-			c.Subreddits,
-			loggedIn,
-			reaper,
-			bot,
-		); err != nil {
-			return err
-		} else {
-			dispatchers = append(dispatchers, d)
-		}
-	}
-
-	if len(c.Users) > 0 {
-		if d, err := userStreams(
-			c.Users,
-			loggedIn,
-			reaper,
-			bot,
-		); err != nil {
-			return err
-		} else {
-			dispatchers = append(dispatchers, d...)
-		}
-	}
-
-	if c.Inbox {
-		if !loggedIn {
-			return fmt.Errorf("You must log in for inbox events.")
-		}
-
-		if d, err := inboxStream(reaper, bot); err != nil {
-			return err
-		} else {
-			dispatchers = append(dispatchers, d)
-		}
+	dispatchers, err := streams.New(
+		streams.Config{
+			LoggedIn:         loggedIn,
+			Subreddits:       c.Subreddits,
+			SubredditHandler: &subredditHandlerProxy{sh},
+			Users:            c.Users,
+			UserHandler:      &userHandlerProxy{uh},
+			Inbox:            c.Inbox,
+			InboxHandler:     &inboxHandlerProxy{ih},
+			Reaper:           reaper,
+			Bot:              bot,
+		},
+	)
+	if err != nil {
+		return err
 	}
 
 	logger := log.New(ioutil.Discard, "", 0)
