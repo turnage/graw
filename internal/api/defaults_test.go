@@ -8,14 +8,14 @@ import (
 
 func TestWithDefaults(t *testing.T) {
 	if diff := pretty.Compare(
-		withDefaults(nil),
+		WithDefaults(nil),
 		defaultValues,
 	); diff != "" {
 		t.Errorf("output for nil input wrong; diff: %s", diff)
 	}
 
 	if diff := pretty.Compare(
-		withDefaults(map[string]string{"key": "value"}),
+		WithDefaults(map[string]string{"key": "value"}),
 		map[string]string{
 			"key":      "value",
 			"raw_json": "1",

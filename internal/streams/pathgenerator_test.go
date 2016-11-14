@@ -42,7 +42,7 @@ func TestLogPathOut(t *testing.T) {
 	}{
 		{"1", "1.json"},
 	} {
-		if out := logPathsOut(
+		if out := logPathOut(
 			test.in,
 		); !reflect.DeepEqual(out, test.out) {
 			t.Errorf("%d: got %s; wanted %s", i, out, test.out)

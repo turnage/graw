@@ -1,9 +1,10 @@
-package api
+package lurker
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/turnage/graw/internal/api"
 	"github.com/turnage/graw/internal/data"
 	"github.com/turnage/graw/internal/reap"
 )
@@ -32,13 +33,13 @@ type lurker struct {
 	r reap.Reaper
 }
 
-func NewLurker(r reap.Reaper) Lurker {
+func New(r reap.Reaper) Lurker {
 	return &lurker{r: r}
 }
 
 func (l *lurker) Listing(path, after string) (reap.Harvest, error) {
 	return l.r.Reap(
-		path, withDefaults(
+		path, api.WithDefaults(
 			map[string]string{
 				"limit":  "100",
 				"before": after,
@@ -48,7 +49,7 @@ func (l *lurker) Listing(path, after string) (reap.Harvest, error) {
 }
 
 func (l *lurker) Thread(path string) (*data.Post, error) {
-	harvest, err := l.r.Reap(path+".json", withDefaults(nil))
+	harvest, err := l.r.Reap(path+".json", api.WithDefaults(nil))
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,7 @@ func (l *lurker) Exists(name string) (bool, error) {
 
 	h, err := l.r.Reap(
 		path,
-		withDefaults(map[string]string{"id": name}),
+		api.WithDefaults(map[string]string{"id": name}),
 	)
 	if err != nil {
 		return false, err

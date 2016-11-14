@@ -3,7 +3,7 @@
 package monitor
 
 import (
-	"github.com/turnage/graw/internal/api"
+	"github.com/turnage/graw/internal/api/lurker"
 	"github.com/turnage/graw/internal/reap"
 	"github.com/turnage/graw/internal/rsort"
 )
@@ -31,7 +31,7 @@ type Config struct {
 	Path string
 
 	// Lurker is the api the monitor uses to read Reddit data.
-	Lurker api.Lurker
+	Lurker lurker.Lurker
 
 	// Sorter sorts the monitor's new listing elements.
 	Sorter rsort.Sorter
@@ -52,7 +52,7 @@ type monitor struct {
 	// appended to the reddit monitor url (e.g./user/robert).
 	path string
 
-	lurker api.Lurker
+	lurker lurker.Lurker
 	sorter rsort.Sorter
 }
 

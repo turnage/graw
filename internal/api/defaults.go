@@ -6,8 +6,8 @@ var (
 	}
 )
 
-// withDefaults returns a value map with the defaults set in it.
-func withDefaults(m map[string]string) map[string]string {
+// WithDefaults returns a value map with the defaults set in it.
+func WithDefaults(m map[string]string) map[string]string {
 	if m == nil {
 		m = make(map[string]string)
 	}

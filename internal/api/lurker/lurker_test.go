@@ -1,4 +1,4 @@
-package api
+package lurker
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/kylelemons/godebug/pretty"
 
+	"github.com/turnage/graw/internal/api"
 	"github.com/turnage/graw/internal/data"
 	"github.com/turnage/graw/internal/reap"
 )
@@ -18,7 +19,7 @@ func TestListing(t *testing.T) {
 			},
 		},
 	}
-	l := NewLurker(reaperWhich(h, nil))
+	l := New(api.ReaperWhich(h, nil))
 
 	actual, err := l.Listing("/messages", "")
 	if err != nil {
@@ -38,7 +39,7 @@ func TestThread(t *testing.T) {
 			},
 		},
 	}
-	l := NewLurker(reaperWhich(h, nil))
+	l := New(api.ReaperWhich(h, nil))
 
 	post, err := l.Thread("")
 	if err != nil {
@@ -51,7 +52,7 @@ func TestThread(t *testing.T) {
 }
 
 func TestThreadReturnsEmpty(t *testing.T) {
-	l := NewLurker(reaperWhich(reap.Harvest{}, nil))
+	l := New(api.ReaperWhich(reap.Harvest{}, nil))
 	_, err := l.Thread("")
 	if err != DoesNotExistErr {
 		t.Errorf("err unexpected; wanted DoesNotExistErr; got %v", err)
@@ -80,8 +81,8 @@ func TestExists(t *testing.T) {
 		{"t1_fffjsdj", comment, nil, true, "/api/info.json"},
 		{"t1_fffjsdj", comment, fail, false, "/api/info.json"},
 	} {
-		r := reaperWhich(test.h, test.err)
-		l := NewLurker(r)
+		r := api.ReaperWhich(test.h, test.err)
+		l := New(r)
 		exists, err := l.Exists(test.input)
 		if err != test.err {
 			t.Errorf("got err %v; wanted %v", err, test.err)
@@ -95,8 +96,8 @@ func TestExists(t *testing.T) {
 			)
 		}
 
-		if r.path != test.path {
-			t.Errorf("got path %s; wanted %s", r.path, test.path)
+		if r.Path != test.path {
+			t.Errorf("got path %s; wanted %s", r.Path, test.path)
 		}
 	}
 }
