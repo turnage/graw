@@ -3,8 +3,6 @@
 package streams
 
 import (
-	"log"
-
 	"github.com/turnage/graw/internal/api/lurker"
 	"github.com/turnage/graw/internal/dispatcher"
 	"github.com/turnage/graw/internal/handlers"
@@ -77,8 +75,6 @@ func New(c Config) ([]dispatcher.Dispatcher, error) {
 		if !c.LoggedIn {
 			sc.path = logPathOut(sc.path)
 		}
-
-		log.Printf("Adding cfg: %v\n", sc)
 
 		if mon, err := monitor.New(
 			monitor.Config{
