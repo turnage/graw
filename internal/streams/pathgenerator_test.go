@@ -35,13 +35,12 @@ func TestUserPaths(t *testing.T) {
 	}
 }
 
-func TestLogPathsOut(t *testing.T) {
+func TestLogPathOut(t *testing.T) {
 	for i, test := range []struct {
-		in  []string
-		out []string
+		in  string
+		out string
 	}{
-		{[]string{"1", "2"}, []string{"1.json", "2.json"}},
-		{[]string{}, []string{}},
+		{"1", "1.json"},
 	} {
 		if out := logPathsOut(
 			test.in,

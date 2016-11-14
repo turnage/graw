@@ -17,6 +17,10 @@ func subreddits(subs []string, sh handlers.SubredditHandler) (
 	singleConfig,
 	error,
 ) {
+	if len(subs) == 0 {
+		return singleConfig{}, nil
+	}
+
 	if sh == nil {
 		return singleConfig{}, noHandlerErr("Subreddit")
 	}
@@ -28,6 +32,10 @@ func subreddits(subs []string, sh handlers.SubredditHandler) (
 }
 
 func users(users []string, uh handlers.UserHandler) ([]singleConfig, error) {
+	if len(users) == 0 {
+		return nil, nil
+	}
+
 	if uh == nil {
 		return nil, noHandlerErr("User")
 	}

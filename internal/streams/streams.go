@@ -3,6 +3,8 @@
 package streams
 
 import (
+	"log"
+
 	"github.com/turnage/graw/internal/api"
 	"github.com/turnage/graw/internal/dispatcher"
 	"github.com/turnage/graw/internal/handlers"
@@ -58,10 +60,12 @@ func New(c Config) ([]dispatcher.Dispatcher, error) {
 		cfgs = append(cfgs, cs...)
 	}
 
-	if cfg, err := inbox(c.LoggedIn, c.InboxHandler); err != nil {
-		return nil, err
-	} else {
-		cfgs = append(cfgs, cfg)
+	if c.Inbox {
+		if cfg, err := inbox(c.LoggedIn, c.InboxHandler); err != nil {
+			return nil, err
+		} else {
+			cfgs = append(cfgs, cfg)
+		}
 	}
 
 	var streams []dispatcher.Dispatcher
@@ -69,6 +73,12 @@ func New(c Config) ([]dispatcher.Dispatcher, error) {
 		if sc.path == "" {
 			continue
 		}
+
+		if !c.LoggedIn {
+			sc.path = logPathOut(sc.path)
+		}
+
+		log.Printf("Adding cfg: %v\n", sc)
 
 		if mon, err := monitor.New(
 			monitor.Config{

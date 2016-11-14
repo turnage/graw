@@ -1,6 +1,7 @@
 package streams
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/turnage/graw/internal/data"
@@ -45,6 +46,12 @@ func TestSubreddits(t *testing.T) {
 		t.Errorf("wanted error for missing handler")
 	}
 
+	if cfg, err := subreddits(nil, nil); err != nil {
+		t.Errorf("error requesting no subreddits.")
+	} else if !reflect.DeepEqual(cfg, singleConfig{}) {
+		t.Errorf("got %v; wanted %v", cfg, singleConfig{})
+	}
+
 	m := &mockSubredditHandler{}
 	if cfg, err := subreddits([]string{"all"}, m); err != nil {
 		t.Errorf("error creating subreddits config: %v", err)
@@ -56,6 +63,12 @@ func TestSubreddits(t *testing.T) {
 func TestUsers(t *testing.T) {
 	if _, err := users([]string{"user"}, nil); err == nil {
 		t.Errorf("wanted error for missing handler")
+	}
+
+	if cfgs, err := users(nil, nil); err != nil {
+		t.Errorf("error requesting zero users")
+	} else if cfgs != nil {
+		t.Errorf("got %v; wanted %v", cfgs, nil)
 	}
 
 	m := &mockUserHandler{}
