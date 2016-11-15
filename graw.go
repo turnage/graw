@@ -1,10 +1,12 @@
 package graw
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
 
+	"github.com/turnage/graw/internal/api/account"
 	"github.com/turnage/graw/internal/client"
 	"github.com/turnage/graw/internal/data"
 	"github.com/turnage/graw/internal/engine"
@@ -33,6 +35,18 @@ func Run(c Config, bot interface{}) error {
 		return err
 	}
 
+	limiter := rateLimit(c.Rate, loggedIn)
+
+	if acc, ok := bot.(accountEmbed); ok {
+		if !loggedIn {
+			return fmt.Errorf(
+				"Account was embedded but bot is logged out.",
+			)
+		}
+
+		acc.grawSetImpl(account.New(reaper, limiter))
+	}
+
 	sh, _ := bot.(SubredditHandler)
 	uh, _ := bot.(UserHandler)
 	ih, _ := bot.(InboxHandler)
@@ -59,13 +73,19 @@ func Run(c Config, bot interface{}) error {
 		logger = c.Logger
 	}
 
-	return engine.New(
+	e := engine.New(
 		engine.Config{
 			Dispatchers: dispatchers,
-			Rate:        rateLimit(c.Rate, loggedIn),
+			Rate:        limiter,
 			Logger:      logger,
 		},
-	).Run()
+	)
+
+	if st, ok := bot.(stopper); ok {
+		st.grawSetEngine(e)
+	}
+
+	return e.Run()
 }
 
 // rateLimit returns a rate limiter compliant with the Reddit API.
