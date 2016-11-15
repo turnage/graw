@@ -1,12 +1,10 @@
 package graw
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
 
-	"github.com/turnage/graw/internal/api/account"
 	"github.com/turnage/graw/internal/client"
 	"github.com/turnage/graw/internal/data"
 	"github.com/turnage/graw/internal/engine"
@@ -43,11 +41,11 @@ func Run(c Config, bot interface{}) error {
 		streams.Config{
 			LoggedIn:         loggedIn,
 			Subreddits:       c.Subreddits,
-			SubredditHandler: subredditProxy(sh),
+			SubredditHandler: subredditHandlerProxyFrom(sh),
 			Users:            c.Users,
-			UserHandler:      userProxy(uh),
+			UserHandler:      userHandlerProxyFrom(uh),
 			Inbox:            c.Inbox,
-			InboxHandler:     inboxProxy(ih),
+			InboxHandler:     inboxHandlerProxyFrom(ih),
 			Reaper:           reaper,
 			Bot:              bot,
 		},

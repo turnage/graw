@@ -18,7 +18,7 @@ func (s *subredditHandlerProxy) Post(p *data.Post) error {
 	return s.sh.Post((*Post)(p))
 }
 
-func subredditProxy(s SubredditHandler) handlers.SubredditHandler {
+func subredditHandlerProxyFrom(s SubredditHandler) handlers.SubredditHandler {
 	if s == nil {
 		return nil
 	}
@@ -30,7 +30,7 @@ type userHandlerProxy struct {
 	uh UserHandler
 }
 
-func userProxy(u UserHandler) handlers.UserHandler {
+func userHandlerProxyFrom(u UserHandler) handlers.UserHandler {
 	if u == nil {
 		return nil
 	}
@@ -50,7 +50,7 @@ type inboxHandlerProxy struct {
 	ih InboxHandler
 }
 
-func inboxProxy(i InboxHandler) handlers.InboxHandler {
+func inboxHandlerProxyFrom(i InboxHandler) handlers.InboxHandler {
 	if i == nil {
 		return nil
 	}
