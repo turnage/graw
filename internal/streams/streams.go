@@ -3,7 +3,7 @@
 package streams
 
 import (
-	"github.com/turnage/graw/internal/api/lurker"
+	"github.com/turnage/graw/internal/api/scanner"
 	"github.com/turnage/graw/internal/dispatcher"
 	"github.com/turnage/graw/internal/handlers"
 	"github.com/turnage/graw/internal/monitor"
@@ -78,9 +78,9 @@ func New(c Config) ([]dispatcher.Dispatcher, error) {
 
 		if mon, err := monitor.New(
 			monitor.Config{
-				Path:   sc.path,
-				Lurker: lurker.New(c.Reaper),
-				Sorter: rsort.New(),
+				Path:    sc.path,
+				Scanner: scanner.New(c.Reaper),
+				Sorter:  rsort.New(),
 			},
 		); err != nil {
 			return nil, err

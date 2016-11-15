@@ -3,7 +3,7 @@
 package monitor
 
 import (
-	"github.com/turnage/graw/internal/api/lurker"
+	"github.com/turnage/graw/internal/api/scanner"
 	"github.com/turnage/graw/internal/reap"
 	"github.com/turnage/graw/internal/rsort"
 )
@@ -30,8 +30,8 @@ type Config struct {
 	// Path is the path to the listing the monitor watches.
 	Path string
 
-	// Lurker is the api the monitor uses to read Reddit data.
-	Lurker lurker.Lurker
+	// Scanner is the api the monitor uses to read Reddit data.
+	Scanner scanner.Scanner
 
 	// Sorter sorts the monitor's new listing elements.
 	Sorter rsort.Sorter
@@ -52,8 +52,8 @@ type monitor struct {
 	// appended to the reddit monitor url (e.g./user/robert).
 	path string
 
-	lurker lurker.Lurker
-	sorter rsort.Sorter
+	scanner scanner.Scanner
+	sorter  rsort.Sorter
 }
 
 // New provides a monitor for the listing endpoint.
@@ -62,7 +62,7 @@ func New(c Config) (Monitor, error) {
 		blankThreshold: blankThreshold,
 		tip:            []string{""},
 		path:           c.Path,
-		lurker:         c.Lurker,
+		scanner:        c.Scanner,
 		sorter:         c.Sorter,
 	}
 
@@ -80,7 +80,7 @@ func (m *monitor) Update() (reap.Harvest, error) {
 		return reap.Harvest{}, m.healthCheck()
 	}
 
-	harvest, err := m.lurker.Listing(m.path, m.tip[0])
+	harvest, err := m.scanner.Listing(m.path, m.tip[0])
 	m.updateTip(harvest)
 	return harvest, err
 }
@@ -88,7 +88,7 @@ func (m *monitor) Update() (reap.Harvest, error) {
 // sync fetches the current tip of a listing endpoint, so that grawbots crawling
 // forward in time don't treat it as a new post, or reprocess it when restarted.
 func (m *monitor) sync() error {
-	harvest, err := m.lurker.Listing(m.path, "")
+	harvest, err := m.scanner.Listing(m.path, "")
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (m *monitor) healthCheck() error {
 // not deleted).If it isn't, it shaves the tip.fixTip returns whether the tip
 // was broken.
 func (m *monitor) fixTip() (bool, error) {
-	exists, err := m.lurker.Exists(m.tip[0])
+	exists, err := m.scanner.Exists(m.tip[0])
 	if err != nil {
 		return false, err
 	}

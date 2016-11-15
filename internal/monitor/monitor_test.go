@@ -4,23 +4,18 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/turnage/graw/internal/data"
 	"github.com/turnage/graw/internal/reap"
 )
 
-type mockLurker struct {
+type mockScanner struct {
 	exists bool
 }
 
-func (m *mockLurker) Listing(_, _ string) (reap.Harvest, error) {
+func (m *mockScanner) Listing(_, _ string) (reap.Harvest, error) {
 	return reap.Harvest{}, nil
 }
 
-func (m *mockLurker) Exists(_ string) (bool, error) { return m.exists, nil }
-
-func (m *mockLurker) Thread(_ string) (*data.Post, error) {
-	return nil, nil
-}
+func (m *mockScanner) Exists(_ string) (bool, error) { return m.exists, nil }
 
 type mockSorter struct {
 	names []string
@@ -29,7 +24,7 @@ type mockSorter struct {
 func (m *mockSorter) Sort(_ reap.Harvest) []string { return m.names }
 
 func TestNew(t *testing.T) {
-	m, err := New(Config{Lurker: &mockLurker{}, Sorter: &mockSorter{}})
+	m, err := New(Config{Scanner: &mockScanner{}, Sorter: &mockSorter{}})
 	if err != nil {
 		t.Errorf("error creating monitor: %v", err)
 	}
@@ -39,7 +34,7 @@ func TestNew(t *testing.T) {
 	}
 
 	names := []string{"1", "2"}
-	m, err = New(Config{Lurker: &mockLurker{}, Sorter: &mockSorter{names}})
+	m, err = New(Config{Scanner: &mockScanner{}, Sorter: &mockSorter{names}})
 	if err != nil {
 		t.Errorf("error creating monitor: %v", err)
 	}
@@ -54,7 +49,7 @@ func TestShaveTip(t *testing.T) {
 		blanks:         1,
 		blankThreshold: 1,
 		tip:            []string{"1", "2"},
-		lurker:         &mockLurker{},
+		scanner:        &mockScanner{},
 		sorter:         &mockSorter{},
 	}
 
@@ -77,7 +72,7 @@ func TestStoreTip(t *testing.T) {
 		blanks:         0,
 		blankThreshold: 1,
 		tip:            []string{"1", "2"},
-		lurker:         &mockLurker{},
+		scanner:        &mockScanner{},
 		sorter:         &mockSorter{[]string{"0"}},
 	}
 
@@ -101,7 +96,7 @@ func TestBackoff(t *testing.T) {
 		blanks:         1,
 		blankThreshold: 1,
 		tip:            []string{"1", "2"},
-		lurker:         &mockLurker{true},
+		scanner:        &mockScanner{true},
 		sorter:         &mockSorter{},
 	}
 
