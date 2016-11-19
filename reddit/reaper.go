@@ -3,6 +3,7 @@ package reddit
 import (
 	"net/http"
 	"net/url"
+	"time"
 )
 
 var (
@@ -21,6 +22,7 @@ type reaperConfig struct {
 	parser   parser
 	hostname string
 	tls      bool
+	rate     time.Duration
 }
 
 // reaper is a high level api for Reddit HTTP requests.
@@ -37,6 +39,8 @@ type reaperImpl struct {
 	parser   parser
 	hostname string
 	scheme   string
+	rate     time.Duration
+	last     time.Time
 }
 
 func newReaper(c reaperConfig) reaper {
@@ -45,10 +49,12 @@ func newReaper(c reaperConfig) reaper {
 		parser:   c.parser,
 		hostname: c.hostname,
 		scheme:   scheme[c.tls],
+		rate:     c.rate,
 	}
 }
 
 func (r *reaperImpl) reap(path string, values map[string]string) (Harvest, error) {
+	r.rateBlock()
 	resp, err := r.cli.Do(
 		&http.Request{
 			Method: "GET",
@@ -69,6 +75,7 @@ func (r *reaperImpl) reap(path string, values map[string]string) (Harvest, error
 }
 
 func (r *reaperImpl) sow(path string, values map[string]string) error {
+	r.rateBlock()
 	_, err := r.cli.Do(
 		&http.Request{
 			Method: "POST",
@@ -79,6 +86,13 @@ func (r *reaperImpl) sow(path string, values map[string]string) error {
 	)
 
 	return err
+}
+
+func (r *reaperImpl) rateBlock() {
+	if time.Since(r.last) < r.rate {
+		<-time.After(r.last.Add(r.rate).Sub(time.Now()))
+	}
+	r.last = time.Now()
 }
 
 func (r *reaperImpl) url(path string, values map[string]string) *url.URL {

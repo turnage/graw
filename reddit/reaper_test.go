@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/kylelemons/godebug/pretty"
 )
@@ -161,5 +162,32 @@ func Testsow(t *testing.T) {
 		if diff := pretty.Compare(c.request, test.correct); diff != "" {
 			t.Errorf("request incorrect; diff: %s", diff)
 		}
+	}
+}
+
+func TestRateBlockReap(t *testing.T) {
+	testRateBlock(func(r reaper) { r.reap("", nil) }, t)
+}
+
+func TestRateBlockSow(t *testing.T) {
+	testRateBlock(func(r reaper) { r.sow("", nil) }, t)
+}
+
+func testRateBlock(f func(reaper), t *testing.T) {
+	start := time.Now()
+	r := &reaperImpl{
+		cli:    &mockClient{},
+		parser: &mockParser{},
+		rate:   10 * time.Millisecond,
+		last:   start,
+	}
+
+	f(r)
+	end := time.Now()
+
+	if block := end.Sub(start); block < r.rate {
+		t.Errorf("wanted block for %v; blocked for %v", r.rate, block)
+	} else if r.last == start {
+		t.Errorf("wanted updated timestamp; found same timestamp")
 	}
 }
