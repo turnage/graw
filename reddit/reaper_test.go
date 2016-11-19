@@ -1,46 +1,12 @@
 package reddit
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"testing"
 
 	"github.com/kylelemons/godebug/pretty"
 )
-
-type mockParser struct {
-	comments []*Comment
-	posts    []*Post
-	messages []*Message
-}
-
-func (m *mockParser) parse(
-	blob json.RawMessage,
-) ([]*Comment, []*Post, []*Message, error) {
-	return m.comments, m.posts, m.messages, nil
-}
-
-func parserWhich(h Harvest) parser {
-	return &mockParser{
-		comments: h.Comments,
-		posts:    h.Posts,
-		messages: h.Messages,
-	}
-}
-
-type mockClient struct {
-	request *http.Request
-}
-
-func (m *mockClient) Do(r *http.Request) ([]byte, error) {
-	m.request = r
-	return nil, nil
-}
-
-func newMockClient() client {
-	return &mockClient{}
-}
 
 func TestNew(t *testing.T) {
 	cli := &mockClient{}
