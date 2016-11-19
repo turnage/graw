@@ -1,12 +1,5 @@
 package reddit
 
-import (
-	"fmt"
-)
-
-// PostDoesNotExistErr indicates a post does not exist.
-var PostDoesNotExistErr = fmt.Errorf("The requested post does not exist.")
-
 // Lurker provides a high level interface for fetching information from Reddit.
 type Lurker interface {
 	// Thread returns a Reddit post with a full parsed comment tree. The
