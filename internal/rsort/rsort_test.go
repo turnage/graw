@@ -4,12 +4,11 @@ import (
 	"testing"
 
 	"github.com/turnage/graw/reddit"
-	"github.com/turnage/graw/internal/reap"
 )
 
 func TestSort(t *testing.T) {
 	names := New().Sort(
-		reap.Harvest{
+		reddit.Harvest{
 			Posts: []*reddit.Post{
 				&reddit.Post{CreatedUTC: 1, Name: "1"},
 				&reddit.Post{CreatedUTC: 7, Name: "7"},

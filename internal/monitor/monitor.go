@@ -1,17 +1,17 @@
-// Package monitor includes monitors for different parts of Reddit, such as a
-// user inbox or a subreddit's post feed.
+// Package monitor tracks a listing feed on Reddit.
 package monitor
 
 import (
-	"github.com/turnage/graw/internal/api/scanner"
-	"github.com/turnage/graw/internal/reap"
+	"github.com/turnage/graw/reddit"
+
 	"github.com/turnage/graw/internal/rsort"
 )
 
 const (
 	// The blank threshold is the amount of updates returning 0 new
 	// elements in the monitored listing the monitor will tolerate before
-	// suspecting the tip of the listing has been deleted.
+	// suspecting the tip of the listing has been deleted or caught in a
+	// spam filter.
 	blankThreshold = 1
 	// maxTipSize is the maximum size of the tip log (number of backup tips
 	// + the current tip).
@@ -22,7 +22,7 @@ const (
 type Monitor interface {
 	// Update will check for new events, and send them to the Monitor's
 	// handlers.
-	Update() (reap.Harvest, error)
+	Update() (reddit.Harvest, error)
 }
 
 // Config configures a monitor.
@@ -30,8 +30,8 @@ type Config struct {
 	// Path is the path to the listing the monitor watches.
 	Path string
 
-	// Scanner is the api the monitor uses to read Reddit 
-	Scanner scanner.Scanner
+	// Scanner is the api the monitor uses to read Reddit
+	Scanner reddit.Scanner
 
 	// Sorter sorts the monitor's new listing elements.
 	Sorter rsort.Sorter
@@ -52,7 +52,7 @@ type monitor struct {
 	// appended to the reddit monitor url (e.g./user/robert).
 	path string
 
-	scanner scanner.Scanner
+	scanner reddit.Scanner
 	sorter  rsort.Sorter
 }
 
@@ -75,39 +75,39 @@ func New(c Config) (Monitor, error) {
 
 // Update checks for new content at the monitored listing endpoint and forwards
 // new content to the bot for processing.
-func (m *monitor) Update() (reap.Harvest, error) {
+func (m *monitor) Update() (reddit.Harvest, error) {
 	if m.blanks == m.blankThreshold {
-		return reap.Harvest{}, m.healthCheck()
+		return reddit.Harvest{}, m.fixTip()
 	}
 
-	harvest, err := m.scanner.Listing(m.path, m.tip[0])
-	m.updateTip(harvest)
+	names, harvest, err := m.harvest(m.tip[0])
+	m.updateTip(names)
 	return harvest, err
+}
+
+// harvest fetches from the listing any posts after the given reference post,
+// and returns those posts and a reverse chronologically sorted list of their
+// names.
+func (m *monitor) harvest(ref string) ([]string, reddit.Harvest, error) {
+	h, err := m.scanner.Listing(m.path, ref)
+	return m.sorter.Sort(h), h, err
 }
 
 // sync fetches the current tip of a listing endpoint, so that grawbots crawling
 // forward in time don't treat it as a new post, or reprocess it when restarted.
 func (m *monitor) sync() error {
-	harvest, err := m.scanner.Listing(m.path, "")
-	if err != nil {
-		return err
-	}
-
-	names := m.sorter.Sort(harvest)
+	names, _, err := m.harvest("")
 	if len(names) > 0 {
 		m.tip = names
 	} else {
 		m.tip = []string{""}
 	}
-
-	return nil
+	return err
 }
 
 // updateTip updates the monitor's list of names from the endpoint listing it
-// uses to keep track of its position in the monitored listing (e.g. a user's
-// page or its position in a subreddit's history).
-func (m *monitor) updateTip(h reap.Harvest) {
-	names := m.sorter.Sort(h)
+// uses to keep track of its position in the monitored listing.
+func (m *monitor) updateTip(names []string) {
 	if len(names) > 0 {
 		m.blanks = 0
 	} else {
@@ -120,43 +120,46 @@ func (m *monitor) updateTip(h reap.Harvest) {
 	}
 }
 
-// healthCheck checks the health of the tip when nothing is returned from a
-// scrape enough times.
-func (m *monitor) healthCheck() error {
-	m.blanks = 0
-	broken, err := m.fixTip()
+// fixTip checks all of the stored backup tips for health. If the post at the
+// front has been deleted or caught in a spam filter, the feed will die and we
+// will stop getting posts. This will adjust backward if a tip is dead and
+// remove any other dead tips in the list. Returns whether the tip was broken.
+func (m *monitor) fixTip() error {
+	oldTip := m.tip[0]
+	names, _, err := m.harvest(m.tip[len(m.tip)-1])
 	if err != nil {
 		return err
 	}
-	if !broken {
+
+	// If none of our backup tips were returned, most likely the last backup
+	// tip is dead and this check was meaningless.
+	if len(names) == 0 {
+		m.tip = m.tip[:len(m.tip)-1]
+		return nil
+	}
+
+	// n^2 because your cycles don't matter to me & n <= maxTipSize
+	for i, t := range m.tip {
+		alive := false
+		for _, n := range names {
+			if t == n {
+				alive = true
+			}
+		}
+		if !alive {
+			m.tip = append(m.tip[:i], m.tip[i+1:]...)
+		}
+	}
+
+	m.blanks = 0
+	if m.tip[0] == oldTip {
 		m.blankThreshold *= 2
+	} else {
+		m.blankThreshold /= 2
+		if m.blankThreshold < 1 {
+			m.blankThreshold = 1
+		}
 	}
 
 	return nil
-}
-
-// fixTip checks that the fullname at the front of the tip is still valid (e.g.
-// not deleted).If it isn't, it shaves the tip.fixTip returns whether the tip
-// was broken.
-func (m *monitor) fixTip() (bool, error) {
-	exists, err := m.scanner.Exists(m.tip[0])
-	if err != nil {
-		return false, err
-	}
-
-	if !exists {
-		m.shaveTip()
-	}
-
-	return !exists, nil
-}
-
-// shaveTip shaves the latest fullname off of the tip, promoting the preceding
-// fullname if there is one or resetting the tip if there isn't.
-func (m *monitor) shaveTip() {
-	if len(m.tip) <= 1 {
-		m.tip = []string{""}
-	} else {
-		m.tip = m.tip[1:]
-	}
 }

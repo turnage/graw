@@ -4,24 +4,20 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/turnage/graw/internal/reap"
+	"github.com/turnage/graw/reddit"
 )
 
-type mockScanner struct {
-	exists bool
-}
+type mockScanner struct{}
 
-func (m *mockScanner) Listing(_, _ string) (reap.Harvest, error) {
-	return reap.Harvest{}, nil
+func (m *mockScanner) Listing(_, _ string) (reddit.Harvest, error) {
+	return reddit.Harvest{}, nil
 }
-
-func (m *mockScanner) Exists(_ string) (bool, error) { return m.exists, nil }
 
 type mockSorter struct {
 	names []string
 }
 
-func (m *mockSorter) Sort(_ reap.Harvest) []string { return m.names }
+func (m *mockSorter) Sort(_ reddit.Harvest) []string { return m.names }
 
 func TestNew(t *testing.T) {
 	m, err := New(Config{Scanner: &mockScanner{}, Sorter: &mockSorter{}})
@@ -58,12 +54,13 @@ func TestShaveTip(t *testing.T) {
 		t.Errorf("error in update: %v", err)
 	}
 
-	if len(m.tip) != 1 || m.tip[0] != "2" {
-		t.Errorf("wanted tip shaved; got %v", m.tip)
+	expected := []string{"1"}
+	if !reflect.DeepEqual(m.tip, expected) {
+		t.Errorf("wanted tip shaved; got %v", m.tip, expected)
 	}
 
-	if m.blanks != 0 {
-		t.Errorf("wanted blanks reset; got %d", m.blanks)
+	if m.blanks != 1 {
+		t.Errorf("did not want blanks reset for bad check")
 	}
 }
 
@@ -96,8 +93,8 @@ func TestBackoff(t *testing.T) {
 		blanks:         1,
 		blankThreshold: 1,
 		tip:            []string{"1", "2"},
-		scanner:        &mockScanner{true},
-		sorter:         &mockSorter{},
+		scanner:        &mockScanner{},
+		sorter:         &mockSorter{names: []string{"1", "2"}},
 	}
 
 	_, err := m.Update()
@@ -116,5 +113,33 @@ func TestBackoff(t *testing.T) {
 
 	if m.blankThreshold != 2 {
 		t.Errorf("wanted threshold scaled; got %d", m.blankThreshold)
+	}
+}
+
+func TestTipFilter(t *testing.T) {
+	m := &monitor{
+		blanks:         2,
+		blankThreshold: 2,
+		tip:            []string{"1", "2", "3", "4"},
+		scanner:        &mockScanner{},
+		sorter:         &mockSorter{names: []string{"2", "4"}},
+	}
+
+	_, err := m.Update()
+	if err != nil {
+		t.Errorf("error in update: %v", err)
+	}
+
+	expected := []string{"2", "4"}
+	if len(m.tip) != 2 || !reflect.DeepEqual(m.tip, expected) {
+		t.Errorf("wanted tip filtered; got %v", m.tip)
+	}
+
+	if m.blanks != 0 {
+		t.Errorf("wanted blanks reset; got %d", m.blanks)
+	}
+
+	if m.blankThreshold != 1 {
+		t.Errorf("wanted threshold descaled; got %d", m.blankThreshold)
 	}
 }

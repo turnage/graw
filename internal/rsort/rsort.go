@@ -7,19 +7,19 @@ package rsort
 import (
 	"sort"
 
-	"github.com/turnage/graw/internal/reap"
+	"github.com/turnage/graw/reddit"
 )
 
 // Sorter sorts Reddit element harvests.
 type Sorter interface {
 	// Sort sorts a Reddit element harvest and returns its fullnames in the
 	// order of their creation (younger names first).
-	Sort(h reap.Harvest) []string
+	Sort(h reddit.Harvest) []string
 }
 
 type sorter struct{}
 
-func (s *sorter) Sort(h reap.Harvest) []string {
+func (s *sorter) Sort(h reddit.Harvest) []string {
 	return sortHarvest(h)
 }
 
@@ -37,7 +37,7 @@ type redditThing interface {
 
 // sortHarvest returns the list of names of Reddit elements in a harvest sorted
 // by creation time to the younger elements appear first in the slice.
-func sortHarvest(h reap.Harvest) []string {
+func sortHarvest(h reddit.Harvest) []string {
 	things := merge(
 		postsAsThings(h.Posts),
 		commentsAsThings(h.Comments),
