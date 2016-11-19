@@ -1,4 +1,4 @@
-package client
+package reddit
 
 import (
 	"net/http"
@@ -26,9 +26,9 @@ func TestNewAppClient(t *testing.T) {
 		"refresh_token": "sidfnsidfnsd" 
 	}`), http.StatusOK)
 
-	if client, err := New(
-		Config{
-			App: App{
+	if client, err := newClient(
+		clientConfig{
+			app: App{
 				TokenURL: serv.URL,
 				ID:       "id",
 				Secret:   "secret",
@@ -48,17 +48,17 @@ func TestNewAppClient(t *testing.T) {
 }
 
 func TestNewAnonClient(t *testing.T) {
-	if client, err := New(Config{}); err != nil {
+	if client, err := newClient(clientConfig{}); err != nil {
 		t.Errorf("error making anon client")
 	} else if client == nil {
 		t.Errorf("anon client was nil")
-	} else if _, ok := client.(*base); !ok {
+	} else if _, ok := client.(*baseClient); !ok {
 		t.Errorf("anon client was not a base implementation")
 	}
 }
 
 func TestDo(t *testing.T) {
-	r := &base{cli: &http.Client{}}
+	r := &baseClient{cli: &http.Client{}}
 	for _, test := range []struct {
 		body []byte
 		code int

@@ -104,3 +104,11 @@ type Message struct {
 	Subreddit  string `mapstructure:"subreddit"`
 	WasComment bool   `mapstructure:"was_comment"`
 }
+
+// harvest is a set of all possible elements that Reddit could return in a
+// listing.
+type harvest struct {
+	Comments []*Comment
+	Posts    []*Post
+	Messages []*Message
+}

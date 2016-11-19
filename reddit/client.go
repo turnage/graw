@@ -1,5 +1,4 @@
-// Package client reaps http Requests which require OAuth2 authorization.
-package client
+package reddit
 
 import (
 	"bytes"
@@ -14,27 +13,27 @@ var (
 	GatewayErr          = fmt.Errorf("502 bad gateway code from Reddit")
 )
 
-// Config holds all the information needed to define Client behavior, such as
-// who the client will identify as externally and where to authorize.
-type Config struct {
+// clientConfig holds all the information needed to define Client behavior, such
+// as who the client will identify as externally and where to authorize.
+type clientConfig struct {
 	// Agent is the user agent set in all requests made by the Client.
-	Agent string
+	agent string
 
 	// If all fields in App are set, this client will attempt to identify as
 	// a registered Reddit app using the credentials.
-	App App
+	app App
 }
 
-// Client executes http Requests and invisibly handles OAuth2 authorization.
-type Client interface {
+// client executes http Requests and invisibly handles OAuth2 authorization.
+type client interface {
 	Do(*http.Request) ([]byte, error)
 }
 
-type base struct {
+type baseClient struct {
 	cli *http.Client
 }
 
-func (b *base) Do(req *http.Request) ([]byte, error) {
+func (b *baseClient) Do(req *http.Request) ([]byte, error) {
 	resp, err := b.cli.Do(req)
 	if err != nil {
 		return nil, err
@@ -62,11 +61,11 @@ func (b *base) Do(req *http.Request) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// New returns a new Client using the given user to make requests.
-func New(c Config) (Client, error) {
-	if c.App.configured() {
+// newClient returns a new client using the given user to make requests.
+func newClient(c clientConfig) (client, error) {
+	if c.app.configured() {
 		return newAppClient(c)
 	}
 
-	return &base{clientWithAgent(c.Agent)}, nil
+	return &baseClient{clientWithAgent(c.agent)}, nil
 }

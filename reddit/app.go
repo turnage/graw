@@ -1,4 +1,4 @@
-package client
+package reddit
 
 // App holds all the information needed to identify as a registered app on
 // Reddit.

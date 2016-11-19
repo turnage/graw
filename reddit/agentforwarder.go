@@ -1,4 +1,4 @@
-package client
+package reddit
 
 import (
 	"net/http"

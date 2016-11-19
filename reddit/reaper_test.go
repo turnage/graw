@@ -1,4 +1,4 @@
-package reap
+package reddit
 
 import (
 	"encoding/json"
@@ -7,24 +7,21 @@ import (
 	"testing"
 
 	"github.com/kylelemons/godebug/pretty"
-
-	"github.com/turnage/graw/internal/client"
-	"github.com/turnage/graw/reddit"
 )
 
 type mockParser struct {
-	comments []*reddit.Comment
-	posts    []*reddit.Post
-	messages []*reddit.Message
+	comments []*Comment
+	posts    []*Post
+	messages []*Message
 }
 
-func (m *mockParser) Parse(
+func (m *mockParser) parse(
 	blob json.RawMessage,
-) ([]*reddit.Comment, []*reddit.Post, []*reddit.Message, error) {
+) ([]*Comment, []*Post, []*Message, error) {
 	return m.comments, m.posts, m.messages, nil
 }
 
-func parserWhich(h Harvest) reddit.Parser {
+func parserWhich(h harvest) parser {
 	return &mockParser{
 		comments: h.Comments,
 		posts:    h.Posts,
@@ -41,32 +38,32 @@ func (m *mockClient) Do(r *http.Request) ([]byte, error) {
 	return nil, nil
 }
 
-func newMockClient() client.Client {
+func newMockClient() client {
 	return &mockClient{}
 }
 
 func TestNew(t *testing.T) {
 	cli := &mockClient{}
 	par := &mockParser{}
-	cfg := Config{
-		Client:   cli,
-		Parser:   par,
-		Hostname: "reddit.com",
-		TLS:      true,
+	cfg := reaperConfig{
+		client:   cli,
+		parser:   par,
+		hostname: "com",
+		tls:      true,
 	}
-	expected := &reaper{
+	expected := &reaperImpl{
 		cli:      cli,
 		parser:   par,
-		hostname: "reddit.com",
+		hostname: "com",
 		scheme:   "https",
 	}
 
-	if diff := pretty.Compare(New(cfg), expected); diff != "" {
+	if diff := pretty.Compare(newReaper(cfg), expected); diff != "" {
 		t.Errorf("reaper construction incorrect; diff: %s", diff)
 	}
 }
 
-func TestReap(t *testing.T) {
+func Testreap(t *testing.T) {
 	for i, test := range []struct {
 		path    string
 		values  map[string]string
@@ -74,61 +71,61 @@ func TestReap(t *testing.T) {
 	}{
 		{"", nil, http.Request{
 			Method: "GET",
-			Host:   "reddit.com",
+			Host:   "com",
 			URL: &url.URL{
 				Scheme:   "http",
-				Host:     "reddit.com",
+				Host:     "com",
 				Path:     "",
 				RawQuery: "",
 			},
 		}},
 		{"", map[string]string{"key": "value"}, http.Request{
 			Method: "GET",
-			Host:   "reddit.com",
+			Host:   "com",
 			URL: &url.URL{
 				Scheme:   "http",
-				Host:     "reddit.com",
+				Host:     "com",
 				Path:     "",
 				RawQuery: "key=value",
 			},
 		}},
 		{"path", nil, http.Request{
 			Method: "GET",
-			Host:   "reddit.com",
+			Host:   "com",
 			URL: &url.URL{
 				Scheme:   "http",
-				Host:     "reddit.com",
+				Host:     "com",
 				Path:     "path",
 				RawQuery: "",
 			},
 		}},
 	} {
-		expected := Harvest{
-			Comments: []*reddit.Comment{
-				&reddit.Comment{
+		expected := harvest{
+			Comments: []*Comment{
+				&Comment{
 					Body: "comment",
 				},
 			},
-			Posts: []*reddit.Post{
-				&reddit.Post{
+			Posts: []*Post{
+				&Post{
 					SelfText: "post",
 				},
 			},
-			Messages: []*reddit.Message{
-				&reddit.Message{
+			Messages: []*Message{
+				&Message{
 					Body: "message",
 				},
 			},
 		}
 		c := &mockClient{}
-		r := &reaper{
+		r := &reaperImpl{
 			cli:      c,
 			parser:   parserWhich(expected),
-			hostname: "reddit.com",
+			hostname: "com",
 			scheme:   "http",
 		}
 
-		harvest, err := r.Reap(test.path, test.values)
+		harvest, err := r.reap(test.path, test.values)
 		if err != nil {
 			t.Errorf("Error reaping input %d: %v", i, err)
 		}
@@ -143,7 +140,7 @@ func TestReap(t *testing.T) {
 	}
 }
 
-func TestSow(t *testing.T) {
+func Testsow(t *testing.T) {
 	for i, test := range []struct {
 		path    string
 		values  map[string]string
@@ -152,10 +149,10 @@ func TestSow(t *testing.T) {
 		{"", nil, http.Request{
 			Method: "POST",
 			Header: formEncoding,
-			Host:   "reddit.com",
+			Host:   "com",
 			URL: &url.URL{
 				Scheme:   "http",
-				Host:     "reddit.com",
+				Host:     "com",
 				Path:     "",
 				RawQuery: "",
 			},
@@ -163,10 +160,10 @@ func TestSow(t *testing.T) {
 		{"", map[string]string{"key": "value"}, http.Request{
 			Method: "POST",
 			Header: formEncoding,
-			Host:   "reddit.com",
+			Host:   "com",
 			URL: &url.URL{
 				Scheme:   "http",
-				Host:     "reddit.com",
+				Host:     "com",
 				Path:     "",
 				RawQuery: "key=value",
 			},
@@ -174,24 +171,24 @@ func TestSow(t *testing.T) {
 		{"path", nil, http.Request{
 			Method: "POST",
 			Header: formEncoding,
-			Host:   "reddit.com",
+			Host:   "com",
 			URL: &url.URL{
 				Scheme:   "http",
-				Host:     "reddit.com",
+				Host:     "com",
 				Path:     "path",
 				RawQuery: "",
 			},
 		}},
 	} {
 		c := &mockClient{}
-		r := &reaper{
+		r := &reaperImpl{
 			cli:      c,
 			parser:   &mockParser{},
-			hostname: "reddit.com",
+			hostname: "com",
 			scheme:   "http",
 		}
 
-		if err := r.Sow(test.path, test.values); err != nil {
+		if err := r.sow(test.path, test.values); err != nil {
 			t.Errorf("Error reaping input %d: %v", i, err)
 		}
 

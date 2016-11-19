@@ -1,4 +1,4 @@
-package client
+package reddit
 
 import (
 	"net/http"
@@ -8,9 +8,9 @@ import (
 )
 
 type appClient struct {
-	base
+	baseClient
+	cfg   clientConfig
 	cli   *http.Client
-	cfg   Config
 	token *oauth2.Token
 }
 
@@ -21,15 +21,15 @@ func (a *appClient) Do(req *http.Request) ([]byte, error) {
 		}
 	}
 
-	return a.base.Do(req)
+	return a.baseClient.Do(req)
 }
 
 func (a *appClient) authorize() error {
 	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, a.cli)
 	cfg := &oauth2.Config{
-		ClientID:     a.cfg.App.ID,
-		ClientSecret: a.cfg.App.Secret,
-		Endpoint:     oauth2.Endpoint{TokenURL: a.cfg.App.TokenURL},
+		ClientID:     a.cfg.app.ID,
+		ClientSecret: a.cfg.app.Secret,
+		Endpoint:     oauth2.Endpoint{TokenURL: a.cfg.app.TokenURL},
 		Scopes: []string{
 			"identity",
 			"read",
@@ -41,18 +41,18 @@ func (a *appClient) authorize() error {
 
 	token, err := cfg.PasswordCredentialsToken(
 		ctx,
-		a.cfg.App.Username,
-		a.cfg.App.Password,
+		a.cfg.app.Username,
+		a.cfg.app.Password,
 	)
 
 	a.token = token
-	a.base.cli = cfg.Client(ctx, token)
+	a.baseClient.cli = cfg.Client(ctx, token)
 	return err
 }
 
-func newAppClient(c Config) (*appClient, error) {
+func newAppClient(c clientConfig) (*appClient, error) {
 	a := &appClient{
-		cli: clientWithAgent(c.Agent),
+		cli: clientWithAgent(c.agent),
 		cfg: c,
 	}
 	return a, a.authorize()

@@ -21,7 +21,7 @@ const deletedKey = "[deleted]"
 // thing is a Reddit type that holds all of their subtypes.
 type thing struct {
 	Kind string                 `json:"kind"`
-	Data map[string]interface{} `json:"`
+	Data map[string]interface{} `json:"data"`
 }
 
 type listing struct {
@@ -35,20 +35,20 @@ type comment struct {
 	Replies thing `mapstructure:"replies"`
 }
 
-// Parser parses Reddit responses..
-type Parser interface {
-	// Parse parses any Reddit response and provides the elements in it.
-	Parse(blob json.RawMessage) ([]*Comment, []*Post, []*Message, error)
+// parser parses Reddit responses..
+type parser interface {
+	// parse parses any Reddit response and provides the elements in it.
+	parse(blob json.RawMessage) ([]*Comment, []*Post, []*Message, error)
 }
 
-type parser struct{}
+type parserImpl struct{}
 
-func NewParser() Parser {
-	return &parser{}
+func newParser() parser {
+	return &parserImpl{}
 }
 
 // parse parses any Reddit response and provides the elements in it.
-func (p *parser) Parse(
+func (p *parserImpl) parse(
 	blob json.RawMessage,
 ) ([]*Comment, []*Post, []*Message, error) {
 	comments, posts, msgs, listingErr := parseRawListing(blob)
