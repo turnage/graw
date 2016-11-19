@@ -4,7 +4,7 @@ package monitor
 import (
 	"github.com/turnage/graw/reddit"
 
-	"github.com/turnage/graw/internal/rsort"
+	"github.com/turnage/graw/streams/internal/rsort"
 )
 
 const (
