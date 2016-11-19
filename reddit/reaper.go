@@ -3,6 +3,7 @@ package reddit
 import (
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -18,11 +19,12 @@ var (
 )
 
 type reaperConfig struct {
-	client   client
-	parser   parser
-	hostname string
-	tls      bool
-	rate     time.Duration
+	client     client
+	parser     parser
+	hostname   string
+	reapSuffix string
+	tls        bool
+	rate       time.Duration
 }
 
 // reaper is a high level api for Reddit HTTP requests.
@@ -35,21 +37,23 @@ type reaper interface {
 }
 
 type reaperImpl struct {
-	cli      client
-	parser   parser
-	hostname string
-	scheme   string
-	rate     time.Duration
-	last     time.Time
+	cli        client
+	parser     parser
+	hostname   string
+	reapSuffix string
+	scheme     string
+	rate       time.Duration
+	last       time.Time
 }
 
 func newReaper(c reaperConfig) reaper {
 	return &reaperImpl{
-		cli:      c.client,
-		parser:   c.parser,
-		hostname: c.hostname,
-		scheme:   scheme[c.tls],
-		rate:     c.rate,
+		cli:        c.client,
+		parser:     c.parser,
+		hostname:   c.hostname,
+		reapSuffix: c.reapSuffix,
+		scheme:     scheme[c.tls],
+		rate:       c.rate,
 	}
 }
 
@@ -58,7 +62,7 @@ func (r *reaperImpl) reap(path string, values map[string]string) (Harvest, error
 	resp, err := r.cli.Do(
 		&http.Request{
 			Method: "GET",
-			URL:    r.url(path, values),
+			URL:    r.url(r.path(path, r.reapSuffix), values),
 			Host:   r.hostname,
 		},
 	)
@@ -102,6 +106,14 @@ func (r *reaperImpl) url(path string, values map[string]string) *url.URL {
 		Path:     path,
 		RawQuery: r.formatValues(values).Encode(),
 	}
+}
+
+func (r *reaperImpl) path(p string, suff string) string {
+	if strings.HasSuffix(p, suff) {
+		return p
+	}
+
+	return p + suff
 }
 
 func (r *reaperImpl) formatValues(values map[string]string) url.Values {

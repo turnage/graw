@@ -37,45 +37,41 @@ func newAccount(r reaper) Account {
 
 func (a *account) Reply(parentName, text string) error {
 	return a.r.sow(
-		"/api/comment", withDefaultAPIArgs(
-			map[string]string{
-				"thing_id": parentName,
-				"text":     text,
-			},
-		),
+		"/api/comment", map[string]string{
+			"thing_id": parentName,
+			"text":     text,
+		},
 	)
 }
 
 func (a *account) SendMessage(user, subject, text string) error {
 	return a.r.sow(
-		"/api/compose", withDefaultAPIArgs(
-			map[string]string{
-				"to":      user,
-				"subject": subject,
-				"text":    text,
-			},
-		),
+		"/api/compose", map[string]string{
+			"to":      user,
+			"subject": subject,
+			"text":    text,
+		},
 	)
 }
 
 func (a *account) PostSelf(subreddit, title, text string) error {
-	return a.post(subreddit, title, text, "self")
+	return a.r.sow(
+		"/api/submit", map[string]string{
+			"sr":    subreddit,
+			"kind":  "self",
+			"title": title,
+			"text":  text,
+		},
+	)
 }
 
 func (a *account) PostLink(subreddit, title, url string) error {
-	return a.post(subreddit, title, url, "link")
-}
-
-func (a *account) post(subreddit, title, content, kind string) error {
 	return a.r.sow(
-		"/api/submit", withDefaultAPIArgs(
-			map[string]string{
-				"sr":    subreddit,
-				"kind":  kind,
-				"title": title,
-				"url":   content,
-				"text":  content,
-			},
-		),
+		"/api/submit", map[string]string{
+			"sr":    subreddit,
+			"kind":  "link",
+			"title": title,
+			"url":   url,
+		},
 	)
 }
