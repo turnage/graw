@@ -1,24 +1,20 @@
-package lurker
+package reddit
 
 import (
 	"testing"
 
 	"github.com/kylelemons/godebug/pretty"
-
-	"github.com/turnage/graw/internal/api"
-	"github.com/turnage/graw/reddit"
-	"github.com/turnage/graw/internal/reap"
 )
 
 func TestThread(t *testing.T) {
-	h := reap.Harvest{
-		Posts: []*reddit.Post{
-			&reddit.Post{
+	h := Harvest{
+		Posts: []*Post{
+			&Post{
 				SelfText: "hello",
 			},
 		},
 	}
-	s := New(api.ReaperWhich(h, nil))
+	s := newLurker(reaperWhich(h, nil))
 
 	post, err := s.Thread("")
 	if err != nil {
@@ -31,9 +27,9 @@ func TestThread(t *testing.T) {
 }
 
 func TestThreadReturnsEmpty(t *testing.T) {
-	s := New(api.ReaperWhich(reap.Harvest{}, nil))
+	s := newLurker(reaperWhich(Harvest{}, nil))
 	_, err := s.Thread("")
-	if err != DoesNotExistErr {
+	if err != PostDoesNotExistErr {
 		t.Errorf("err unexpected; wanted DoesNotExistErr; got %v", err)
 	}
 }
