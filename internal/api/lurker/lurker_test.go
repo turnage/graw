@@ -6,14 +6,14 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 
 	"github.com/turnage/graw/internal/api"
-	"github.com/turnage/graw/internal/data"
+	"github.com/turnage/graw/reddit"
 	"github.com/turnage/graw/internal/reap"
 )
 
 func TestThread(t *testing.T) {
 	h := reap.Harvest{
-		Posts: []*data.Post{
-			&data.Post{
+		Posts: []*reddit.Post{
+			&reddit.Post{
 				SelfText: "hello",
 			},
 		},

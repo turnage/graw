@@ -4,17 +4,17 @@
 
 package rsort
 
-import "github.com/turnage/graw/internal/data"
+import "github.com/turnage/graw/reddit"
 
 type postsThingImpl struct {
-	e *data.Post
+	e *reddit.Post
 }
 
 func (g postsThingImpl) Name() string { return g.e.Name }
 
 func (g postsThingImpl) Birth() uint64 { return g.e.CreatedUTC }
 
-func postsAsThings(gs []*data.Post) []redditThing {
+func postsAsThings(gs []*reddit.Post) []redditThing {
 	things := make([]redditThing, len(gs))
 	for i, g := range gs {
 		things[i] = &postsThingImpl{g}

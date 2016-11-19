@@ -1,4 +1,4 @@
-package data
+package reddit
 
 import (
 	"encoding/json"
@@ -21,14 +21,14 @@ const deletedKey = "[deleted]"
 // thing is a Reddit type that holds all of their subtypes.
 type thing struct {
 	Kind string                 `json:"kind"`
-	Data map[string]interface{} `json:"data"`
+	Data map[string]interface{} `json:"`
 }
 
 type listing struct {
 	Children []thing `json:"children,omitempty"`
 }
 
-// comment wraps the user facing Comment data type with a Replies field for
+// comment wraps the user facing Comment type with a Replies field for
 // intermediate parsing.
 type comment struct {
 	Comment `mapstructure:",squash"`

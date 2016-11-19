@@ -1,6 +1,6 @@
 // Data types defined here all derive from Reddit's definitions. See the Reddit
 // documentation for more context: https://github.com/reddit/reddit/wiki/JSON
-package data
+package reddit
 
 // Comment represents a comment on Reddit (Reddit type t1_).
 type Comment struct {

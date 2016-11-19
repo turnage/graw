@@ -3,7 +3,7 @@ package rsort
 import (
 	"github.com/cheekybits/genny/generic"
 
-	"github.com/turnage/graw/internal/data"
+	"github.com/turnage/graw/grawdata"
 )
 
 type name generic.Type

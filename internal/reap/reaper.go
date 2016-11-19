@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/turnage/graw/internal/client"
-	"github.com/turnage/graw/internal/data"
+	"github.com/turnage/graw/reddit"
 )
 
 var (
@@ -22,14 +22,14 @@ var (
 
 // Harvest contains Reddit elements yielded in a reaping.
 type Harvest struct {
-	Comments []*data.Comment
-	Posts    []*data.Post
-	Messages []*data.Message
+	Comments []*reddit.Comment
+	Posts    []*reddit.Post
+	Messages []*reddit.Message
 }
 
 type Config struct {
 	Client   client.Client
-	Parser   data.Parser
+	Parser   reddit.Parser
 	Hostname string
 	TLS      bool
 }
@@ -45,7 +45,7 @@ type Reaper interface {
 
 type reaper struct {
 	cli      client.Client
-	parser   data.Parser
+	parser   reddit.Parser
 	hostname string
 	scheme   string
 }

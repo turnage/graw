@@ -30,7 +30,7 @@ type Config struct {
 	// Path is the path to the listing the monitor watches.
 	Path string
 
-	// Scanner is the api the monitor uses to read Reddit data.
+	// Scanner is the api the monitor uses to read Reddit 
 	Scanner scanner.Scanner
 
 	// Sorter sorts the monitor's new listing elements.

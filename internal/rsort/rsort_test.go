@@ -3,24 +3,24 @@ package rsort
 import (
 	"testing"
 
-	"github.com/turnage/graw/internal/data"
+	"github.com/turnage/graw/reddit"
 	"github.com/turnage/graw/internal/reap"
 )
 
 func TestSort(t *testing.T) {
 	names := New().Sort(
 		reap.Harvest{
-			Posts: []*data.Post{
-				&data.Post{CreatedUTC: 1, Name: "1"},
-				&data.Post{CreatedUTC: 7, Name: "7"},
-				&data.Post{CreatedUTC: 2, Name: "2"},
+			Posts: []*reddit.Post{
+				&reddit.Post{CreatedUTC: 1, Name: "1"},
+				&reddit.Post{CreatedUTC: 7, Name: "7"},
+				&reddit.Post{CreatedUTC: 2, Name: "2"},
 			},
-			Comments: []*data.Comment{
-				&data.Comment{CreatedUTC: 5, Name: "5"},
-				&data.Comment{CreatedUTC: 0, Name: "0"},
+			Comments: []*reddit.Comment{
+				&reddit.Comment{CreatedUTC: 5, Name: "5"},
+				&reddit.Comment{CreatedUTC: 0, Name: "0"},
 			},
-			Messages: []*data.Message{
-				&data.Message{CreatedUTC: 6, Name: "6"},
+			Messages: []*reddit.Message{
+				&reddit.Message{CreatedUTC: 6, Name: "6"},
 			},
 		},
 	)

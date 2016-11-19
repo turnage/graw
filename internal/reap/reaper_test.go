@@ -9,22 +9,22 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 
 	"github.com/turnage/graw/internal/client"
-	"github.com/turnage/graw/internal/data"
+	"github.com/turnage/graw/reddit"
 )
 
 type mockParser struct {
-	comments []*data.Comment
-	posts    []*data.Post
-	messages []*data.Message
+	comments []*reddit.Comment
+	posts    []*reddit.Post
+	messages []*reddit.Message
 }
 
 func (m *mockParser) Parse(
 	blob json.RawMessage,
-) ([]*data.Comment, []*data.Post, []*data.Message, error) {
+) ([]*reddit.Comment, []*reddit.Post, []*reddit.Message, error) {
 	return m.comments, m.posts, m.messages, nil
 }
 
-func parserWhich(h Harvest) data.Parser {
+func parserWhich(h Harvest) reddit.Parser {
 	return &mockParser{
 		comments: h.Comments,
 		posts:    h.Posts,
@@ -104,18 +104,18 @@ func TestReap(t *testing.T) {
 		}},
 	} {
 		expected := Harvest{
-			Comments: []*data.Comment{
-				&data.Comment{
+			Comments: []*reddit.Comment{
+				&reddit.Comment{
 					Body: "comment",
 				},
 			},
-			Posts: []*data.Post{
-				&data.Post{
+			Posts: []*reddit.Post{
+				&reddit.Post{
 					SelfText: "post",
 				},
 			},
-			Messages: []*data.Message{
-				&data.Message{
+			Messages: []*reddit.Message{
+				&reddit.Message{
 					Body: "message",
 				},
 			},

@@ -6,15 +6,15 @@ import (
 
 	"github.com/kylelemons/godebug/pretty"
 
+	"github.com/turnage/graw/reddit"
 	"github.com/turnage/graw/internal/api"
-	"github.com/turnage/graw/internal/data"
 	"github.com/turnage/graw/internal/reap"
 )
 
 func TestListing(t *testing.T) {
 	h := reap.Harvest{
-		Comments: []*data.Comment{
-			&data.Comment{
+		Comments: []*reddit.Comment{
+			&reddit.Comment{
 				Body: "text",
 			},
 		},
@@ -33,9 +33,9 @@ func TestListing(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	empty := reap.Harvest{}
-	post := reap.Harvest{Posts: []*data.Post{&data.Post{}}}
-	comment := reap.Harvest{Comments: []*data.Comment{&data.Comment{}}}
-	message := reap.Harvest{Messages: []*data.Message{&data.Message{}}}
+	post := reap.Harvest{Posts: []*reddit.Post{&reddit.Post{}}}
+	comment := reap.Harvest{Comments: []*reddit.Comment{&reddit.Comment{}}}
+	message := reap.Harvest{Messages: []*reddit.Message{&reddit.Message{}}}
 	fail := fmt.Errorf("a failure")
 
 	for _, test := range []struct {

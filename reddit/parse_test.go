@@ -1,17 +1,17 @@
-// parse_test uses actual Reddit data, selected at human-random, to test that
+// parse_test uses actual Reddit  selected at human-random, to test that
 // the parser can extract the information from them. The selected information I
 // test isn't a full check because that would take a long time to write and I
 // don't think it is that worthwhile. Instead some things are poked where I
 // think there are likely to be issues.
 //
-// Find the result expecations in internal/testdata/*.json
-package data
+// Find the result expecations in internal/test*.json
+package reddit
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/turnage/graw/internal/testdata"
+	"github.com/turnage/graw/reddit/internal/testdata"
 )
 
 func TestParse(t *testing.T) {
@@ -35,7 +35,7 @@ func TestParseThread(t *testing.T) {
 	}
 
 	if post == nil {
-		t.Fatalf("post data is nil")
+		t.Fatalf("post is nil")
 	}
 
 	if !strings.HasPrefix(post.Title, "my wife passed away") {
