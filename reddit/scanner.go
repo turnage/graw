@@ -1,11 +1,8 @@
-package scanner
+package reddit
 
 import (
 	"fmt"
 	"strings"
-
-	"github.com/turnage/graw/internal/api"
-	"github.com/turnage/graw/internal/reap"
 )
 
 // deletedAuthor is the author field of deleted posts on Reddit.
@@ -15,7 +12,7 @@ const deletedAuthor = "[deleted]"
 // Reddit.
 type Scanner interface {
 	// Listing returns a harvest from a listing endpoint at Reddit.
-	Listing(path, after string) (reap.Harvest, error)
+	Listing(path, after string) (Harvest, error)
 	// Exists returns whether a thing with the given name exists on Reddit
 	// and is not deleted. A name is a type code (t#_) and an id, e.g.
 	// "t1_fjsj3jf".
@@ -23,16 +20,16 @@ type Scanner interface {
 }
 
 type scanner struct {
-	r reap.Reaper
+	r reaper
 }
 
-func New(r reap.Reaper) Scanner {
+func newScanner(r reaper) Scanner {
 	return &scanner{r: r}
 }
 
-func (s *scanner) Listing(path, after string) (reap.Harvest, error) {
-	return s.r.Reap(
-		path, api.WithDefaults(
+func (s *scanner) Listing(path, after string) (Harvest, error) {
+	return s.r.reap(
+		path, withDefaultAPIArgs(
 			map[string]string{
 				"limit":  "100",
 				"before": after,
@@ -51,9 +48,9 @@ func (s *scanner) Exists(name string) (bool, error) {
 		path = fmt.Sprintf("/message/messages/%s", id)
 	}
 
-	h, err := s.r.Reap(
+	h, err := s.r.reap(
 		path,
-		api.WithDefaults(map[string]string{"id": name}),
+		withDefaultAPIArgs(map[string]string{"id": name}),
 	)
 	if err != nil {
 		return false, err

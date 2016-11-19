@@ -21,7 +21,7 @@ func (m *mockParser) parse(
 	return m.comments, m.posts, m.messages, nil
 }
 
-func parserWhich(h harvest) parser {
+func parserWhich(h Harvest) parser {
 	return &mockParser{
 		comments: h.Comments,
 		posts:    h.Posts,
@@ -100,7 +100,7 @@ func Testreap(t *testing.T) {
 			},
 		}},
 	} {
-		expected := harvest{
+		expected := Harvest{
 			Comments: []*Comment{
 				&Comment{
 					Body: "comment",
@@ -125,13 +125,13 @@ func Testreap(t *testing.T) {
 			scheme:   "http",
 		}
 
-		harvest, err := r.reap(test.path, test.values)
+		Harvest, err := r.reap(test.path, test.values)
 		if err != nil {
 			t.Errorf("Error reaping input %d: %v", i, err)
 		}
 
-		if diff := pretty.Compare(harvest, expected); diff != "" {
-			t.Errorf("harvest incorrect; diff: %s", diff)
+		if diff := pretty.Compare(Harvest, expected); diff != "" {
+			t.Errorf("Harvest incorrect; diff: %s", diff)
 		}
 
 		if diff := pretty.Compare(c.request, test.correct); diff != "" {

@@ -105,9 +105,9 @@ type Message struct {
 	WasComment bool   `mapstructure:"was_comment"`
 }
 
-// harvest is a set of all possible elements that Reddit could return in a
+// Harvest is a set of all possible elements that Reddit could return in a
 // listing.
-type harvest struct {
+type Harvest struct {
 	Comments []*Comment
 	Posts    []*Post
 	Messages []*Message

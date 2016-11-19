@@ -1,13 +1,4 @@
-// Package account implements a representation of user accounts on Reddit, for
-// interacting with Reddit.
-package account
-
-import (
-	"time"
-
-	"github.com/turnage/graw/internal/api"
-	"github.com/turnage/graw/internal/reap"
-)
+package reddit
 
 type Account interface {
 	// Reply posts a reply to something on reddit. The behavior depends on
@@ -33,24 +24,20 @@ type Account interface {
 
 type account struct {
 	// r is used to execute requests to Reddit.
-	r reap.Reaper
-	// grant is a channel over which Account receives grants for issuing
-	// requests.
-	grant <-chan time.Time
+	r reaper
 }
 
-// New returns a new Account using the given reaper to make requests Reddit.
-func New(r reap.Reaper, grant <-chan time.Time) Account {
+// newAccount returns a new Account using the given reaper to make requests
+// to Reddit.
+func newAccount(r reaper) Account {
 	return &account{
-		r:     r,
-		grant: grant,
+		r: r,
 	}
 }
 
 func (a *account) Reply(parentName, text string) error {
-	<-a.grant
-	return a.r.Sow(
-		"/api/comment", api.WithDefaults(
+	return a.r.sow(
+		"/api/comment", withDefaultAPIArgs(
 			map[string]string{
 				"thing_id": parentName,
 				"text":     text,
@@ -60,9 +47,8 @@ func (a *account) Reply(parentName, text string) error {
 }
 
 func (a *account) SendMessage(user, subject, text string) error {
-	<-a.grant
-	return a.r.Sow(
-		"/api/compose", api.WithDefaults(
+	return a.r.sow(
+		"/api/compose", withDefaultAPIArgs(
 			map[string]string{
 				"to":      user,
 				"subject": subject,
@@ -81,9 +67,8 @@ func (a *account) PostLink(subreddit, title, url string) error {
 }
 
 func (a *account) post(subreddit, title, content, kind string) error {
-	<-a.grant
-	return a.r.Sow(
-		"/api/submit", api.WithDefaults(
+	return a.r.sow(
+		"/api/submit", withDefaultAPIArgs(
 			map[string]string{
 				"sr":    subreddit,
 				"kind":  kind,

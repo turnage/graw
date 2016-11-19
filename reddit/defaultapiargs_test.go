@@ -1,4 +1,4 @@
-package api
+package reddit
 
 import (
 	"testing"
@@ -6,16 +6,16 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 )
 
-func TestWithDefaults(t *testing.T) {
+func TestWithDefaultAPIArgs(t *testing.T) {
 	if diff := pretty.Compare(
-		WithDefaults(nil),
-		defaultValues,
+		withDefaultAPIArgs(nil),
+		defaultAPIArgs,
 	); diff != "" {
 		t.Errorf("output for nil input wrong; diff: %s", diff)
 	}
 
 	if diff := pretty.Compare(
-		WithDefaults(map[string]string{"key": "value"}),
+		withDefaultAPIArgs(map[string]string{"key": "value"}),
 		map[string]string{
 			"key":      "value",
 			"raw_json": "1",

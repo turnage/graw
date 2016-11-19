@@ -1,25 +1,21 @@
-package scanner
+package reddit
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/kylelemons/godebug/pretty"
-
-	"github.com/turnage/graw/reddit"
-	"github.com/turnage/graw/internal/api"
-	"github.com/turnage/graw/internal/reap"
 )
 
 func TestListing(t *testing.T) {
-	h := reap.Harvest{
-		Comments: []*reddit.Comment{
-			&reddit.Comment{
+	h := Harvest{
+		Comments: []*Comment{
+			&Comment{
 				Body: "text",
 			},
 		},
 	}
-	s := New(api.ReaperWhich(h, nil))
+	s := newScanner(reaperWhich(h, nil))
 
 	actual, err := s.Listing("/messages", "")
 	if err != nil {
@@ -32,15 +28,15 @@ func TestListing(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
-	empty := reap.Harvest{}
-	post := reap.Harvest{Posts: []*reddit.Post{&reddit.Post{}}}
-	comment := reap.Harvest{Comments: []*reddit.Comment{&reddit.Comment{}}}
-	message := reap.Harvest{Messages: []*reddit.Message{&reddit.Message{}}}
+	empty := Harvest{}
+	post := Harvest{Posts: []*Post{&Post{}}}
+	comment := Harvest{Comments: []*Comment{&Comment{}}}
+	message := Harvest{Messages: []*Message{&Message{}}}
 	fail := fmt.Errorf("a failure")
 
 	for _, test := range []struct {
 		input string
-		h     reap.Harvest
+		h     Harvest
 		err   error
 
 		exists bool
@@ -53,8 +49,8 @@ func TestExists(t *testing.T) {
 		{"t1_fffjsdj", comment, nil, true, "/api/info.json"},
 		{"t1_fffjsdj", comment, fail, false, "/api/info.json"},
 	} {
-		r := api.ReaperWhich(test.h, test.err)
-		s := New(r)
+		r := reaperWhich(test.h, test.err)
+		s := newScanner(r)
 		exists, err := s.Exists(test.input)
 		if err != test.err {
 			t.Errorf("got err %v; wanted %v", err, test.err)
@@ -68,8 +64,8 @@ func TestExists(t *testing.T) {
 			)
 		}
 
-		if r.Path != test.path {
-			t.Errorf("got path %s; wanted %s", r.Path, test.path)
+		if r.path != test.path {
+			t.Errorf("got path %s; wanted %s", r.path, test.path)
 		}
 	}
 }

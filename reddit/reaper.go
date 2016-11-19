@@ -27,7 +27,7 @@ type reaperConfig struct {
 type reaper interface {
 	// reap executes a GET request to Reddit and returns the elements from
 	// the endpoint.
-	reap(path string, values map[string]string) (harvest, error)
+	reap(path string, values map[string]string) (Harvest, error)
 	// sow executes a POST request to Reddit.
 	sow(path string, values map[string]string) error
 }
@@ -48,7 +48,7 @@ func newReaper(c reaperConfig) reaper {
 	}
 }
 
-func (r *reaperImpl) reap(path string, values map[string]string) (harvest, error) {
+func (r *reaperImpl) reap(path string, values map[string]string) (Harvest, error) {
 	resp, err := r.cli.Do(
 		&http.Request{
 			Method: "GET",
@@ -57,11 +57,11 @@ func (r *reaperImpl) reap(path string, values map[string]string) (harvest, error
 		},
 	)
 	if err != nil {
-		return harvest{}, err
+		return Harvest{}, err
 	}
 
 	comments, posts, messages, err := r.parser.parse(resp)
-	return harvest{
+	return Harvest{
 		Comments: comments,
 		Posts:    posts,
 		Messages: messages,
