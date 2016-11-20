@@ -76,7 +76,7 @@ func New(c Config) (Monitor, error) {
 // Update checks for new content at the monitored listing endpoint and forwards
 // new content to the bot for processing.
 func (m *monitor) Update() (reddit.Harvest, error) {
-	if m.blanks == m.blankThreshold {
+	if m.blanks > m.blankThreshold {
 		return reddit.Harvest{}, m.fixTip()
 	}
 
@@ -139,10 +139,10 @@ func (m *monitor) fixTip() error {
 	}
 
 	// n^2 because your cycles don't matter to me & n <= maxTipSize
-	for i, t := range m.tip {
+	for i := 0; i < len(m.tip)-1; i++ {
 		alive := false
 		for _, n := range names {
-			if t == n {
+			if m.tip[i] == n {
 				alive = true
 			}
 		}
