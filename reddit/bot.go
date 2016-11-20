@@ -38,3 +38,18 @@ func NewBot(c BotConfig) (Bot, error) {
 		Scanner: newScanner(r),
 	}, err
 }
+
+func NewBotFromAgentFile(filename string, rate time.Duration) (Bot, error) {
+	agent, app, err := load(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewBot(
+		BotConfig{
+			Agent: agent,
+			App:   app,
+			Rate:  rate,
+		},
+	)
+}
