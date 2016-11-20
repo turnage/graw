@@ -13,6 +13,8 @@
 //
 //   cfg := BotConfig{
 //     Agent: "graw:doc_demo_bot:0.3.1 by /u/yourusername"
+//     // Your registered app info from following:
+//     // https://github.com/reddit/reddit/wiki/OAuth2
 //     App: App{
 //       ID:     "sdf09ofnsdf",
 //       Secret: "skldjnfksjdnf",
