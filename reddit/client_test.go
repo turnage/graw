@@ -29,11 +29,11 @@ func TestNewAppClient(t *testing.T) {
 	if client, err := newClient(
 		clientConfig{
 			app: App{
-				TokenURL: serv.URL,
 				ID:       "id",
 				Secret:   "secret",
 				Username: "user",
 				Password: "password",
+				tokenURL: serv.URL,
 			},
 		},
 	); err != nil {

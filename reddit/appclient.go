@@ -29,7 +29,7 @@ func (a *appClient) authorize() error {
 	cfg := &oauth2.Config{
 		ClientID:     a.cfg.app.ID,
 		ClientSecret: a.cfg.app.Secret,
-		Endpoint:     oauth2.Endpoint{TokenURL: a.cfg.app.TokenURL},
+		Endpoint:     oauth2.Endpoint{TokenURL: a.cfg.app.tokenURL},
 		Scopes: []string{
 			"identity",
 			"read",

@@ -6,6 +6,9 @@ import (
 	"net/http"
 )
 
+// tokenURL is the url of reddit's oauth2 authorization service.
+const tokenURL = "https://www.reddit.com/api/v1/access_token"
+
 // clientConfig holds all the information needed to define Client behavior, such
 // as who the client will identify as externally and where to authorize.
 type clientConfig struct {
@@ -56,6 +59,10 @@ func (b *baseClient) Do(req *http.Request) ([]byte, error) {
 
 // newClient returns a new client using the given user to make requests.
 func newClient(c clientConfig) (client, error) {
+	if c.app.tokenURL == "" {
+		c.app.tokenURL = tokenURL
+	}
+
 	if c.app.configured() {
 		return newAppClient(c)
 	}
