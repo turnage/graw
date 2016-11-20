@@ -30,7 +30,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func Testreap(t *testing.T) {
+func TestReap(t *testing.T) {
 	for i, test := range []struct {
 		path    string
 		values  map[string]string
@@ -107,7 +107,7 @@ func Testreap(t *testing.T) {
 	}
 }
 
-func Testsow(t *testing.T) {
+func TestSow(t *testing.T) {
 	for i, test := range []struct {
 		path    string
 		values  map[string]string

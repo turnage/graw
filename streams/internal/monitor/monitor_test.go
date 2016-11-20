@@ -56,7 +56,7 @@ func TestShaveTip(t *testing.T) {
 
 	expected := []string{"1"}
 	if !reflect.DeepEqual(m.tip, expected) {
-		t.Errorf("wanted tip shaved; got %v", m.tip, expected)
+		t.Errorf("wanted tip shaved; got %v", m.tip)
 	}
 
 	if m.blanks != 1 {
