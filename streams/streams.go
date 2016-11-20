@@ -18,7 +18,7 @@ func Subreddits(
 	<-chan *reddit.Post,
 	error,
 ) {
-	path := "/r/" + strings.Join(subreddits, "+")
+	path := "/r/" + strings.Join(subreddits, "+") + "/new"
 	posts, _, _, err := streamFromPath(scanner, kill, errs, path)
 	return posts, err
 }
