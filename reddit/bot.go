@@ -30,6 +30,7 @@ func NewBot(c BotConfig) (Bot, error) {
 			parser:   newParser(),
 			hostname: "oauth.reddit.com",
 			tls:      true,
+			rate:     maxOf(c.Rate, time.Second),
 		},
 	)
 	return &bot{
