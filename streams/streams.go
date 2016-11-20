@@ -1,3 +1,37 @@
+// Package streams provides robust event streams from Reddit.
+//
+// This package is not abstract. If you are looking for a simpler, high level
+// interface, see graw.
+//
+// The streams provided by this package will not be deterred like naive
+// implementations by a post getting caught in the spam filter, removed by mods,
+// the author being shadowbanned, or an author deleting their post. These
+// streams are in it to win it.
+//
+// All of the streams provisioned by this package depend on an api handle from
+// the reddit package, and two control channels: one kill signal and one error
+// feed.
+//
+// The kill channel can be shared by multiple streams as long as you signal kill
+// by close()ing the channel. Sending data over it will kill an arbitrary one of
+// the streams sharing the channel but not all of them.
+//
+// The error channel will return issues which may be intermittent. They are not
+// wrapped, so you can check them against the definitions in the reddit package
+// and choose to wait when Reddit is busy or the connection faults, instead of
+// failing.
+//
+// If there is a problem setting up the stream, such as the endpoint being
+// invalid, that will be caught in the initial construction of the stream; you
+// don't need to worry about that on the error channel.
+//
+// These streams will consume "intervals" of the Reddit handle given to them.
+// Since the reddit handlers are rate limited and do not allow bursts, there is
+// essentially a schedule on which they execute requests, and the executions
+// will be divided roughly evenly between the goroutines sharing the handle.
+// E.g. if you create two user streams which depend on a handle with a rate
+// limit of 5 seconds, each of them will be unblocked once every 10 seconds
+// (ish), since they each consume one interval, and the interval is 5 seconds.
 package streams
 
 import (
@@ -9,6 +43,14 @@ import (
 	"github.com/turnage/graw/streams/internal/rsort"
 )
 
+// Subreddits returns a stream of new posts from the requested subreddits. This
+// stream monitors the combination listing of all subreddits using Reddit's "+"
+// feature e.g. /r/golang+rust. This will consume one interval of the handle per
+// call, so it is best to gather all the subreddits needed and make invoke this
+// function once.
+//
+// Be aware that these posts are unlikely to have comments. If you are
+// interested in comment trees, save their permalinks and fetch them later.
 func Subreddits(
 	scanner reddit.Scanner,
 	kill <-chan bool,
@@ -23,6 +65,8 @@ func Subreddits(
 	return posts, err
 }
 
+// User returns a stream of new posts and comments made by a user. Each user
+// stream consumes one interval of the handle.
 func User(
 	scanner reddit.Scanner,
 	kill <-chan bool,
@@ -38,6 +82,8 @@ func User(
 	return posts, comments, err
 }
 
+// PostReplies returns a stream of top level replies to posts made by the bot's
+// account. This stream consumes one interval of the handle.
 func PostReplies(
 	bot reddit.Bot,
 	kill <-chan bool,
@@ -49,6 +95,8 @@ func PostReplies(
 	return inboxStream(bot, kill, errs, "selfreply")
 }
 
+// CommentReplies returns a stream of replies to comments made by the bot's
+// account. This stream consumes one interval of the handle.
 func CommentReplies(
 	bot reddit.Bot,
 	kill <-chan bool,
@@ -60,6 +108,10 @@ func CommentReplies(
 	return inboxStream(bot, kill, errs, "comments")
 }
 
+// Mentions returns a stream of mentions of the bot's username anywhere on
+// Reddit. It consumes one interval of the handle. Note, that a username mention
+// which can reach the inbox in any other way (as a pm, or a reply), will not
+// come through the mention stream because Reddit labels it differently.
 func Mentions(
 	bot reddit.Bot,
 	kill <-chan bool,
@@ -71,6 +123,8 @@ func Mentions(
 	return inboxStream(bot, kill, errs, "mentions")
 }
 
+// Messages returns a stream of messages sent to the bot's inbox. It consumes
+// one interval of the handle.
 func Messages(
 	bot reddit.Bot,
 	kill <-chan bool,
