@@ -3,6 +3,7 @@ package graw
 import (
 	"fmt"
 
+	"github.com/turnage/graw/botfaces"
 	"github.com/turnage/graw/reddit"
 	"github.com/turnage/graw/streams"
 )
@@ -50,7 +51,7 @@ func connectScanStreams(
 	errs chan<- error,
 ) error {
 	if len(c.Subreddits) > 0 {
-		ph, ok := handler.(PostHandler)
+		ph, ok := handler.(botfaces.PostHandler)
 		if !ok {
 			return postHandlerErr
 		}
@@ -72,7 +73,7 @@ func connectScanStreams(
 	}
 
 	if len(c.Users) > 0 {
-		uh, ok := handler.(UserHandler)
+		uh, ok := handler.(botfaces.UserHandler)
 		if !ok {
 			return userHandlerErr
 		}

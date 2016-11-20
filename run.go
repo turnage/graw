@@ -3,6 +3,7 @@ package graw
 import (
 	"fmt"
 
+	"github.com/turnage/graw/botfaces"
 	"github.com/turnage/graw/reddit"
 	"github.com/turnage/graw/streams"
 )
@@ -59,7 +60,7 @@ func connectAllStreams(
 	// lol no generics:
 
 	if c.PostReplies {
-		if prh, ok := handler.(PostReplyHandler); !ok {
+		if prh, ok := handler.(botfaces.PostReplyHandler); !ok {
 			return postReplyHandlerErr
 		} else if prs, err := streams.PostReplies(
 			bot,
@@ -77,7 +78,7 @@ func connectAllStreams(
 	}
 
 	if c.CommentReplies {
-		if crh, ok := handler.(CommentReplyHandler); !ok {
+		if crh, ok := handler.(botfaces.CommentReplyHandler); !ok {
 			return commentReplyHandlerErr
 		} else if crs, err := streams.CommentReplies(
 			bot,
@@ -95,7 +96,7 @@ func connectAllStreams(
 	}
 
 	if c.Mentions {
-		if mh, ok := handler.(MentionHandler); !ok {
+		if mh, ok := handler.(botfaces.MentionHandler); !ok {
 			return mentionHandlerErr
 		} else if ms, err := streams.Mentions(
 			bot,
@@ -113,7 +114,7 @@ func connectAllStreams(
 	}
 
 	if c.Messages {
-		if mh, ok := handler.(MessageHandler); !ok {
+		if mh, ok := handler.(botfaces.MessageHandler); !ok {
 			return messageHandlerErr
 		} else if ms, err := streams.Messages(
 			bot,

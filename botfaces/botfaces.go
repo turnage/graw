@@ -1,4 +1,6 @@
-package graw
+// Package botfaces defines interfaces graw uses to connect bots to event
+// streams on Reddit. There is no need to import this package.
+package botfaces
 
 import (
 	"github.com/turnage/graw/reddit"
@@ -46,7 +48,7 @@ type PostReplyHandler interface {
 	// submissions in its inbox. [Called as goroutine.]
 	//
 	// The reply is in the form of a message because that is how it arrives
-	// in the Reddit inbox, but it is originally a comment and  replying to
+	// in the Reddit inbox, but it is originally a comment and replying to
 	// this with the Reddit package will still generate a comment.
 	PostReply(reply *reddit.Message) error
 }
@@ -58,7 +60,7 @@ type CommentReplyHandler interface {
 	// comments in it its inbox. [Called as goroutine.]
 	//
 	// The reply is in the form of a message because that is how it arrives
-	// in the Reddit inbox, but it is originally a comment and  replying to
+	// in the Reddit inbox, but it is originally a comment and replying to
 	// this with the Reddit package will still generate a comment.
 	CommentReply(reply *reddit.Message) error
 }
@@ -80,7 +82,7 @@ type MentionHandler interface {
 	// inbox. [Called as goroutine.]
 	//
 	// The reply is in the form of a message because that is how it arrives
-	// in the Reddit inbox, but it is originally a comment and  replying to
+	// in the Reddit inbox, but it is originally a comment and replying to
 	// this with the Reddit package will still generate a comment.
 	Mention(mention *reddit.Message) error
 }
