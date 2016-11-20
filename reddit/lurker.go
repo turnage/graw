@@ -1,9 +1,8 @@
 package reddit
 
-// Lurker provides a high level interface for fetching information from Reddit.
+// Lurker defines browsing behavior.
 type Lurker interface {
-	// Thread returns a Reddit post with a full parsed comment tree. The
-	// permalink can be used as the path.
+	// Thread returns a Reddit post with a fully parsed comment tree.
 	Thread(permalink string) (*Post, error)
 }
 

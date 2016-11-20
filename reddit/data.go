@@ -1,8 +1,7 @@
-// Data types defined here all derive from Reddit's definitions. See the Reddit
-// documentation for more context: https://github.com/reddit/reddit/wiki/JSON
 package reddit
 
 // Comment represents a comment on Reddit (Reddit type t1_).
+// https://github.com/reddit/reddit/wiki/JSON#comment-implements-votable--created
 type Comment struct {
 	ID        string `mapstructure:"id"`
 	Name      string `mapstructure:"name"`
@@ -37,6 +36,7 @@ type Comment struct {
 }
 
 // Post represents posts on Reddit (Reddit type t3_).
+// https://github.com/reddit/reddit/wiki/JSON#link-implements-votable--created
 type Post struct {
 	ID        string `mapstructure:"id"`
 	Name      string `mapstructure:"name"`
@@ -82,6 +82,7 @@ type Post struct {
 }
 
 // Message represents messages on Reddit (Reddit type t4_).
+// https://github.com/reddit/reddit/wiki/JSON#message-implements-created
 type Message struct {
 	ID   string `mapstructure:"id"`
 	Name string `mapstructure:"name"`

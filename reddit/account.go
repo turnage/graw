@@ -1,5 +1,6 @@
 package reddit
 
+// Account defines behaviors only an account can perform on Reddit.
 type Account interface {
 	// Reply posts a reply to something on reddit. The behavior depends on
 	// what is being replied to. For
