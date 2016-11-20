@@ -121,7 +121,7 @@ func TestLurker(t *testing.T) {
 		[]testCase{
 			testCase{
 				name: "Thread",
-				err:  PostDoesNotExistErr,
+				err:  ThreadDoesNotExistErr,
 				f: func(b Bot) error {
 					_, err := b.Thread("/permalink")
 					return err

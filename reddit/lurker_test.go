@@ -29,7 +29,7 @@ func TestThread(t *testing.T) {
 func TestThreadReturnsEmpty(t *testing.T) {
 	s := newLurker(reaperWhich(Harvest{}, nil))
 	_, err := s.Thread("")
-	if err != PostDoesNotExistErr {
+	if err != ThreadDoesNotExistErr {
 		t.Errorf("err unexpected; wanted DoesNotExistErr; got %v", err)
 	}
 }
