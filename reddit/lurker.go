@@ -16,7 +16,10 @@ func newLurker(r reaper) Lurker {
 }
 
 func (s *lurker) Thread(permalink string) (*Post, error) {
-	harvest, err := s.r.reap(permalink+".json", withDefaultAPIArgs(nil))
+	harvest, err := s.r.reap(
+		permalink+".json",
+		map[string]string{"raw_json": "1"},
+	)
 	if err != nil {
 		return nil, err
 	}
