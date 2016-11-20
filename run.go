@@ -23,7 +23,15 @@ var (
 	)
 )
 
-func Run(handler interface{}, bot reddit.Bot, cfg Config) error {
+// Run connects a handler to any requested event sources and makes requests with
+// the given bot api handle. It launches a goroutine for the run. It returns two
+// functions, a stop() function to terminate the graw run at any time, and a
+// wait() function to block until the graw run fails.
+func Run(handler interface{}, bot reddit.Bot, cfg Config) (
+	func(),
+	func() error,
+	error,
+) {
 	kill := make(chan bool)
 	errs := make(chan error)
 
@@ -34,10 +42,10 @@ func Run(handler interface{}, bot reddit.Bot, cfg Config) error {
 		kill,
 		errs,
 	); err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	return foreman(kill, errs, logger(cfg.Logger))
+	return launch(handler, kill, errs, logger(cfg.Logger))
 }
 
 func connectAllStreams(

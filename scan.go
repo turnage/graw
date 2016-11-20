@@ -20,12 +20,20 @@ var (
 	)
 )
 
-func Scan(handler interface{}, script reddit.Script, cfg Config) error {
+// Scan connects any requested logged-out event sources to the given handler,
+// making requests with the given script handle. It launches a goroutine for the
+// scan. It returns two functions: a stop() function to stop the scan at any
+// time, and a wait() function to block until the scan fails.
+func Scan(handler interface{}, script reddit.Script, cfg Config) (
+	func(),
+	func() error,
+	error,
+) {
 	kill := make(chan bool)
 	errs := make(chan error)
 
 	if cfg.PostReplies || cfg.CommentReplies || cfg.Mentions || cfg.Messages {
-		return loggedOutErr
+		return nil, nil, loggedOutErr
 	}
 
 	if err := connectScanStreams(
@@ -35,10 +43,10 @@ func Scan(handler interface{}, script reddit.Script, cfg Config) error {
 		kill,
 		errs,
 	); err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	return foreman(kill, errs, logger(cfg.Logger))
+	return launch(handler, kill, errs, logger(cfg.Logger))
 }
 
 // connectScanStreams connects the streams a scanner can subscribe to to the
