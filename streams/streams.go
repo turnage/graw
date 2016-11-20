@@ -157,6 +157,9 @@ func flow(
 		// if the errors channel is closed, the master goroutine is
 		// shutting us down.
 		case <-kill:
+			close(posts)
+			close(comments)
+			close(messages)
 			return
 		default:
 			if h, err := mon.Update(); err != nil {
