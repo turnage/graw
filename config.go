@@ -28,6 +28,7 @@ type Config struct {
 	// When true, messages sent to the bot's inbox will be forwarded to the
 	// bot's MessageHandler.
 	Messages bool
-	// If set, internal messages will be logged here.
+	// If set, internal messages will be logged here. This is a spammy log
+	// used for debugging graw.
 	Logger *log.Logger
 }
