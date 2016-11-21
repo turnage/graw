@@ -35,7 +35,9 @@ func main() {
 		*rate,
 	); err != nil {
 		fmt.Printf("Failed to create reddit script: %v\n", err)
-	} else if err := graw.Scan(&announcer{}, script, cfg); err != nil {
+	} else if _, wait, err := graw.Scan(&announcer{}, script, cfg); err != nil {
+		fmt.Printf("graw launch failed: %v\n", err)
+	} else if err := wait(); err != nil {
 		fmt.Printf("graw run failed: %v\n", err)
 	}
 
