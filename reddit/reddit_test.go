@@ -3,6 +3,7 @@ package reddit
 import (
 	"net/http"
 	"net/url"
+	"sync"
 	"testing"
 
 	"github.com/kylelemons/godebug/pretty"
@@ -149,6 +150,7 @@ func testRequests(cases []testCase, t *testing.T) {
 		hostname:   "reddit.com",
 		reapSuffix: ".json",
 		scheme:     "https",
+		mu:         &sync.Mutex{},
 	}
 	b := &bot{
 		Account: newAccount(r),

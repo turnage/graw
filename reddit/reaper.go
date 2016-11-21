@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -44,6 +45,7 @@ type reaperImpl struct {
 	scheme     string
 	rate       time.Duration
 	last       time.Time
+	mu         *sync.Mutex
 }
 
 func newReaper(c reaperConfig) reaper {
@@ -54,6 +56,7 @@ func newReaper(c reaperConfig) reaper {
 		reapSuffix: c.reapSuffix,
 		scheme:     scheme[c.tls],
 		rate:       c.rate,
+		mu:         &sync.Mutex{},
 	}
 }
 
@@ -93,6 +96,9 @@ func (r *reaperImpl) sow(path string, values map[string]string) error {
 }
 
 func (r *reaperImpl) rateBlock() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if time.Since(r.last) < r.rate {
 		<-time.After(r.last.Add(r.rate).Sub(time.Now()))
 	}

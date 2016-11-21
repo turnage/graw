@@ -3,6 +3,7 @@ package reddit
 import (
 	"net/http"
 	"net/url"
+	"sync"
 	"testing"
 	"time"
 
@@ -23,6 +24,7 @@ func TestNew(t *testing.T) {
 		parser:   par,
 		hostname: "com",
 		scheme:   "https",
+		mu:       &sync.Mutex{},
 	}
 
 	if diff := pretty.Compare(newReaper(cfg), expected); diff != "" {
@@ -90,6 +92,7 @@ func TestReap(t *testing.T) {
 			parser:   parserWhich(expected),
 			hostname: "com",
 			scheme:   "http",
+			mu:       &sync.Mutex{},
 		}
 
 		Harvest, err := r.reap(test.path, test.values)
@@ -153,6 +156,7 @@ func TestSow(t *testing.T) {
 			parser:   &mockParser{},
 			hostname: "com",
 			scheme:   "http",
+			mu:       &sync.Mutex{},
 		}
 
 		if err := r.sow(test.path, test.values); err != nil {
@@ -180,6 +184,7 @@ func testRateBlock(f func(reaper), t *testing.T) {
 		parser: &mockParser{},
 		rate:   10 * time.Millisecond,
 		last:   start,
+		mu:     &sync.Mutex{},
 	}
 
 	f(r)
