@@ -22,7 +22,7 @@ type Tearer interface {
 	// TearDown is the last method ever called on the bot, and all other
 	// method calls will finish before this method is called. Bots should
 	// unload resources here.
-	TearDown() error
+	TearDown()
 }
 
 // PostHandler defines methods for bots that handle new posts in
