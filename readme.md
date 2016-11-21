@@ -1,38 +1,71 @@
 graw
 --------------------------------------------------------------------------------
 
-Version: 0.4.1
-
-Before depending on graw, please consult the [API Promise](promise.md).
-
 ![Build Status](https://travis-ci.org/turnage/graw.svg?branch=master)
-[![Coverage Status](https://coveralls.io/repos/turnage/graw/badge.svg?branch=master&service=github)](https://coveralls.io/github/turnage/graw?branch=master)
-[![GoDoc](https://godoc.org/github.com/turnage/graw?status.svg)](https://godoc.org/github.com/turnage/graw)
+![Version: 1.0.0](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)
+[![GoDoc](https://godoc.org/github.com/gopkg.in/turnage/graw.v1?status.svg)](https://godoc.org/gopkg.in/turnage/graw.v1)
 
-    go get github.com/turnage/graw
+    go get gopkg.in/turnage/graw.v1
 
-graw is for writing Reddit bots
-* that run forever and all the time.
-* quickly without worrying about things like "loops".
-* *in Go!*
+graw is a library for building Reddit bots that takes care of everything you
+don't want to.
 
-Choose what events on Reddit to listen for (e.g. private messages, or new posts 
-in certain subreddits) and graw will feed them to your bot. Here is a simple
-graw bot that announces new posts:
+As of major version 1, the API promise: no breaking changes, ever. Details
+below.
 
-    type AnnouncerBot struct {}
-    
-    func (a *AnnouncerBot) Post(post *redditproto.Link) {
-        fmt.Printf("New post by %s: %s\n", post.GetAuthor(), post.GetTitle())
-    }
+### Usage
 
-graw provides all data from Reddit in the form of
-[Protocol Buffers](https://developers.google.com/protocol-buffers/).
-See graw's [proto definitions](https://github.com/turnage/redditproto/blob/master/reddit.proto).
+The design of graw is that your bot is a handler for events, Reddit is a source
+of events, and graw connects the two. If you want to announce all the new posts
+in a given subreddit, this is your bot:
 
-See the [wiki](https://github.com/turnage/graw/wiki) for a quick start.
+````
+type announcer struct {}
 
-Here is an [example grawbot](https://gist.github.com/turnage/468f981f3b1e85bb19f2#file-announcer-go) that announces all of the new posts in /r/all.
+func (a *announcer) Post(post *reddit.Post) error {
+	fmt.Printf(`%s posted "%s"\n`, post.Author, post.Title)
+        return nil
+}
+````
 
-Here is an [example grawbot](https://gist.github.com/turnage/468f981f3b1e85bb19f2#file-replier-go) that
-automatically replies to private messages.
+Give this to graw with an api handle and a tell it what events you want to
+subscribe to; graw will take care of the rest. See the godoc for more
+information.
+
+### Features
+
+The primary feature of graw is robust event streams. graw supports many exciting
+event streams:
+
+* New posts in subreddits.
+* New posts or comments by users.
+* Private messages sent to the bot.
+* Replies to the bot's posts.
+* Replies to the bot's comments.
+* Mentions of the bot's username.
+
+Handling all of these events is as as simple as implementing a method to receive
+them!
+
+graw also provides two lower level packages for developers to tackle other
+interactions with Reddit like one-shot scripts and bot actions.
+
+### API Promise
+
+As of version 1.0.0, the graw API is stable. I will not make any backwards
+incompatible changes, ever. The only exceptions are:
+
+* I may add methods to an interface. This will only break you if you embed it
+  and implement a method with the same name as the one I add.
+* I may add fields the Config struct. This will only break you if you embed it
+  and add a field with the same name as the one I add, or initialize it
+  positionally.
+
+I don't foresee anyone having a reason to do either of these things. 
+
+If you were using the latest of major version 0, this should upgrade shouldn't
+break you unless you change your import path; v0 is still available at:
+
+    go get gopkg.in/turnage/graw.v0
+
+but I am no longer maintaining it.
