@@ -74,6 +74,4 @@ func foreman(
 			}
 		}
 	}
-
-	return nil
 }
