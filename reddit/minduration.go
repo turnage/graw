@@ -7,7 +7,7 @@ import (
 // lol no generics
 func maxOf(a, b time.Duration) time.Duration {
 	// lol no ternary statements
-	if a < b {
+	if a > b {
 		return a
 	}
 
