@@ -133,7 +133,18 @@ func Messages(
 	<-chan *reddit.Message,
 	error,
 ) {
-	return inboxStream(bot, kill, errs, "messages")
+	onlyMessages := make(chan *reddit.Message)
+
+	messages, err := inboxStream(bot, kill, errs, "inbox")
+	go func() {
+		for m := range messages {
+			if !m.WasComment {
+				onlyMessages <- m
+			}
+		}
+	}()
+
+	return onlyMessages, err
 }
 
 func inboxStream(
