@@ -45,6 +45,8 @@ func (b *baseClient) Do(req *http.Request) ([]byte, error) {
 		return nil, RateLimitErr
 	case http.StatusBadGateway:
 		return nil, GatewayErr
+	case http.StatusGatewayTimeout:
+		return nil, GatewayTimeoutErr
 	default:
 		return nil, fmt.Errorf("bad response code: %d", resp.StatusCode)
 	}

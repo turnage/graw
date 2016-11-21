@@ -68,6 +68,8 @@ func TestDo(t *testing.T) {
 		{nil, http.StatusForbidden, PermissionDeniedErr},
 		{nil, http.StatusServiceUnavailable, BusyErr},
 		{nil, http.StatusTooManyRequests, RateLimitErr},
+		{nil, http.StatusBadGateway, GatewayErr},
+		{nil, http.StatusGatewayTimeout, GatewayTimeoutErr},
 		{nil, http.StatusOK, nil},
 	} {
 		serv := serverWhich(test.body, test.code)

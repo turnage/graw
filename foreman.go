@@ -66,7 +66,9 @@ func foreman(
 			case reddit.BusyErr:
 				logger.Printf("Reddit was busy; staying up.")
 			case reddit.GatewayErr:
-				logger.Printf("Connection faulted; staying up.")
+				logger.Printf("Bad gateway error; staying up.")
+			case reddit.GatewayTimeoutErr:
+				logger.Printf("Gateway timeout; staying up.")
 			default:
 				return err
 			}
