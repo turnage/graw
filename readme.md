@@ -3,15 +3,15 @@ graw
 
 ![Build Status](https://travis-ci.org/turnage/graw.svg?branch=master)
 ![Version: 1.0.0](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)
-[![GoDoc](https://godoc.org/github.com/gopkg.in/turnage/graw.v1?status.svg)](https://godoc.org/gopkg.in/turnage/graw.v1)
+[![GoDoc](https://godoc.org/github.com/turnage/graw?status.svg)](https://godoc.org/github.com/turnage/graw)
 
-    go get gopkg.in/turnage/graw.v1
+    go get github.com/turnage/graw
 
 graw is a library for building Reddit bots that takes care of everything you
 don't want to.
 
-As of major version 1, the API promise: no breaking changes, ever. Details
-below.
+As of major version 1, the API promise is: no breaking changes, ever. Details
+below. This applies to all (library) subpackages of graw.
 
 ### Usage
 
@@ -44,11 +44,12 @@ event streams:
 * Replies to the bot's comments.
 * Mentions of the bot's username.
 
-Handling all of these events is as as simple as implementing a method to receive
-them!
+Processing all of these events is as as simple as implementing a method to
+receive them!
 
 graw also provides two lower level packages for developers to tackle other
-interactions with Reddit like one-shot scripts and bot actions.
+interactions with Reddit like one-shot scripts and bot actions. See
+subdirectories in the godoc.
 
 ### API Promise
 
@@ -57,14 +58,14 @@ incompatible changes, ever. The only exceptions are:
 
 * I may add methods to an interface. This will only break you if you embed it
   and implement a method with the same name as the one I add.
-* I may add fields the Config struct. This will only break you if you embed it
-  and add a field with the same name as the one I add, or initialize it
+* I may add fields to the Config struct. This will only break you if you embed
+  it and add a field with the same name as the one I add, or initialize it
   positionally.
 
 I don't foresee anyone having a reason to do either of these things. 
 
-If you were using the latest of major version 0, this should upgrade shouldn't
-break you unless you change your import path; v0 is still available at:
+If you were using the latest of major version 0 and don't want to upgrade yet,
+v0 is still available at:
 
     go get gopkg.in/turnage/graw.v0
 

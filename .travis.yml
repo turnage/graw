@@ -1,4 +1,3 @@
 language: go
 go:
 - tip
-go_import_path: gopkg.in/turnage/graw.v1
