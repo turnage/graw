@@ -28,9 +28,10 @@ func (a *announcer) Post(post *reddit.Post) error {
 }
 ````
 
-Give this to graw with an api handle and a tell it what events you want to
-subscribe to; graw will take care of the rest. See the godoc for more
-information.
+Give this to graw with an
+[api handle from the reddit package](https://godoc.org/github.com/turnage/graw/reddit)
+and a tell it what events you want to subscribe to; graw will take care of the
+rest. See the godoc for more information.
 
 ### Features
 
