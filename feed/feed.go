@@ -1,3 +1,5 @@
+// Package feed is an example grawbot that announces the feed of a given
+// subreddit.
 package main
 
 import (
