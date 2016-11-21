@@ -1,5 +1,2 @@
-*.cover
-*.swp
-res/one
-res/two
-useragent.protobuf
+cmd/feed/feed
+cmd/act/act
