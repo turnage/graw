@@ -53,7 +53,8 @@ func NewBot(c BotConfig) (Bot, error) {
 }
 
 // NewBotFromAgentFile calls NewBot with a config built from an agent file. An
-// agent file is a relic from older graw versions.
+// agent file is a convenient way to store your bot's account information. See
+// https://github.com/turnage/graw/wiki/agent-files
 func NewBotFromAgentFile(filename string, rate time.Duration) (Bot, error) {
 	agent, app, err := load(filename)
 	if err != nil {
