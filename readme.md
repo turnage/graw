@@ -33,6 +33,8 @@ Give this to graw with an
 and a tell it what events you want to subscribe to; graw will take care of the
 rest. See the godoc for more information.
 
+See [the tutorial](https://github.com/turnage/graw/wiki/Tutorial) for more information.
+
 ### Features
 
 The primary feature of graw is robust event streams. graw supports many exciting
