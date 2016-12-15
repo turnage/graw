@@ -143,3 +143,25 @@ func TestTipFilter(t *testing.T) {
 		t.Errorf("wanted threshold descaled; got %d", m.blankThreshold)
 	}
 }
+
+func TestTipStaysNonNil(t *testing.T) {
+	m := &monitor{
+		blanks:         2,
+		blankThreshold: 1,
+		tip:            []string{""},
+		scanner:        &mockScanner{},
+		sorter:         &mockSorter{names: []string{}},
+	}
+
+	_, err := m.Update()
+	if err != nil {
+		t.Errorf("error in update: %v", err)
+	}
+
+	// This second call is here to ensure it doesn't panic, as it would if
+	// the tip becomes nil.
+	_, err = m.Update()
+	if err != nil {
+		t.Errorf("error in second update: %v", err)
+	}
+}

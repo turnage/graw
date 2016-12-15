@@ -18,6 +18,10 @@ const (
 	maxTipSize = 20
 )
 
+// defaultTip is the blank reference point in a Reddit listing, which asks for
+// the most recent elements.
+var defaultTip = []string{""}
+
 // Monitor defines the controls for a Monitor.
 type Monitor interface {
 	// Update will check for new events, and send them to the Monitor's
@@ -100,7 +104,7 @@ func (m *monitor) sync() error {
 	if len(names) > 0 {
 		m.tip = names
 	} else {
-		m.tip = []string{""}
+		m.tip = defaultTip
 	}
 	return err
 }
@@ -135,6 +139,9 @@ func (m *monitor) fixTip() error {
 	// tip is dead and this check was meaningless.
 	if len(names) == 0 {
 		m.tip = m.tip[:len(m.tip)-1]
+		if len(m.tip) == 0 {
+			m.tip = defaultTip
+		}
 		return nil
 	}
 
