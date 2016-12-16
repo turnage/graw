@@ -11,6 +11,9 @@ type Config struct {
 	// New posts in all subreddits named here will be forwarded to the bot's
 	// PostHandler.
 	Subreddits []string
+	// New comments in all subreddits named here will be forwarded to the
+	// bot's CommentHandler.
+	SubredditComments []string
 	// New posts and comments made by all users named here will be forwarded
 	// to the bot's UserHandler. Note that since a separate monitor must be
 	// construced for every user, unlike subreddits, subscribing to the

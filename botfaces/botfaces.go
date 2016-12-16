@@ -33,6 +33,14 @@ type PostHandler interface {
 	Post(post *reddit.Post) error
 }
 
+// CommentHandler defines methods for bots that handle new comments in
+// subreddits they monitor.
+type CommentHandler interface {
+	// Comment is called when a comment is made in a monitored subreddit
+	// that the bot has not seen yet. [Called as goroutine.]
+	Comment(post *reddit.Comment) error
+}
+
 // MessageHandler defines methods for bots that handle new private messages to
 // their inbox.
 type MessageHandler interface {
