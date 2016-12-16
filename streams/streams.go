@@ -65,6 +65,29 @@ func Subreddits(
 	return posts, err
 }
 
+// SubredditComments returns a stream of new comments from the requested
+// subreddits. This stream monitors the combination listing of all subreddits
+// using Reddit's "+" feature e.g. /r/golang+rust. This will consume one
+// interval of the handle per call, so it is best to gather all the subreddits
+// needed and make invoke this function once.
+//
+// Be aware that these comments will not have reply trees. If you are interested
+// in comment trees, save the permalinks of their parent posts and fetch them
+// later..
+func SubredditComments(
+	scanner reddit.Scanner,
+	kill <-chan bool,
+	errs chan<- error,
+	subreddits ...string,
+) (
+	<-chan *reddit.Comment,
+	error,
+) {
+	path := "/r/" + strings.Join(subreddits, "+") + "/comments"
+	_, comments, _, err := streamFromPath(scanner, kill, errs, path)
+	return comments, err
+}
+
 // User returns a stream of new posts and comments made by a user. Each user
 // stream consumes one interval of the handle.
 func User(

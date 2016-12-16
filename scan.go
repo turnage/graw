@@ -12,6 +12,10 @@ var (
 	postHandlerErr = fmt.Errorf(
 		"You must implement PostHandler to handle subreddit feeds.",
 	)
+	commentHandlerErr = fmt.Errorf(
+		"You must implement CommentHandler to handle subreddit " +
+			"comment feeds.",
+	)
 	userHandlerErr = fmt.Errorf(
 		"You must implement UserHandler to handle user feeds.",
 	)
@@ -75,6 +79,28 @@ func connectScanStreams(
 			go func() {
 				for p := range posts {
 					errs <- ph.Post(p)
+				}
+			}()
+		}
+	}
+
+	if len(c.SubredditComments) > 0 {
+		ch, ok := handler.(botfaces.CommentHandler)
+		if !ok {
+			return commentHandlerErr
+		}
+
+		if comments, err := streams.SubredditComments(
+			sc,
+			kill,
+			errs,
+			c.SubredditComments...,
+		); err != nil {
+			return err
+		} else {
+			go func() {
+				for c := range comments {
+					errs <- ch.Comment(c)
 				}
 			}()
 		}

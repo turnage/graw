@@ -17,6 +17,7 @@ var (
 	agent          = feed.Flag("agent", "Filename of the agent file to use.").String()
 	rate           = feed.Flag("rate", "Update interval.").Duration()
 	subreddits     = feed.Flag("subreddits", "Subreddits to announce.").Strings()
+	comments       = feed.Flag("comments", "Subreddits to announce comments in.").Strings()
 	users          = feed.Flag("users", "Users to announce activity from.").Strings()
 	postreplies    = feed.Flag("postreplies", "Announce replies to bot's posts.").Bool()
 	commentreplies = feed.Flag("commentreplies", "Announce replies to bot's comments.").Bool()
@@ -30,6 +31,14 @@ func (a *announcer) Post(p *reddit.Post) error {
 	fmt.Printf(
 		"[New Post in %s][by %s]: %s\n",
 		p.Subreddit, p.Author, p.Title,
+	)
+	return nil
+}
+
+func (a *announcer) Comment(c *reddit.Comment) error {
+	fmt.Printf(
+		"[New Comment in %s][by %s]: %s\n\n",
+		c.Subreddit, c.Author, c.Body,
 	)
 	return nil
 }
@@ -100,13 +109,14 @@ func main() {
 	}
 
 	cfg := graw.Config{
-		Subreddits:     *subreddits,
-		Users:          *users,
-		PostReplies:    *postreplies,
-		CommentReplies: *commentreplies,
-		Messages:       *messages,
-		Mentions:       *mentions,
-		Logger:         log.New(os.Stderr, "", log.LstdFlags),
+		Subreddits:        *subreddits,
+		SubredditComments: *comments,
+		Users:             *users,
+		PostReplies:       *postreplies,
+		CommentReplies:    *commentreplies,
+		Messages:          *messages,
+		Mentions:          *mentions,
+		Logger:            log.New(os.Stderr, "", log.LstdFlags),
 	}
 
 	var err error
