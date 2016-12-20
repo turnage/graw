@@ -46,10 +46,10 @@ import (
 // Subreddits returns a stream of new posts from the requested subreddits. This
 // stream monitors the combination listing of all subreddits using Reddit's "+"
 // feature e.g. /r/golang+rust. This will consume one interval of the handle per
-// call, so it is best to gather all the subreddits needed and make invoke this
+// call, so it is best to gather all the subreddits needed and invoke this
 // function once.
 //
-// Be aware that these posts are unlikely to have comments. If you are
+// Be aware that these posts are new and will not have comments. If you are
 // interested in comment trees, save their permalinks and fetch them later.
 func Subreddits(
 	scanner reddit.Scanner,
@@ -69,11 +69,11 @@ func Subreddits(
 // subreddits. This stream monitors the combination listing of all subreddits
 // using Reddit's "+" feature e.g. /r/golang+rust. This will consume one
 // interval of the handle per call, so it is best to gather all the subreddits
-// needed and make invoke this function once.
+// needed and invoke this function once.
 //
-// Be aware that these comments will not have reply trees. If you are interested
-// in comment trees, save the permalinks of their parent posts and fetch them
-// later..
+// Be aware that these comments are new, and will not have reply trees. If you
+// are interested in comment trees, save the permalinks of their parent posts
+// and fetch them later once they may have had activity.
 func SubredditComments(
 	scanner reddit.Scanner,
 	kill <-chan bool,
