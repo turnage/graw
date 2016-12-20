@@ -2,7 +2,7 @@ graw
 --------------------------------------------------------------------------------
 
 ![Build Status](https://travis-ci.org/turnage/graw.svg?branch=master)
-![Version: 1.0.1](https://img.shields.io/badge/version-1.0.1-brightgreen.svg)
+![Version: 1.1.0](https://img.shields.io/badge/version-1.1.0-brightgreen.svg)
 [![GoDoc](https://godoc.org/github.com/turnage/graw?status.svg)](https://godoc.org/github.com/turnage/graw)
 
     go get github.com/turnage/graw
