@@ -23,7 +23,7 @@ in a given subreddit, this is your bot:
 type announcer struct {}
 
 func (a *announcer) Post(post *reddit.Post) error {
-	fmt.Printf(`%s posted "%s"\n`, post.Author, post.Title)
+        fmt.Printf(`%s posted "%s"\n`, post.Author, post.Title)
         return nil
 }
 ````
@@ -31,9 +31,8 @@ func (a *announcer) Post(post *reddit.Post) error {
 Give this to graw with an
 [api handle from the reddit package](https://godoc.org/github.com/turnage/graw/reddit)
 and a tell it what events you want to subscribe to; graw will take care of the
-rest. See the godoc for more information.
-
-See [the tutorial](https://github.com/turnage/graw/wiki/Tutorial) for more information.
+rest. See the godoc and [tutorial](https://github.com/turnage/graw/wiki/Tutorial) for
+more information.
 
 ### Features
 
