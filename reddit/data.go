@@ -37,8 +37,8 @@ type Comment struct {
 	Distinguished string `mapstructure:"distinguished"`
 }
 
-// IsRoot is true when the comment is a top level comment.
-func (c *Comment) IsRoot() bool {
+// IsTopLevel is true when the comment is a top level comment.
+func (c *Comment) IsTopLevel() bool {
 	parentType := strings.Split(c.ParentID, "_")[0]
 	return parentType == postKind
 }
