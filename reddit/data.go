@@ -1,5 +1,7 @@
 package reddit
 
+import "strings"
+
 // Comment represents a comment on Reddit (Reddit type t1_).
 // https://github.com/reddit/reddit/wiki/JSON#comment-implements-votable--created
 type Comment struct {
@@ -33,6 +35,12 @@ type Comment struct {
 
 	Gilded        int32  `mapstructure:"gilded"`
 	Distinguished string `mapstructure:"distinguished"`
+}
+
+// IsRoot is true when the comment is a top level comment.
+func (c *Comment) IsRoot() bool {
+	parentType := strings.Split(c.ParentID, "_")[0]
+	return parentType == "t3"
 }
 
 // Post represents posts on Reddit (Reddit type t3_).
