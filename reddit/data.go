@@ -40,7 +40,7 @@ type Comment struct {
 // IsRoot is true when the comment is a top level comment.
 func (c *Comment) IsRoot() bool {
 	parentType := strings.Split(c.ParentID, "_")[0]
-	return parentType == "t3"
+	return parentType == postKind
 }
 
 // Post represents posts on Reddit (Reddit type t3_).
