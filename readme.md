@@ -4,6 +4,7 @@ graw
 ![Build Status](https://travis-ci.org/turnage/graw.svg?branch=master)
 ![Version: 1.2.0](https://img.shields.io/badge/version-1.2.0-brightgreen.svg)
 [![GoDoc](https://godoc.org/github.com/turnage/graw?status.svg)](https://godoc.org/github.com/turnage/graw)
+[![API Testing](https://img.shields.io/badge/API%20Test-RapidAPI-blue.svg)](https://rapidapi.com/package/Reddit/functions?utm_source=RedditGithub&utm_medium=button&utm_content=Vender_GitHub)
 
     go get github.com/turnage/graw
 
