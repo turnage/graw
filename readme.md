@@ -8,7 +8,7 @@ graw
     go get github.com/turnage/graw
 
 graw is a library for building Reddit bots that takes care of everything you
-don't want to.
+don't want to. [Read the tutorial book](https://turnage.gitbooks.io/graw/content/)!
 
 As of major version 1, the API promise is: no breaking changes, ever. Details
 below. This applies to all (library) subpackages of graw.
@@ -31,8 +31,8 @@ func (a *announcer) Post(post *reddit.Post) error {
 Give this to graw with an
 [api handle from the reddit package](https://godoc.org/github.com/turnage/graw/reddit)
 and a tell it what events you want to subscribe to; graw will take care of the
-rest. See the godoc and [tutorial](https://github.com/turnage/graw/wiki/Tutorial) for
-more information.
+rest. See the [godoc](https://godoc.org/github.com/turnage/graw) and
+[tutorial book](https://turnage.gitbooks.io/graw/content/) for more information.
 
 ### Features
 
@@ -40,6 +40,7 @@ The primary feature of graw is robust event streams. graw supports many exciting
 event streams:
 
 * New posts in subreddits.
+* New comments in subreddits.
 * New posts or comments by users.
 * Private messages sent to the bot.
 * Replies to the bot's posts.
@@ -65,10 +66,3 @@ incompatible changes, ever. The only exceptions are:
   positionally.
 
 I don't foresee anyone having a reason to do either of these things. 
-
-If you were using the latest of major version 0 and don't want to upgrade yet,
-v0 is still available at:
-
-    go get gopkg.in/turnage/graw.v0
-
-but I am no longer maintaining it.
