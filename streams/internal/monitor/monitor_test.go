@@ -13,6 +13,11 @@ func (m *mockScanner) Listing(_, _ string) (reddit.Harvest, error) {
 	return reddit.Harvest{}, nil
 }
 
+
+func (m *mockScanner) ListingWithParams(_ string, _ map[string]string) (reddit.Harvest, error) {
+	return reddit.Harvest{}, nil
+}
+
 type mockSorter struct {
 	names []string
 }
