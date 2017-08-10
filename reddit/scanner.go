@@ -27,6 +27,7 @@ type Scanner interface {
 	// If you want a stream where all of this is handled for you, see graw
 	// or graw/streams.
 	Listing(path, after string) (Harvest, error)
+	ListingWithParams(path string, params map[string]string) (Harvest, error)
 }
 
 type scanner struct {
@@ -45,4 +46,18 @@ func (s *scanner) Listing(path, after string) (Harvest, error) {
 			"before":   after,
 		},
 	)
+}
+
+func (s *scanner) ListingWithParams(path string, params map[string]string) (
+	Harvest,
+	error,
+) {
+	reaperParams := map[string]string{
+		"raw_json": "1",
+		"limit":    "100",
+	}
+	for key, value := range params {
+		reaperParams[key] = value
+	}
+	return s.r.reap(path, reaperParams)
 }
