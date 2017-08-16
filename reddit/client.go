@@ -31,10 +31,12 @@ type baseClient struct {
 
 func (b *baseClient) Do(req *http.Request) ([]byte, error) {
 	resp, err := b.cli.Do(req)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	switch resp.StatusCode {
 	case http.StatusOK:
