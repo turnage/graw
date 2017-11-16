@@ -43,7 +43,7 @@ func (s *scanner) Listing(path, after string) (Harvest, error) {
 		path, map[string]string{
 			"raw_json": "1",
 			"limit":    "100",
-			"before":   after,
+			"after":    after,
 		},
 	)
 }

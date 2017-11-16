@@ -108,7 +108,7 @@ func TestScanner(t *testing.T) {
 						Scheme:   "https",
 						Host:     "reddit.com",
 						Path:     "/r/all.json",
-						RawQuery: "before=ref&limit=100&raw_json=1",
+						RawQuery: "after=ref&limit=100&raw_json=1",
 					},
 					Host: "reddit.com",
 				},
