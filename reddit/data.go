@@ -43,6 +43,19 @@ func (c *Comment) IsTopLevel() bool {
 	return parentType == postKind
 }
 
+// RedditVideo represents a subfield in the response about posts
+type RedditVideo struct {
+	FallbackURL string `mapstructure:"fallback_url"`
+	Height int `mapstructure:"height"`
+	Width int `mapstructure:"width"`
+	ScrubberMediaURL string `mapstructure:"scrubber_media_url"`
+	DashURL string `mapstructure:"dash_url"`
+	Duration int `mapstructure:"duration"`
+	HLSURL string `mapstructure:"hls_url"`
+	IsGIF bool `mapstructure:"is_gif"`
+	TranscodingStatus string `mapstructure:"transcoding_status"`
+}
+
 // Post represents posts on Reddit (Reddit type t3_).
 // https://github.com/reddit/reddit/wiki/JSON#link-implements-votable--created
 type Post struct {
@@ -87,6 +100,13 @@ type Post struct {
 	Gilded        int32  `mapstructure:"gilded"`
 	Distinguished string `mapstructure:"distinguished"`
 	Stickied      bool   `mapstructure:"stickied"`
+
+	Media struct {
+		RedditVideo RedditVideo `mapstructure:"reddit_video"`
+	} `mapstructure:"media"`
+	SecureMedia struct {
+		RedditVideo RedditVideo `mapstructure:"reddit_video"`
+	} `mapstructure:"secure_media"`
 }
 
 // Message represents messages on Reddit (Reddit type t4_).
