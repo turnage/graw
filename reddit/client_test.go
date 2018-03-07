@@ -17,36 +17,6 @@ func serverWhich(body []byte, code int) *httptest.Server {
 	)
 }
 
-func TestNewAppClient(t *testing.T) {
-	serv := serverWhich([]byte(`{
-		"access_token": "aksjdsakjd",
-		"token_type": "bearer",
-		"expires_in": 100,
-		"scope": "*",
-		"refresh_token": "sidfnsidfnsd" 
-	}`), http.StatusOK)
-
-	if client, err := newClient(
-		clientConfig{
-			app: App{
-				ID:       "id",
-				Secret:   "secret",
-				Username: "user",
-				Password: "password",
-				tokenURL: serv.URL,
-			},
-		},
-	); err != nil {
-		t.Errorf("failed to fetch token: %v", err)
-	} else if client == nil {
-		t.Errorf("client was nil")
-	} else if app, ok := client.(*appClient); !ok {
-		t.Errorf("client was not an appClient")
-	} else if app.token == nil {
-		t.Errorf("appClient's token was not set")
-	}
-}
-
 func TestNewAnonClient(t *testing.T) {
 	if client, err := newClient(clientConfig{}); err != nil {
 		t.Errorf("error making anon client")
