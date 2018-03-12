@@ -43,17 +43,34 @@ func (c *Comment) IsTopLevel() bool {
 	return parentType == postKind
 }
 
-// RedditVideo represents a subfield in the response about posts
-type RedditVideo struct {
-	FallbackURL string `mapstructure:"fallback_url"`
-	Height int `mapstructure:"height"`
-	Width int `mapstructure:"width"`
-	ScrubberMediaURL string `mapstructure:"scrubber_media_url"`
-	DashURL string `mapstructure:"dash_url"`
-	Duration int `mapstructure:"duration"`
-	HLSURL string `mapstructure:"hls_url"`
-	IsGIF bool `mapstructure:"is_gif"`
-	TranscodingStatus string `mapstructure:"transcoding_status"`
+// Media represents a subfield in the response about posts
+type Media struct {
+	Type   string `mapstructure:"type"`
+	OEmbed struct {
+		ProviderURL     string `mapstructure:"provider_url"`
+		Description     string `mapstructure:"description"`
+		Title           string `mapstructure:"title"`
+		ThumbnailWidth  int    `mapstructure:"thumbnail_width"`
+		Height          int    `mapstructure:"height"`
+		Width           int    `mapstructure:"width"`
+		HTML            string `mapstructure:"html"`
+		Version         string `mapstructure:"version"`
+		ProviderName    string `mapstructure:"provider_name"`
+		ThumbnailURL    string `mapstructure:"thumbnail_url"`
+		Type            string `mapstructure:"type"`
+		ThumbnailHeight int    `mapstructure:"thumbnail_height"`
+	} `mapstructure:"oembed"`
+	RedditVideo struct {
+		FallbackURL       string `mapstructure:"fallback_url"`
+		Height            int    `mapstructure:"height"`
+		Width             int    `mapstructure:"width"`
+		ScrubberMediaURL  string `mapstructure:"scrubber_media_url"`
+		DashURL           string `mapstructure:"dash_url"`
+		Duration          int    `mapstructure:"duration"`
+		HLSURL            string `mapstructure:"hls_url"`
+		IsGIF             bool   `mapstructure:"is_gif"`
+		TranscodingStatus string `mapstructure:"transcoding_status"`
+	} `mapstructure:"reddit_video"`
 }
 
 // Post represents posts on Reddit (Reddit type t3_).
@@ -101,12 +118,9 @@ type Post struct {
 	Distinguished string `mapstructure:"distinguished"`
 	Stickied      bool   `mapstructure:"stickied"`
 
-	Media struct {
-		RedditVideo RedditVideo `mapstructure:"reddit_video"`
-	} `mapstructure:"media"`
-	SecureMedia struct {
-		RedditVideo RedditVideo `mapstructure:"reddit_video"`
-	} `mapstructure:"secure_media"`
+	IsRedditMediaDomain bool  `mapstructure:"is_reddit_media_domain"`
+	Media               Media `mapstructure:"media"`
+	SecureMedia         Media `mapstructure:"secure_media"`
 }
 
 // Message represents messages on Reddit (Reddit type t4_).
