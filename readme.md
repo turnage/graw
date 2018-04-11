@@ -19,7 +19,7 @@ The design of graw is that your bot is a handler for events, Reddit is a source
 of events, and graw connects the two. If you want to announce all the new posts
 in a given subreddit, this is your bot:
 
-````
+````go
 type announcer struct {}
 
 func (a *announcer) Post(post *reddit.Post) error {
