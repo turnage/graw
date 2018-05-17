@@ -12,7 +12,7 @@ const (
 	// elements in the monitored listing the monitor will tolerate before
 	// suspecting the tip of the listing has been deleted or caught in a
 	// spam filter.
-	blankThreshold = 1
+	blankThreshold = 4
 	// maxTipSize is the maximum size of the tip log (number of backup tips
 	// + the current tip).
 	maxTipSize = 20
@@ -45,9 +45,6 @@ type monitor struct {
 	// blanks is the number of rounds that have turned up 0 new
 	// elements at the listing endpoint.
 	blanks int
-	// blankThreshold is the number of blanks a monitor will tolerate before
-	// suspecting its tip is broken (e.g.post was deleted).
-	blankThreshold int
 	// tip is a slice of reddit thing names, the first of which represents
 	// the "tip", which the monitor uses to requests new posts by using it
 	// as a reference point (i.e.asks Reddit for posts "after" the tip).
@@ -63,7 +60,6 @@ type monitor struct {
 // New provides a monitor for the listing endpoint.
 func New(c Config) (Monitor, error) {
 	m := &monitor{
-		blankThreshold: blankThreshold,
 		tip:            []string{""},
 		path:           c.Path,
 		scanner:        c.Scanner,
@@ -80,7 +76,7 @@ func New(c Config) (Monitor, error) {
 // Update checks for new content at the monitored listing endpoint and forwards
 // new content to the bot for processing.
 func (m *monitor) Update() (reddit.Harvest, error) {
-	if m.blanks > m.blankThreshold {
+	if m.blanks > blankThreshold {
 		return reddit.Harvest{}, m.fixTip()
 	}
 
@@ -129,7 +125,6 @@ func (m *monitor) updateTip(names []string) {
 // will stop getting posts. This will adjust backward if a tip is dead and
 // remove any other dead tips in the list. Returns whether the tip was broken.
 func (m *monitor) fixTip() error {
-	oldTip := m.tip[0]
 	names, _, err := m.harvest(m.tip[len(m.tip)-1])
 	if err != nil {
 		return err
@@ -159,14 +154,5 @@ func (m *monitor) fixTip() error {
 	}
 
 	m.blanks = 0
-	if m.tip[0] == oldTip {
-		m.blankThreshold *= 2
-	} else {
-		m.blankThreshold /= 2
-		if m.blankThreshold < 1 {
-			m.blankThreshold = 1
-		}
-	}
-
 	return nil
 }
