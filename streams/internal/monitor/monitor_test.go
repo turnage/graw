@@ -47,8 +47,7 @@ func TestNew(t *testing.T) {
 
 func TestShaveTip(t *testing.T) {
 	m := &monitor{
-		blanks:         2,
-		blankThreshold: 1,
+		blanks:         5,
 		tip:            []string{"1", "2"},
 		scanner:        &mockScanner{},
 		sorter:         &mockSorter{},
@@ -64,7 +63,7 @@ func TestShaveTip(t *testing.T) {
 		t.Errorf("wanted tip shaved; got %v", m.tip)
 	}
 
-	if m.blanks != 2 {
+	if m.blanks != 5 {
 		t.Errorf("did not want blanks reset for bad check")
 	}
 }
@@ -72,7 +71,6 @@ func TestShaveTip(t *testing.T) {
 func TestStoreTip(t *testing.T) {
 	m := &monitor{
 		blanks:         0,
-		blankThreshold: 1,
 		tip:            []string{"1", "2"},
 		scanner:        &mockScanner{},
 		sorter:         &mockSorter{[]string{"0"}},
@@ -95,8 +93,7 @@ func TestStoreTip(t *testing.T) {
 
 func TestBackoff(t *testing.T) {
 	m := &monitor{
-		blanks:         2,
-		blankThreshold: 1,
+		blanks:         6,
 		tip:            []string{"1", "2"},
 		scanner:        &mockScanner{},
 		sorter:         &mockSorter{names: []string{"1", "2"}},
@@ -115,16 +112,11 @@ func TestBackoff(t *testing.T) {
 	if m.blanks != 0 {
 		t.Errorf("wanted blanks reset; got %d", m.blanks)
 	}
-
-	if m.blankThreshold != 2 {
-		t.Errorf("wanted threshold scaled; got %d", m.blankThreshold)
-	}
 }
 
 func TestTipFilter(t *testing.T) {
 	m := &monitor{
-		blanks:         3,
-		blankThreshold: 2,
+		blanks:         6,
 		tip:            []string{"1", "2", "3", "4"},
 		scanner:        &mockScanner{},
 		sorter:         &mockSorter{names: []string{"2", "4"}},
@@ -143,16 +135,11 @@ func TestTipFilter(t *testing.T) {
 	if m.blanks != 0 {
 		t.Errorf("wanted blanks reset; got %d", m.blanks)
 	}
-
-	if m.blankThreshold != 1 {
-		t.Errorf("wanted threshold descaled; got %d", m.blankThreshold)
-	}
 }
 
 func TestTipStaysNonNil(t *testing.T) {
 	m := &monitor{
 		blanks:         2,
-		blankThreshold: 1,
 		tip:            []string{""},
 		scanner:        &mockScanner{},
 		sorter:         &mockSorter{names: []string{}},
