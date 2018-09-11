@@ -1,6 +1,7 @@
 package reddit
 
 import (
+	"bytes"
 	"net/http"
 	"net/url"
 	"strings"
@@ -34,7 +35,7 @@ type reaper interface {
 	// the endpoint.
 	reap(path string, values map[string]string) (Harvest, error)
 	// sow executes a POST request to Reddit.
-	sow(path string, values map[string]string) error
+	sow(path string, values map[string]string) (*http.Response, error)
 }
 
 type reaperImpl struct {
@@ -73,7 +74,12 @@ func (r *reaperImpl) reap(path string, values map[string]string) (Harvest, error
 		return Harvest{}, err
 	}
 
-	comments, posts, messages, err := r.parser.parse(resp)
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(resp.Body); err != nil {
+		return Harvest{}, err
+	}
+
+	comments, posts, messages, err := r.parser.parse(buf.Bytes())
 	return Harvest{
 		Comments: comments,
 		Posts:    posts,
@@ -81,9 +87,9 @@ func (r *reaperImpl) reap(path string, values map[string]string) (Harvest, error
 	}, err
 }
 
-func (r *reaperImpl) sow(path string, values map[string]string) error {
+func (r *reaperImpl) sow(path string, values map[string]string) (*http.Response, error) {
 	r.rateBlock()
-	_, err := r.cli.Do(
+	res, err := r.cli.Do(
 		&http.Request{
 			Method: "POST",
 			Header: formEncoding,
@@ -91,8 +97,7 @@ func (r *reaperImpl) sow(path string, values map[string]string) error {
 			URL:    r.url(path, values),
 		},
 	)
-
-	return err
+	return res, err
 }
 
 func (r *reaperImpl) rateBlock() {
