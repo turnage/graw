@@ -1,7 +1,6 @@
 package reddit
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 )
@@ -22,18 +21,15 @@ type clientConfig struct {
 
 // client executes http Requests and invisibly handles OAuth2 authorization.
 type client interface {
-	Do(*http.Request) ([]byte, error)
+	Do(*http.Request) (*http.Response, error)
 }
 
 type baseClient struct {
 	cli *http.Client
 }
 
-func (b *baseClient) Do(req *http.Request) ([]byte, error) {
+func (b *baseClient) Do(req *http.Request) (*http.Response, error) {
 	resp, err := b.cli.Do(req)
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +50,7 @@ func (b *baseClient) Do(req *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("bad response code: %d", resp.StatusCode)
 	}
 
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return resp, nil
 }
 
 // newClient returns a new client using the given user to make requests.

@@ -14,7 +14,7 @@ type appClient struct {
 	token *oauth2.Token
 }
 
-func (a *appClient) Do(req *http.Request) ([]byte, error) {
+func (a *appClient) Do(req *http.Request) (*http.Response, error) {
 	if a.token == nil || !a.token.Valid() {
 		if err := a.authorize(); err != nil {
 			return nil, err
