@@ -1,14 +1,15 @@
 package reddit
 
 import (
-	"fmt"
+	"errors"
 )
 
+// Errors that can be returned by the Reddit API.
 var (
-	PermissionDeniedErr   = fmt.Errorf("unauthorized access to endpoint")
-	BusyErr               = fmt.Errorf("Reddit is busy right now")
-	RateLimitErr          = fmt.Errorf("Reddit is rate limiting requests")
-	GatewayErr            = fmt.Errorf("502 bad gateway code from Reddit")
-	GatewayTimeoutErr     = fmt.Errorf("504 gateway timeout from Reddit")
-	ThreadDoesNotExistErr = fmt.Errorf("The requested post does not exist.")
+	PermissionDeniedErr   = errors.New("unauthorized access to endpoint")
+	BusyErr               = errors.New("Reddit is busy right now")
+	RateLimitErr          = errors.New("Reddit is rate limiting requests")
+	GatewayErr            = errors.New("502 bad gateway code from Reddit")
+	GatewayTimeoutErr     = errors.New("504 gateway timeout code from Reddit")
+	ThreadDoesNotExistErr = errors.New("the requested post does not exist")
 )

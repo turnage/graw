@@ -1,7 +1,7 @@
 package graw
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/turnage/graw/botfaces"
 	"github.com/turnage/graw/reddit"
@@ -9,17 +9,17 @@ import (
 )
 
 var (
-	postReplyHandlerErr = fmt.Errorf(
-		"You must implement PostReplHandler to take post reply feeds.",
+	postReplyHandlerErr = errors.New(
+		"you must implement PostReplHandler to take post reply feeds",
 	)
-	commentReplyHandlerErr = fmt.Errorf(
-		"You must implement CommentReplyHandler to take comment reply feeds.",
+	commentReplyHandlerErr = errors.New(
+		"you must implement CommentReplyHandler to take comment reply feeds",
 	)
-	mentionHandlerErr = fmt.Errorf(
-		"You must implement MentionHandler to take mention feeds.",
+	mentionHandlerErr = errors.New(
+		"you must implement MentionHandler to take mention feeds",
 	)
-	messageHandlerErr = fmt.Errorf(
-		"You must implement MessageHandler to take message feeds.",
+	messageHandlerErr = errors.New(
+		"you must implement MessageHandler to take message feeds",
 	)
 )
 
