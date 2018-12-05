@@ -71,17 +71,17 @@ func TestReap(t *testing.T) {
 	} {
 		expected := Harvest{
 			Comments: []*Comment{
-				&Comment{
+				{
 					Body: "comment",
 				},
 			},
 			Posts: []*Post{
-				&Post{
+				{
 					SelfText: "post",
 				},
 			},
 			Messages: []*Message{
-				&Message{
+				{
 					Body: "message",
 				},
 			},
@@ -105,7 +105,7 @@ func TestReap(t *testing.T) {
 		}
 
 		if diff := pretty.Compare(c.request, test.correct); diff != "" {
-			t.Errorf("request incorrect; diff: %s", diff)
+			t.Errorf("Request incorrect; diff: %s", diff)
 		}
 	}
 }
@@ -164,7 +164,7 @@ func TestSow(t *testing.T) {
 		}
 
 		if diff := pretty.Compare(c.request, test.correct); diff != "" {
-			t.Errorf("request incorrect; diff: %s", diff)
+			t.Errorf("Request incorrect; diff: %s", diff)
 		}
 	}
 }
@@ -191,8 +191,8 @@ func testRateBlock(f func(reaper), t *testing.T) {
 	end := time.Now()
 
 	if block := end.Sub(start); block < r.rate {
-		t.Errorf("wanted block for %v; blocked for %v", r.rate, block)
+		t.Errorf("Wanted block for %v; blocked for %v", r.rate, block)
 	} else if r.last == start {
-		t.Errorf("wanted updated timestamp; found same timestamp")
+		t.Errorf("Wanted updated timestamp; found same timestamp")
 	}
 }

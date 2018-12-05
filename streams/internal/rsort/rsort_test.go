@@ -10,16 +10,16 @@ func TestSort(t *testing.T) {
 	names := New().Sort(
 		reddit.Harvest{
 			Posts: []*reddit.Post{
-				&reddit.Post{CreatedUTC: 1, Name: "1"},
-				&reddit.Post{CreatedUTC: 7, Name: "7"},
-				&reddit.Post{CreatedUTC: 2, Name: "2"},
+				{CreatedUTC: 1, Name: "1"},
+				{CreatedUTC: 7, Name: "7"},
+				{CreatedUTC: 2, Name: "2"},
 			},
 			Comments: []*reddit.Comment{
-				&reddit.Comment{CreatedUTC: 5, Name: "5"},
-				&reddit.Comment{CreatedUTC: 0, Name: "0"},
+				{CreatedUTC: 5, Name: "5"},
+				{CreatedUTC: 0, Name: "0"},
 			},
 			Messages: []*reddit.Message{
-				&reddit.Message{CreatedUTC: 6, Name: "6"},
+				{CreatedUTC: 6, Name: "6"},
 			},
 		},
 	)

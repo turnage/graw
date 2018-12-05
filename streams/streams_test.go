@@ -23,12 +23,12 @@ func TestStream(t *testing.T) {
 	errs := make(chan error)
 	mon := &mockMonitor{
 		h: reddit.Harvest{
-			Posts: []*reddit.Post{&reddit.Post{Title: "Title"}},
+			Posts: []*reddit.Post{{Title: "Title"}},
 			Comments: []*reddit.Comment{
-				&reddit.Comment{Body: "body"},
+				{Body: "body"},
 			},
 			Messages: []*reddit.Message{
-				&reddit.Message{Body: "body"},
+				{Body: "body"},
 			},
 		},
 	}

@@ -1,6 +1,7 @@
 package graw
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/turnage/graw/botfaces"
@@ -9,19 +10,14 @@ import (
 )
 
 var (
-	postHandlerErr = fmt.Errorf(
-		"You must implement PostHandler to handle subreddit feeds.",
-	)
-	commentHandlerErr = fmt.Errorf(
-		"You must implement CommentHandler to handle subreddit " +
-			"comment feeds.",
-	)
-	userHandlerErr = fmt.Errorf(
-		"You must implement UserHandler to handle user feeds.",
-	)
-	loggedOutErr = fmt.Errorf(
-		"You must be running as a logged in bot to get inbox feeds.",
-	)
+	errNotPostHandler = errors.New("you must implement PostHandler to handle " +
+		"subreddit feeds")
+	errNotCommentHandler = errors.New("you must implement CommentHandler to handle " +
+		"subreddit comment feeds")
+	errNotUserHandler = fmt.Errorf("you must implement UserHandler to handle user " +
+		"feeds")
+	errLoggedOut = fmt.Errorf("you must be running as a logged in bot to get " +
+		"inbox feeds")
 )
 
 // Scan connects any requested logged-out event sources to the given handler,
@@ -37,7 +33,7 @@ func Scan(handler interface{}, script reddit.Script, cfg Config) (
 	errs := make(chan error)
 
 	if cfg.PostReplies || cfg.CommentReplies || cfg.Mentions || cfg.Messages {
-		return nil, nil, loggedOutErr
+		return nil, nil, errLoggedOut
 	}
 
 	if err := connectScanStreams(
@@ -65,73 +61,63 @@ func connectScanStreams(
 	if len(c.Subreddits) > 0 {
 		ph, ok := handler.(botfaces.PostHandler)
 		if !ok {
-			return postHandlerErr
+			return errNotPostHandler
 		}
 
-		if posts, err := streams.Subreddits(
-			sc,
-			kill,
-			errs,
-			c.Subreddits...,
-		); err != nil {
+		posts, err := streams.Subreddits(sc, kill, errs, c.Subreddits...)
+		if err != nil {
 			return err
-		} else {
-			go func() {
-				for p := range posts {
-					errs <- ph.Post(p)
-				}
-			}()
 		}
+
+		go func() {
+			for p := range posts {
+				errs <- ph.Post(p)
+			}
+		}()
 	}
 
 	if len(c.SubredditComments) > 0 {
 		ch, ok := handler.(botfaces.CommentHandler)
 		if !ok {
-			return commentHandlerErr
+			return errNotCommentHandler
 		}
 
-		if comments, err := streams.SubredditComments(
-			sc,
-			kill,
-			errs,
-			c.SubredditComments...,
-		); err != nil {
+		comments, err := streams.SubredditComments(sc, kill, errs,
+			c.SubredditComments...)
+		if err != nil {
 			return err
-		} else {
-			go func() {
-				for c := range comments {
-					errs <- ch.Comment(c)
-				}
-			}()
 		}
+
+		go func() {
+			for c := range comments {
+				errs <- ch.Comment(c)
+			}
+		}()
 	}
 
 	if len(c.Users) > 0 {
 		uh, ok := handler.(botfaces.UserHandler)
 		if !ok {
-			return userHandlerErr
+			return errNotUserHandler
 		}
 
 		for _, user := range c.Users {
-			if posts, comments, err := streams.User(
-				sc,
-				kill,
-				errs,
-				user,
-			); err != nil {
+			posts, comments, err := streams.User(sc, kill, errs, user)
+			if err != nil {
 				return err
-			} else {
-				go func() {
-					for p := range posts {
-						errs <- uh.UserPost(p)
-					}
-				}()
-				go func() {
-					for c := range comments {
-						errs <- uh.UserComment(c)
-					}
-				}()
 			}
+
+			go func() {
+				for p := range posts {
+					errs <- uh.UserPost(p)
+				}
+			}()
+
+			go func() {
+				for c := range comments {
+					errs <- uh.UserComment(c)
+				}
+			}()
 		}
 	}
 

@@ -24,7 +24,7 @@ func (s *lurker) Thread(permalink string) (*Post, error) {
 	}
 
 	if len(harvest.Posts) != 1 {
-		return nil, ThreadDoesNotExistErr
+		return nil, ErrThreadNotExists
 	}
 
 	return harvest.Posts[0], nil

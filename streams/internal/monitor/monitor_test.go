@@ -13,7 +13,6 @@ func (m *mockScanner) Listing(_, _ string) (reddit.Harvest, error) {
 	return reddit.Harvest{}, nil
 }
 
-
 func (m *mockScanner) ListingWithParams(_ string, _ map[string]string) (reddit.Harvest, error) {
 	return reddit.Harvest{}, nil
 }
@@ -47,10 +46,10 @@ func TestNew(t *testing.T) {
 
 func TestShaveTip(t *testing.T) {
 	m := &monitor{
-		blanks:         5,
-		tip:            []string{"1", "2"},
-		scanner:        &mockScanner{},
-		sorter:         &mockSorter{},
+		blanks:  5,
+		tip:     []string{"1", "2"},
+		scanner: &mockScanner{},
+		sorter:  &mockSorter{},
 	}
 
 	_, err := m.Update()
@@ -70,10 +69,10 @@ func TestShaveTip(t *testing.T) {
 
 func TestStoreTip(t *testing.T) {
 	m := &monitor{
-		blanks:         0,
-		tip:            []string{"1", "2"},
-		scanner:        &mockScanner{},
-		sorter:         &mockSorter{[]string{"0"}},
+		blanks:  0,
+		tip:     []string{"1", "2"},
+		scanner: &mockScanner{},
+		sorter:  &mockSorter{[]string{"0"}},
 	}
 
 	_, err := m.Update()
@@ -93,10 +92,10 @@ func TestStoreTip(t *testing.T) {
 
 func TestBackoff(t *testing.T) {
 	m := &monitor{
-		blanks:         6,
-		tip:            []string{"1", "2"},
-		scanner:        &mockScanner{},
-		sorter:         &mockSorter{names: []string{"1", "2"}},
+		blanks:  6,
+		tip:     []string{"1", "2"},
+		scanner: &mockScanner{},
+		sorter:  &mockSorter{names: []string{"1", "2"}},
 	}
 
 	_, err := m.Update()
@@ -116,10 +115,10 @@ func TestBackoff(t *testing.T) {
 
 func TestTipFilter(t *testing.T) {
 	m := &monitor{
-		blanks:         6,
-		tip:            []string{"1", "2", "3", "4"},
-		scanner:        &mockScanner{},
-		sorter:         &mockSorter{names: []string{"2", "4"}},
+		blanks:  6,
+		tip:     []string{"1", "2", "3", "4"},
+		scanner: &mockScanner{},
+		sorter:  &mockSorter{names: []string{"2", "4"}},
 	}
 
 	_, err := m.Update()
@@ -139,10 +138,10 @@ func TestTipFilter(t *testing.T) {
 
 func TestTipStaysNonNil(t *testing.T) {
 	m := &monitor{
-		blanks:         2,
-		tip:            []string{""},
-		scanner:        &mockScanner{},
-		sorter:         &mockSorter{names: []string{}},
+		blanks:  2,
+		tip:     []string{""},
+		scanner: &mockScanner{},
+		sorter:  &mockSorter{names: []string{}},
 	}
 
 	_, err := m.Update()

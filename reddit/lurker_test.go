@@ -9,7 +9,7 @@ import (
 func TestThread(t *testing.T) {
 	h := Harvest{
 		Posts: []*Post{
-			&Post{
+			{
 				SelfText: "hello",
 			},
 		},
@@ -29,7 +29,7 @@ func TestThread(t *testing.T) {
 func TestThreadReturnsEmpty(t *testing.T) {
 	s := newLurker(reaperWhich(Harvest{}, nil))
 	_, err := s.Thread("")
-	if err != ThreadDoesNotExistErr {
+	if err != ErrThreadNotExists {
 		t.Errorf("err unexpected; wanted DoesNotExistErr; got %v", err)
 	}
 }

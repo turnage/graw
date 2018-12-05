@@ -1,7 +1,7 @@
 package graw
 
 import (
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"log"
 	"testing"
@@ -33,11 +33,11 @@ func TestForemanControls(t *testing.T) {
 	waitForForeman(result, nil, t)
 
 	if !b.setUpCalled {
-		t.Errorf("SetUp() was not called on bot")
+		t.Error("SetUp() was not called on bot.")
 	}
 
 	if !b.tearDownCalled {
-		t.Errorf("TearDown() was not called on bot")
+		t.Error("TearDown() was not called on bot.")
 	}
 }
 
@@ -50,17 +50,16 @@ func TestForemanError(t *testing.T) {
 	// that it is the one that comes through the result channel, since the
 	// errors are read chronologically).
 
-	uniqueError := fmt.Errorf("an error")
+	uniqueError := errors.New("an error")
 
 	go func() {
 		errs <- nil
-		errs <- reddit.BusyErr
-		errs <- reddit.GatewayErr
-		errs <- reddit.GatewayTimeoutErr
+		errs <- reddit.ErrBusy
+		errs <- reddit.ErrBadGateway
+		errs <- reddit.ErrGatewayTimeout
 		errs <- uniqueError
 	}()
 	waitForForeman(result, uniqueError, t)
-
 }
 
 func testForeman(handler interface{}, errs chan error, t *testing.T) (
@@ -76,7 +75,7 @@ func testForeman(handler interface{}, errs chan error, t *testing.T) (
 
 	stop, wait, err := launch(handler, kill, errs, logger)
 	if err != nil {
-		t.Fatalf("error launching the foreman: %v", err)
+		t.Fatalf("Error launching the Foreman: %v", err)
 	}
 
 	go func() {
@@ -90,9 +89,9 @@ func waitForForeman(result <-chan error, expected error, t *testing.T) {
 	select {
 	case err := <-result:
 		if err != expected {
-			t.Errorf("error from foreman run: %v", err)
+			t.Errorf("Error from foreman run: %v", err)
 		}
 	case <-time.After(time.Second):
-		t.Errorf("foreman did not stop()")
+		t.Error("Foreman did not stop()")
 	}
 }

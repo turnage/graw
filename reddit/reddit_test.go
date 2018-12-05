@@ -21,7 +21,7 @@ type testCase struct {
 func TestAccount(t *testing.T) {
 	testRequests(
 		[]testCase{
-			testCase{
+			{
 				name: "Reply",
 				f: func(b Bot) error {
 					return b.Reply("name", "text")
@@ -38,7 +38,7 @@ func TestAccount(t *testing.T) {
 					Header: formEncoding,
 				},
 			},
-			testCase{
+			{
 				name: "SendMessage",
 				f: func(b Bot) error {
 					return b.SendMessage("user", "subject", "text")
@@ -55,7 +55,7 @@ func TestAccount(t *testing.T) {
 					Header: formEncoding,
 				},
 			},
-			testCase{
+			{
 				name: "PostSelf",
 				f: func(b Bot) error {
 					return b.PostSelf("self", "title", "text")
@@ -72,7 +72,7 @@ func TestAccount(t *testing.T) {
 					Header: formEncoding,
 				},
 			},
-			testCase{
+			{
 				name: "PostLink",
 				f: func(b Bot) error {
 					return b.PostLink("link", "title", "url")
@@ -96,7 +96,7 @@ func TestAccount(t *testing.T) {
 func TestScanner(t *testing.T) {
 	testRequests(
 		[]testCase{
-			testCase{
+			{
 				name: "Listing",
 				f: func(b Bot) error {
 					_, err := b.Listing("/r/all", "ref")
@@ -120,9 +120,9 @@ func TestScanner(t *testing.T) {
 func TestLurker(t *testing.T) {
 	testRequests(
 		[]testCase{
-			testCase{
+			{
 				name: "Thread",
-				err:  ThreadDoesNotExistErr,
+				err:  ErrThreadNotExists,
 				f: func(b Bot) error {
 					_, err := b.Thread("/permalink")
 					return err
@@ -165,8 +165,7 @@ func testRequests(cases []testCase, t *testing.T) {
 		if diff := pretty.Compare(c.request, test.correct); diff != "" {
 			t.Errorf(
 				"[%s] request incorrect; diff: %s",
-				test.name,
-				diff,
+				test.name, diff,
 			)
 		}
 	}

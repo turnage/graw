@@ -60,10 +60,10 @@ type monitor struct {
 // New provides a monitor for the listing endpoint.
 func New(c Config) (Monitor, error) {
 	m := &monitor{
-		tip:            []string{""},
-		path:           c.Path,
-		scanner:        c.Scanner,
-		sorter:         c.Sorter,
+		tip:     []string{""},
+		path:    c.Path,
+		scanner: c.Scanner,
+		sorter:  c.Sorter,
 	}
 
 	if err := m.sync(); err != nil {

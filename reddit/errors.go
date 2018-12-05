@@ -6,10 +6,10 @@ import (
 
 // Errors that can be returned by the Reddit API.
 var (
-	PermissionDeniedErr   = errors.New("unauthorized access to endpoint")
-	BusyErr               = errors.New("Reddit is busy right now")
-	RateLimitErr          = errors.New("Reddit is rate limiting requests")
-	GatewayErr            = errors.New("502 bad gateway code from Reddit")
-	GatewayTimeoutErr     = errors.New("504 gateway timeout code from Reddit")
-	ThreadDoesNotExistErr = errors.New("the requested post does not exist")
+	ErrPermissionDenied = errors.New("unauthorized access to endpoint")
+	ErrBusy             = errors.New("Reddit is busy right now")
+	ErrRateLimit        = errors.New("Reddit is rate limiting requests")
+	ErrBadGateway       = errors.New("502 bad gateway code from Reddit")
+	ErrGatewayTimeout   = errors.New("504 gateway timeout code from Reddit")
+	ErrThreadNotExists  = errors.New("the requested thread does not exist")
 )

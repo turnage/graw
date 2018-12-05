@@ -1,0 +1,23 @@
+root = true
+
+[*]
+charset = utf-8
+
+## Indent rules:
+indent_style = space
+indent_size = 2
+
+## Line endings and spacing:
+end_of_line = lf
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+## Golang and Makefile require indents.
+[{*.go,Makefile}]
+indent_style = tab
+
+[*.go]
+tab_width = 2
+
+[Makefile]
+tab_width = 4

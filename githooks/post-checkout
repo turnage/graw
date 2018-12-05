@@ -1,0 +1,19 @@
+#!/bin/sh
+
+## [git-lfs]
+command -v git-lfs >/dev/null 2>&1 || { echo >&2 "\nThis repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting .git/hooks/post-checkout.\n"; exit 2; }
+git lfs post-checkout "$@"
+
+
+## [GO MOD DEPS]
+dl() {
+  echo # visual separator
+
+  if ! command -v make >/dev/null 2>&1; then
+    echo "Could not download dependencies with 'make dl'; GNU make not found." >&2
+    return 1
+  fi
+
+  make dl || return $?
+}
+dl || exit $?

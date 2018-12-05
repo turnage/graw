@@ -19,11 +19,11 @@ func serverWhich(body []byte, code int) *httptest.Server {
 
 func TestNewAnonClient(t *testing.T) {
 	if client, err := newClient(clientConfig{}); err != nil {
-		t.Errorf("error making anon client")
+		t.Error("error making anon client")
 	} else if client == nil {
-		t.Errorf("anon client was nil")
+		t.Error("anon client was nil")
 	} else if _, ok := client.(*baseClient); !ok {
-		t.Errorf("anon client was not a base implementation")
+		t.Error("anon client was not a base implementation")
 	}
 }
 
@@ -35,11 +35,11 @@ func TestDo(t *testing.T) {
 		err  error
 	}{
 		{[]byte("expected"), http.StatusOK, nil},
-		{nil, http.StatusForbidden, PermissionDeniedErr},
-		{nil, http.StatusServiceUnavailable, BusyErr},
-		{nil, http.StatusTooManyRequests, RateLimitErr},
-		{nil, http.StatusBadGateway, GatewayErr},
-		{nil, http.StatusGatewayTimeout, GatewayTimeoutErr},
+		{nil, http.StatusForbidden, ErrPermissionDenied},
+		{nil, http.StatusServiceUnavailable, ErrBusy},
+		{nil, http.StatusTooManyRequests, ErrRateLimit},
+		{nil, http.StatusBadGateway, ErrBadGateway},
+		{nil, http.StatusGatewayTimeout, ErrGatewayTimeout},
 		{nil, http.StatusOK, nil},
 	} {
 		serv := serverWhich(test.body, test.code)

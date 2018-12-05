@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+## [BEFORE]
+## Check number of staged files before pre-commit actions.
+STAT_CMD="git diff --name-status"
+STAT_BEFORE="$($STAT_CMD | wc -l)"
+
+
+## [GO CODE CHECK]
+## Check if the code is formatted and linted correctly.
+check() {
+  echo "Performing code check:"
+  make check || return $?
+}
+check || exit $?
+
+## [GIT SECRET]
+git-secret() {
+  echo # visual separator
+
+  ## Determine if git-secret is active for this project.
+  if [ -z "$(which git-secret)" ]; then return 0; fi # git-secret not installed
+  if [ ! -d .gitsecret ]; then return 0; fi          # git-secret not used
+
+  ## Hide all secret files using git-secret.
+  echo "Hiding secret files:"
+  git secret hide -m || return 2
+}
+git-secret || exit $?
+
+
+## [AFTER]
+## Check number of staged file after pre-commit actions.
+STAT_AFTER="$($STAT_CMD | wc -l)"
+if ((STAT_AFTER > STAT_BEFORE)); then
+  echo "Some files were modified; please stage the ones you'd like to keep." >&2
+  exit 1
+fi

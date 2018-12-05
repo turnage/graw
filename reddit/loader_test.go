@@ -17,28 +17,28 @@ func TestLoad(t *testing.T) {
 		username: "user"
 		password: "pass"
 	`, expected); err != nil {
-		t.Errorf("failed to build test expectation proto: %v", err)
+		t.Errorf("Failed to build test expectation proto: %v", err)
 	}
 
 	testFile, err := ioutil.TempFile("", "user_agent")
 	if err != nil {
-		t.Errorf("failed to make test input file: %v", err)
+		t.Errorf("Failed to make test input file: %v", err)
 	}
 
 	if err := proto.MarshalText(testFile, expected); err != nil {
-		t.Errorf("failed to write test input file: %v", err)
+		t.Errorf("Failed to write test input file: %v", err)
 	}
 
 	if _, err := loadAgentFile("notarealfile"); err == nil {
-		t.Errorf("wanted error returned with nonexistent file as input")
+		t.Error("Wanted error returned with nonexistent file as input")
 	}
 
 	actual, err := loadAgentFile(testFile.Name())
 	if err != nil {
-		t.Errorf("failed: %v", err)
+		t.Errorf("Failed: %v", err)
 	}
 
 	if !proto.Equal(expected, actual) {
-		t.Errorf("got %v; wanted %v", actual, expected)
+		t.Errorf("Got %v; wanted %v", actual, expected)
 	}
 }

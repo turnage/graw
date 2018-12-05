@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 )
+
 type asset struct {
 	bytes []byte
 	info  os.FileInfo
@@ -331,12 +332,12 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"bindata.go": bindataGo,
-	"inbox.json": inboxJson,
+	"bindata.go":     bindataGo,
+	"inbox.json":     inboxJson,
 	"subreddit.json": subredditJson,
-	"testdata.go": testdataGo,
-	"thread.json": threadJson,
-	"user.json": userJson,
+	"testdata.go":    testdataGo,
+	"thread.json":    threadJson,
+	"user.json":      userJson,
 }
 
 // AssetDir returns the file names below a certain
@@ -378,13 +379,14 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
-	"bindata.go": &bintree{bindataGo, map[string]*bintree{}},
-	"inbox.json": &bintree{inboxJson, map[string]*bintree{}},
-	"subreddit.json": &bintree{subredditJson, map[string]*bintree{}},
-	"testdata.go": &bintree{testdataGo, map[string]*bintree{}},
-	"thread.json": &bintree{threadJson, map[string]*bintree{}},
-	"user.json": &bintree{userJson, map[string]*bintree{}},
+	"bindata.go":     {bindataGo, map[string]*bintree{}},
+	"inbox.json":     {inboxJson, map[string]*bintree{}},
+	"subreddit.json": {subredditJson, map[string]*bintree{}},
+	"testdata.go":    {testdataGo, map[string]*bintree{}},
+	"thread.json":    {threadJson, map[string]*bintree{}},
+	"user.json":      {userJson, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
@@ -433,4 +435,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

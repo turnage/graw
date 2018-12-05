@@ -63,11 +63,11 @@ func foreman(
 		case err := <-errs:
 			switch err {
 			case nil:
-			case reddit.BusyErr:
+			case reddit.ErrBusy:
 				logger.Printf("Reddit was busy; staying up.")
-			case reddit.GatewayErr:
+			case reddit.ErrBadGateway:
 				logger.Printf("Bad gateway error; staying up.")
-			case reddit.GatewayTimeoutErr:
+			case reddit.ErrGatewayTimeout:
 				logger.Printf("Gateway timeout; staying up.")
 			default:
 				return err
