@@ -11,6 +11,7 @@ func TestAppConfigured(t *testing.T) {
 	}{
 		{App{"", "", "", "", ""}, false},
 		{App{"y", "y", "y", "y", "y"}, true},
+		{App{"y", "y", "", "", "y"}, false},
 		{App{"", "", "y", "y", "y"}, false},
 		{App{"", "", "y", "", ""}, false},
 		{App{"", "y", "", "y", ""}, false},

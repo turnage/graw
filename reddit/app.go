@@ -28,5 +28,5 @@ func (a App) configured() bool {
 		return true
 	}
 
-	return allNotEmpty(a.tokenURL, a.ID, a.Secret, a.Username, a.Password)
+	return allNotEmpty(a.tokenURL, a.ID, a.Secret)
 }
