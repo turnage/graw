@@ -1,5 +1,13 @@
 package reddit
 
+import "fmt"
+
+var (
+	errMissingOauthCredentials = fmt.Errorf("missing oauth credentials")
+	errMissingUsername         = fmt.Errorf("missing username")
+	errMissingPassword         = fmt.Errorf("missing password")
+)
+
 // App holds all the information needed to identify as a registered app on
 // Reddit. If you are unfamiliar with this information, you can find it in your
 // "apps" tab on reddit; see this tutorial:
@@ -18,15 +26,22 @@ type App struct {
 	tokenURL string
 }
 
-func (a App) configured() bool {
-	allNotEmpty := func(ss ...string) bool {
-		for _, s := range ss {
-			if s == "" {
-				return false
-			}
-		}
-		return true
+func (a App) unauthenticated() bool {
+	return a.ID == "" || a.Secret == ""
+}
+
+func (a App) validateAuth() error {
+	if a.unauthenticated() {
+		return errMissingOauthCredentials
 	}
 
-	return allNotEmpty(a.tokenURL, a.ID, a.Secret)
+	if a.Password != "" && a.Username == "" {
+		return errMissingUsername
+	}
+
+	if a.Username != "" && a.Password == "" {
+		return errMissingPassword
+	}
+
+	return nil
 }

@@ -68,9 +68,13 @@ func newClient(c clientConfig) (client, error) {
 		c.app.tokenURL = tokenURL
 	}
 
-	if c.app.configured() {
-		return newAppClient(c)
+	if c.app.unauthenticated() {
+		return &baseClient{clientWithAgent(c.agent)}, nil
 	}
 
-	return &baseClient{clientWithAgent(c.agent)}, nil
+	if err := c.app.validateAuth(); err != nil {
+		return nil, err
+	}
+
+	return newAppClient(c)
 }
