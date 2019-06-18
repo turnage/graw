@@ -29,7 +29,7 @@ func (a *appClient) Do(req *http.Request) ([]byte, error) {
 func (a *appClient) authorize() error {
 	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, a.cli)
 
-	if a.cfg.app.Username == "" || a.cfg.app.Password == "" {
+	if a.cfg.app.unauthenticated() {
 		a.baseClient.cli = a.clientCredentialsClient(ctx)
 		return nil
 	}
@@ -41,13 +41,22 @@ func (a *appClient) authorize() error {
 		Scopes:       oauthScopes,
 	}
 
-	token, err := cfg.PasswordCredentialsToken(
-		ctx,
-		a.cfg.app.Username,
-		a.cfg.app.Password,
-	)
+	var token *oauth2.Token
+	var err error
+
+	if a.cfg.app.Token != nil {
+		token = a.cfg.app.Token
+		err = nil
+	} else {
+		token, err = cfg.PasswordCredentialsToken(
+			ctx,
+			a.cfg.app.Username,
+			a.cfg.app.Password,
+		)
+	}
 
 	a.baseClient.cli = cfg.Client(ctx, token)
+
 	return err
 }
 
