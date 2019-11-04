@@ -1,6 +1,10 @@
 package reddit
 
-import "fmt"
+import (
+	"fmt"
+
+	"golang.org/x/oauth2"
+)
 
 var (
 	errMissingOauthCredentials = fmt.Errorf("missing oauth credentials")
@@ -24,15 +28,22 @@ type App struct {
 
 	// tokenURL is the url of the token request location for OAuth2.
 	tokenURL string
+
+	// If token is specified, username/password authentication is skipped
+	Token *oauth2.Token
 }
 
 func (a App) unauthenticated() bool {
-	return a.ID == "" || a.Secret == ""
+	return a.Token == nil && (a.ID == "" || a.Secret == "")
 }
 
 func (a App) validateAuth() error {
 	if a.unauthenticated() {
 		return errMissingOauthCredentials
+	}
+
+	if a.Token != nil {
+		return nil
 	}
 
 	if a.Password != "" && a.Username == "" {
