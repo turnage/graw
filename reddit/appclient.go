@@ -1,6 +1,10 @@
 package reddit
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
+	"log"
 	"net/http"
 
 	"golang.org/x/net/context"
@@ -17,20 +21,59 @@ var oauthScopes = []string{
 }
 
 type appClient struct {
-	baseClient
-	cfg clientConfig
-	cli *http.Client
+	autoRefresh *autoRefresh
+	cfg         clientConfig
+	cli         *http.Client
+	app         *App
+}
+
+func (a *appClient) AutoRefresh() error {
+	if a.autoRefresh == nil {
+		return errors.New("autoRefresh not set")
+	}
+	go a.autoRefresh.autoRefresh(a)
+	return nil
 }
 
 func (a *appClient) Do(req *http.Request) ([]byte, error) {
-	return a.baseClient.Do(req)
+	resp, err := a.cli.Do(req)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+	case http.StatusForbidden:
+		return nil, PermissionDeniedErr
+	case http.StatusServiceUnavailable:
+		return nil, BusyErr
+	case http.StatusTooManyRequests:
+		return nil, RateLimitErr
+	case http.StatusBadGateway:
+		return nil, GatewayErr
+	case http.StatusGatewayTimeout:
+		return nil, GatewayTimeoutErr
+	default:
+		return nil, fmt.Errorf("bad response code: %d", resp.StatusCode)
+	}
+
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(resp.Body); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func (a *appClient) authorize() error {
+	a.cli = clientWithAgent(a.cfg.agent)
 	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, a.cli)
 
 	if a.cfg.app.Username == "" || a.cfg.app.Password == "" {
-		a.baseClient.cli = a.clientCredentialsClient(ctx)
+		a.cli = a.clientCredentialsClient(ctx)
 		return nil
 	}
 
@@ -47,8 +90,14 @@ func (a *appClient) authorize() error {
 		a.cfg.app.Password,
 	)
 
-	a.baseClient.cli = cfg.Client(ctx, token)
-	return err
+	if err != nil {
+		return err
+	}
+
+	log.Printf("access_token generated: %s\n", token.AccessToken)
+	a.cli = cfg.Client(ctx, token)
+	a.autoRefresh.setRefreshTimerFromToken(token)
+	return nil
 }
 
 func (a *appClient) clientCredentialsClient(ctx context.Context) *http.Client {
@@ -64,8 +113,9 @@ func (a *appClient) clientCredentialsClient(ctx context.Context) *http.Client {
 
 func newAppClient(c clientConfig) (*appClient, error) {
 	a := &appClient{
-		cli: clientWithAgent(c.agent),
-		cfg: c,
+		cli:         clientWithAgent(c.agent),
+		cfg:         c,
+		autoRefresh: newAutoRefresh(),
 	}
 	return a, a.authorize()
 }

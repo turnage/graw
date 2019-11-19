@@ -1,8 +1,6 @@
 package reddit
 
 import (
-	"bytes"
-	"fmt"
 	"net/http"
 )
 
@@ -23,43 +21,7 @@ type clientConfig struct {
 // client executes http Requests and invisibly handles OAuth2 authorization.
 type client interface {
 	Do(*http.Request) ([]byte, error)
-}
-
-type baseClient struct {
-	cli *http.Client
-}
-
-func (b *baseClient) Do(req *http.Request) ([]byte, error) {
-	resp, err := b.cli.Do(req)
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-	case http.StatusForbidden:
-		return nil, PermissionDeniedErr
-	case http.StatusServiceUnavailable:
-		return nil, BusyErr
-	case http.StatusTooManyRequests:
-		return nil, RateLimitErr
-	case http.StatusBadGateway:
-		return nil, GatewayErr
-	case http.StatusGatewayTimeout:
-		return nil, GatewayTimeoutErr
-	default:
-		return nil, fmt.Errorf("bad response code: %d", resp.StatusCode)
-	}
-
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	AutoRefresh() error
 }
 
 // newClient returns a new client using the given user to make requests.
@@ -69,7 +31,9 @@ func newClient(c clientConfig) (client, error) {
 	}
 
 	if c.app.unauthenticated() {
-		return &baseClient{clientWithAgent(c.agent)}, nil
+		return &appClient{
+			app: &c.app,
+		}, nil
 	}
 
 	if err := c.app.validateAuth(); err != nil {

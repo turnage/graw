@@ -49,6 +49,7 @@ type reaperImpl struct {
 }
 
 func newReaper(c reaperConfig) reaper {
+	c.client.AutoRefresh()
 	return &reaperImpl{
 		cli:        c.client,
 		parser:     c.parser,
@@ -62,6 +63,7 @@ func newReaper(c reaperConfig) reaper {
 
 func (r *reaperImpl) reap(path string, values map[string]string) (Harvest, error) {
 	r.rateBlock()
+	r.url(r.path(path, r.reapSuffix), values)
 	resp, err := r.cli.Do(
 		&http.Request{
 			Method: "GET",
