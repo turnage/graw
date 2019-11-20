@@ -13,3 +13,7 @@ func (m *mockClient) Do(r *http.Request) ([]byte, error) {
 	m.request = r
 	return nil, nil
 }
+
+func (m *mockClient) AutoRefresh() error {
+	return nil
+}

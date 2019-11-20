@@ -22,13 +22,13 @@ func TestNewAnonClient(t *testing.T) {
 		t.Errorf("error making anon client")
 	} else if client == nil {
 		t.Errorf("anon client was nil")
-	} else if _, ok := client.(*baseClient); !ok {
+	} else if _, ok := client.(*appClient); !ok {
 		t.Errorf("anon client was not a base implementation")
 	}
 }
 
 func TestDo(t *testing.T) {
-	r := &baseClient{cli: &http.Client{}}
+	r := &appClient{cli: &http.Client{}}
 	for _, test := range []struct {
 		body []byte
 		code int
