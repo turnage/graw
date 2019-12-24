@@ -2,6 +2,7 @@ package reddit
 
 import (
 	"net/http"
+	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -18,11 +19,18 @@ var oauthScopes = []string{
 
 type appClient struct {
 	baseClient
-	cfg clientConfig
-	cli *http.Client
+	cfg    clientConfig
+	cli    *http.Client
+	expiry time.Time
 }
 
 func (a *appClient) Do(req *http.Request) ([]byte, error) {
+	if time.Until(a.expiry) < time.Minute*5 {
+		if err := a.authorize(); err != nil {
+			return nil, err
+		}
+	}
+
 	return a.baseClient.Do(req)
 }
 
@@ -48,6 +56,7 @@ func (a *appClient) authorize() error {
 	)
 
 	a.baseClient.cli = cfg.Client(ctx, token)
+	a.expiry = token.Expiry
 	return err
 }
 
