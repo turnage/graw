@@ -54,6 +54,9 @@ func (a *appClient) authorize() error {
 		a.cfg.app.Username,
 		a.cfg.app.Password,
 	)
+	if err != nil {
+		return err
+	}
 
 	a.baseClient.cli = cfg.Client(ctx, token)
 	a.expiry = token.Expiry
