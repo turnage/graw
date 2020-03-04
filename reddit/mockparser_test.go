@@ -5,9 +5,10 @@ import (
 )
 
 type mockParser struct {
-	comments []*Comment
-	posts    []*Post
-	messages []*Message
+	comments   []*Comment
+	posts      []*Post
+	messages   []*Message
+	submission Submission
 }
 
 func (m *mockParser) parse(

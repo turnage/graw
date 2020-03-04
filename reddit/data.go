@@ -160,3 +160,9 @@ type Harvest struct {
 	Posts    []*Post
 	Messages []*Message
 }
+
+type Submission struct {
+	ID   string `mapstructure:"id"`
+	Name string `mapstructure:"name"`
+	URL  string `mapstructure:"url"`
+}

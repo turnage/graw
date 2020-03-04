@@ -6,6 +6,7 @@ type mockReaper struct {
 	path string
 
 	h   Harvest
+	s   Submission
 	err error
 }
 
