@@ -39,6 +39,7 @@ type comment struct {
 type parser interface {
 	// parse parses any Reddit response and provides the elements in it.
 	parse(blob json.RawMessage) ([]*Comment, []*Post, []*Message, error)
+	parse_submitted(blob json.RawMessage) (Submission, error)
 }
 
 type parserImpl struct{}
@@ -65,6 +66,37 @@ func (p *parserImpl) parse(
 		"failed to parse as listing [%v] or thread [%v]",
 		listingErr, threadErr,
 	)
+}
+
+// parse_submitted parses a response from reddit describing
+// the status of some resource that was submitted
+func (p *parserImpl) parse_submitted(blob json.RawMessage) (Submission, error) {
+	var wrapped map[string]interface{}
+	err := json.Unmarshal(blob, &wrapped)
+	if err != nil {
+		return Submission{}, err
+	}
+
+	wrapped = wrapped["json"].(map[string]interface{})
+	if len(wrapped["errors"].([]interface{})) != 0 {
+		return Submission{}, fmt.Errorf("API errors were returned: %v", wrapped["errors"])
+	}
+
+	data := wrapped["data"].(map[string]interface{})
+
+	// Comment submissions are further wrapped in a things block
+	// because of ... something? There only appears to be a single thing
+	// This transformes var data to be the data of the single thing
+	// This also mirrors https://reddit.com/ + permalink -> url
+	things, has_things := data["things"].([]interface{})
+	if has_things && len(things) == 1 {
+		data = things[0].(map[string]interface{})["data"].(map[string]interface{})
+		data["url"] = fmt.Sprintf("https://reddit.com%s", data["permalink"])
+	}
+
+	var submission Submission
+	err = mapstructure.Decode(data, &submission)
+	return submission, err
 }
 
 // parseRawListing parses a listing json blob and returns the elements in it.
