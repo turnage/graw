@@ -39,6 +39,24 @@ func TestAccount(t *testing.T) {
 				},
 			},
 			testCase{
+				name: "GetReply",
+				f: func(b Bot) error {
+					_, err := b.GetReply("name", "text")
+					return err
+				},
+				correct: http.Request{
+					Method: "POST",
+					URL: &url.URL{
+						Scheme:   "https",
+						Host:     "reddit.com",
+						Path:     "/api/comment",
+						RawQuery: "api_type=json&text=text&thing_id=name",
+					},
+					Host:   "reddit.com",
+					Header: formEncoding,
+				},
+			},
+			testCase{
 				name: "SendMessage",
 				f: func(b Bot) error {
 					return b.SendMessage("user", "subject", "text")
@@ -73,6 +91,25 @@ func TestAccount(t *testing.T) {
 				},
 			},
 			testCase{
+				name: "GetPostSelf",
+				f: func(b Bot) error {
+					_, err := b.GetPostSelf("self", "title", "text")
+					return err
+
+				},
+				correct: http.Request{
+					Method: "POST",
+					URL: &url.URL{
+						Scheme:   "https",
+						Host:     "reddit.com",
+						Path:     "/api/submit",
+						RawQuery: "api_type=json&kind=self&sr=self&text=text&title=title",
+					},
+					Host:   "reddit.com",
+					Header: formEncoding,
+				},
+			},
+			testCase{
 				name: "PostLink",
 				f: func(b Bot) error {
 					return b.PostLink("link", "title", "url")
@@ -84,6 +121,24 @@ func TestAccount(t *testing.T) {
 						Host:     "reddit.com",
 						Path:     "/api/submit",
 						RawQuery: "kind=link&sr=link&title=title&url=url",
+					},
+					Host:   "reddit.com",
+					Header: formEncoding,
+				},
+			},
+			testCase{
+				name: "GetPostLink",
+				f: func(b Bot) error {
+					_, err := b.GetPostLink("link", "title", "url")
+					return err
+				},
+				correct: http.Request{
+					Method: "POST",
+					URL: &url.URL{
+						Scheme:   "https",
+						Host:     "reddit.com",
+						Path:     "/api/submit",
+						RawQuery: "api_type=json&kind=link&sr=link&title=title&url=url",
 					},
 					Host:   "reddit.com",
 					Header: formEncoding,
