@@ -20,6 +20,11 @@ func (m *mockReaper) sow(path string, _ map[string]string) error {
 	return m.err
 }
 
+func (m *mockReaper) get_sow(path string, _ map[string]string) (Submission, error) {
+	m.path = path
+	return m.s, m.err
+}
+
 func reaperWhich(h Harvest, err error) *mockReaper {
 	return &mockReaper{
 		h:   h,

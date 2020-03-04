@@ -35,6 +35,9 @@ type reaper interface {
 	reap(path string, values map[string]string) (Harvest, error)
 	// sow executes a POST request to Reddit.
 	sow(path string, values map[string]string) error
+	// get_sow executes a POST request to Reddit
+	// and returns the response, usually the posted item
+	get_sow(path string, values map[string]string) (Submission, error)
 }
 
 type reaperImpl struct {
@@ -93,6 +96,25 @@ func (r *reaperImpl) sow(path string, values map[string]string) error {
 	)
 
 	return err
+}
+
+func (r *reaperImpl) get_sow(path string, values map[string]string) (Submission, error) {
+	r.rateBlock()
+	values["api_type"] = "json"
+	resp, err := r.cli.Do(
+		&http.Request{
+			Method: "POST",
+			Header: formEncoding,
+			Host:   r.hostname,
+			URL:    r.url(path, values),
+		},
+	)
+
+	if err != nil {
+		return Submission{}, err
+	}
+
+	return r.parser.parse_submitted(resp)
 }
 
 func (r *reaperImpl) rateBlock() {
