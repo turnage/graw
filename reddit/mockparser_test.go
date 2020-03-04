@@ -17,6 +17,12 @@ func (m *mockParser) parse(
 	return m.comments, m.posts, m.messages, nil
 }
 
+func (m *mockParser) parse_submitted(
+	blob json.RawMessage,
+) (Submission, error) {
+	return m.submission, nil
+}
+
 func parserWhich(h Harvest) parser {
 	return &mockParser{
 		comments: h.Comments,
