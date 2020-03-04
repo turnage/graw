@@ -12,15 +12,18 @@ type Account interface {
 	// Use .Name on the parent post, message, or comment to find its
 	// name.
 	Reply(parentName, text string) error
+	GetReply(parentName, text string) (Submission, error)
 
 	// SendMessage sends a private message to a user.
 	SendMessage(user, subject, text string) error
 
 	// PostSelf makes a text (self) post to a subreddit.
 	PostSelf(subreddit, title, text string) error
+	GetPostSelf(subreddit, title, text string) (Submission, error)
 
 	// PostLink makes a link post to a subreddit.
 	PostLink(subreddit, title, url string) error
+	GetPostLink(subreddit, title, url string) (Submission, error)
 }
 
 type account struct {
@@ -38,6 +41,15 @@ func newAccount(r reaper) Account {
 
 func (a *account) Reply(parentName, text string) error {
 	return a.r.sow(
+		"/api/comment", map[string]string{
+			"thing_id": parentName,
+			"text":     text,
+		},
+	)
+}
+
+func (a *account) GetReply(parentName, text string) (Submission, error) {
+	return a.r.get_sow(
 		"/api/comment", map[string]string{
 			"thing_id": parentName,
 			"text":     text,
@@ -66,8 +78,30 @@ func (a *account) PostSelf(subreddit, title, text string) error {
 	)
 }
 
+func (a *account) GetPostSelf(subreddit, title, text string) (Submission, error) {
+	return a.r.get_sow(
+		"/api/submit", map[string]string{
+			"sr":    subreddit,
+			"kind":  "self",
+			"title": title,
+			"text":  text,
+		},
+	)
+}
+
 func (a *account) PostLink(subreddit, title, url string) error {
 	return a.r.sow(
+		"/api/submit", map[string]string{
+			"sr":    subreddit,
+			"kind":  "link",
+			"title": title,
+			"url":   url,
+		},
+	)
+}
+
+func (a *account) GetPostLink(subreddit, title, url string) (Submission, error) {
+	return a.r.get_sow(
 		"/api/submit", map[string]string{
 			"sr":    subreddit,
 			"kind":  "link",
