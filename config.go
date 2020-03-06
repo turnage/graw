@@ -11,6 +11,10 @@ type Config struct {
 	// New posts in all subreddits named here will be forwarded to the bot's
 	// PostHandler.
 	Subreddits []string
+	// New posts in all users' custom feeds named here will be forwarded to the bot's
+	// PostHandler.
+	// Key is username, value is list of feeds
+	CustomFeeds map[string][]string
 	// New comments in all subreddits named here will be forwarded to the
 	// bot's CommentHandler.
 	SubredditComments []string
