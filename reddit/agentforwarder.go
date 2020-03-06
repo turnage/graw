@@ -17,6 +17,12 @@ func (a *agentForwarder) RoundTrip(r *http.Request) (*http.Response, error) {
 	return a.Transport.RoundTrip(r)
 }
 
+func patchWithAgent(client *http.Client, agent string) *http.Client {
+	client.Transport = &agentForwarder{agent: agent}
+	return client
+}
+
 func clientWithAgent(agent string) *http.Client {
-	return &http.Client{Transport: &agentForwarder{agent: agent}}
+	c := &http.Client{}
+	return patchWithAgent(c, agent)
 }
