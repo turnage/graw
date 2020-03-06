@@ -32,15 +32,15 @@ type ScriptConfig struct {
 // seconds, because Reddit's API rules cap logged out non-OAuth clients at 30
 // requests per minute.
 func NewScript(agent string, rate time.Duration) (Script, error) {
-	return NewScripFromConfig(ScriptConfig{
+	return NewScriptFromConfig(ScriptConfig{
 		Agent:  agent,
 		Rate:   rate,
 		Client: nil, // uses default if nil
 	})
 }
 
-// NewScript returns a Script handle to Reddit's API from ScriptConfig
-func NewScripFromConfig(config ScriptConfig) (Script, error) {
+// NewScriptFromConfig returns a Script handle to Reddit's API from ScriptConfig
+func NewScriptFromConfig(config ScriptConfig) (Script, error) {
 	c, err := newClient(clientConfig{agent: config.Agent, client: config.Client})
 	r := newReaper(
 		reaperConfig{
