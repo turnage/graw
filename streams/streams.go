@@ -65,6 +65,25 @@ func Subreddits(
 	return posts, err
 }
 
+// CustomFeeds returns a stream of new posts from the requested custom feeds.
+//
+// Be aware that these posts are new and will not have comments. If you are
+// interested in comment trees, save their permalinks and fetch them later.
+func CustomFeeds(
+	scanner reddit.Scanner,
+	kill <-chan bool,
+	errs chan<- error,
+	user string,
+	feeds ...string,
+) (
+	<-chan *reddit.Post,
+	error,
+) {
+	path := "/user/" + user + "/m/" + strings.Join(feeds, "+") + "/new"
+	posts, _, _, err := streamFromPath(scanner, kill, errs, path)
+	return posts, err
+}
+
 // SubredditComments returns a stream of new comments from the requested
 // subreddits. This stream monitors the combination listing of all subreddits
 // using Reddit's "+" feature e.g. /r/golang+rust. This will consume one

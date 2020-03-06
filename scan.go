@@ -84,6 +84,31 @@ func connectScanStreams(
 		}
 	}
 
+	if len(c.CustomFeeds) > 0 {
+		ph, ok := handler.(botfaces.PostHandler)
+		if !ok {
+			return postHandlerErr
+		}
+
+		for user, feeds := range c.CustomFeeds {
+			if posts, err := streams.CustomFeeds(
+				sc,
+				kill,
+				errs,
+				user,
+				feeds...,
+			); err != nil {
+				return err
+			} else {
+				go func() {
+					for p := range posts {
+						errs <- ph.Post(p)
+					}
+				}()
+			}
+		}
+	}
+
 	if len(c.SubredditComments) > 0 {
 		ch, ok := handler.(botfaces.CommentHandler)
 		if !ok {
