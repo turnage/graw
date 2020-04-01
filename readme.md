@@ -23,7 +23,7 @@ in a given subreddit, this is your bot:
 type announcer struct {}
 
 func (a *announcer) Post(post *reddit.Post) error {
-        fmt.Printf(`%s posted "%s"\n`, post.Author, post.Title)
+        fmt.Printf("%s posted \"%s\"\n", post.Author, post.Title)
         return nil
 }
 ````
