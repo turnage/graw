@@ -6,7 +6,7 @@ import (
 
 // agentForward forwards a user agent in all requests made by the Transport.
 type agentForwarder struct {
-	http.RoundTripper
+	http.Transport
 	agent string
 }
 
@@ -14,15 +14,9 @@ type agentForwarder struct {
 // default RountTrip implementation.
 func (a *agentForwarder) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Add("User-Agent", a.agent)
-	return a.RoundTripper.RoundTrip(r)
-}
-
-func patchWithAgent(client *http.Client, agent string) *http.Client {
-	client.Transport = &agentForwarder{RoundTripper: client.Transport, agent: agent}
-	return client
+	return a.Transport.RoundTrip(r)
 }
 
 func clientWithAgent(agent string) *http.Client {
-	c := &http.Client{}
-	return patchWithAgent(c, agent)
+	return &http.Client{Transport: &agentForwarder{agent: agent}}
 }

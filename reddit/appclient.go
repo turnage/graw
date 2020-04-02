@@ -75,15 +75,8 @@ func (a *appClient) clientCredentialsClient(ctx context.Context) *http.Client {
 }
 
 func newAppClient(c clientConfig) (*appClient, error) {
-	var client *http.Client
-	if c.client == nil {
-		client = clientWithAgent(c.agent)
-	} else {
-		client = patchWithAgent(client, c.agent)
-	}
-
 	a := &appClient{
-		cli: client,
+		cli: clientWithAgent(c.agent),
 		cfg: c,
 	}
 	return a, a.authorize()

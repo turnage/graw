@@ -1,7 +1,6 @@
 package reddit
 
 import (
-	"net/http"
 	"time"
 )
 
@@ -19,8 +18,6 @@ type BotConfig struct {
 	// rules cap OAuth2 clients at 60 requests per minute. See package
 	// overview for rate limit information.
 	Rate time.Duration
-	// Custom HTTP client
-	Client *http.Client
 }
 
 // Bot defines the behaviors of a logged in Reddit bot.
@@ -38,7 +35,7 @@ type bot struct {
 
 // NewBot returns a logged in handle to the Reddit API.
 func NewBot(c BotConfig) (Bot, error) {
-	cli, err := newClient(clientConfig{agent: c.Agent, app: c.App, client: c.Client})
+	cli, err := newClient(clientConfig{agent: c.Agent, app: c.App})
 	r := newReaper(
 		reaperConfig{
 			client:   cli,

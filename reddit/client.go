@@ -18,9 +18,6 @@ type clientConfig struct {
 	// If all fields in App are set, this client will attempt to identify as
 	// a registered Reddit app using the credentials.
 	app App
-
-	// Custom http client, if nil default should be used
-	client *http.Client
 }
 
 // client executes http Requests and invisibly handles OAuth2 authorization.
