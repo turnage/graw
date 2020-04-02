@@ -35,9 +35,10 @@ jobs:
 
 
     - name: Test
-      run: go test ./... -cover
+      run: go test ./... -coverprofile=lcov.info
 
     - name: Coveralls GitHub Action
       uses: coverallsapp/github-action@v1.0.1
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: lcov.info
