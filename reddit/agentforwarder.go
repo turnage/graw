@@ -18,6 +18,10 @@ func (a *agentForwarder) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 func patchWithAgent(client *http.Client, agent string) *http.Client {
+	if client.Transport == nil {
+		client.Transport = http.DefaultTransport
+	}
+
 	client.Transport = &agentForwarder{RoundTripper: client.Transport, agent: agent}
 	return client
 }
