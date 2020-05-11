@@ -72,3 +72,23 @@ func NewBotFromAgentFile(filename string, rate time.Duration) (Bot, error) {
 		},
 	)
 }
+
+// NewBotFromVars call NewBot using the variables given to create a new bot
+// Designed as a Drop-in replacement for NewBotFromAgentFIle, allowing the users
+// to load the variables any way they choose.
+func NewBotFromVars(userAgent string, clientID string, clientSecret string, username string, password string, rate time.Duration) (Bot, error) {
+	app := App{
+		ID:       clientID,
+		Secret:   clientSecret,
+		Username: username,
+		Password: password,
+	}
+
+	return NewBot(
+		BotConfig{
+			Agent: userAgent,
+			App:   app,
+			Rate:  rate,
+		},
+	)
+}
