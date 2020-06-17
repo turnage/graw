@@ -79,7 +79,7 @@ func newAppClient(c clientConfig) (*appClient, error) {
 	if c.client == nil {
 		client = clientWithAgent(c.agent)
 	} else {
-		client = patchWithAgent(client, c.agent)
+		client = patchWithAgent(c.client, c.agent)
 	}
 
 	a := &appClient{
