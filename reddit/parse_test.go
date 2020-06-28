@@ -22,14 +22,14 @@ func TestParse(t *testing.T) {
 		testdata.MustAsset("subreddit.json"),
 		testdata.MustAsset("inbox.json"),
 	} {
-		if _, _, _, err := p.parse(input); err != nil {
+		if _, _, _, _, err := p.parse(input); err != nil {
 			t.Errorf("failed to parse input %d: %v", i, err)
 		}
 	}
 }
 
 func TestParseThread(t *testing.T) {
-	post, err := parseThread(testdata.MustAsset("thread.json"))
+	post, _, err := parseThread(testdata.MustAsset("thread.json"))
 	if err != nil {
 		t.Fatalf("failed to parse: %v", err)
 	}
@@ -74,7 +74,7 @@ func TestParseThread(t *testing.T) {
 }
 
 func TestParseUserFeed(t *testing.T) {
-	comments, posts, _, err := parseRawListing(
+	comments, posts, _, _, err := parseRawListing(
 		testdata.MustAsset("user.json"),
 	)
 	if err != nil {
@@ -105,7 +105,7 @@ func TestParseUserFeed(t *testing.T) {
 }
 
 func TestParseSubredditFeed(t *testing.T) {
-	_, posts, _, err := parseRawListing(testdata.MustAsset("subreddit.json"))
+	_, posts, _, _, err := parseRawListing(testdata.MustAsset("subreddit.json"))
 	if err != nil {
 		t.Fatalf("failed to parse subreddit feed: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestParseSubredditFeed(t *testing.T) {
 }
 
 func TestParseInboxFeed(t *testing.T) {
-	_, _, msgs, err := parseRawListing(testdata.MustAsset("inbox.json"))
+	_, _, msgs, _, err := parseRawListing(testdata.MustAsset("inbox.json"))
 	if err != nil {
 		t.Fatalf("failed to parse inbox feed: %v", err)
 	}

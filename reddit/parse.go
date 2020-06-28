@@ -12,6 +12,7 @@ const (
 	postKind    = "t3"
 	commentKind = "t1"
 	messageKind = "t4"
+	moreKind    = "more"
 )
 
 // author fields and body fields are set to the deletedKey if the user deletes
@@ -38,7 +39,7 @@ type comment struct {
 // parser parses Reddit responses..
 type parser interface {
 	// parse parses any Reddit response and provides the elements in it.
-	parse(blob json.RawMessage) ([]*Comment, []*Post, []*Message, error)
+	parse(blob json.RawMessage) ([]*Comment, []*Post, []*Message, []*More, error)
 	parse_submitted(blob json.RawMessage) (Submission, error)
 }
 
@@ -51,18 +52,18 @@ func newParser() parser {
 // parse parses any Reddit response and provides the elements in it.
 func (p *parserImpl) parse(
 	blob json.RawMessage,
-) ([]*Comment, []*Post, []*Message, error) {
-	comments, posts, msgs, listingErr := parseRawListing(blob)
+) ([]*Comment, []*Post, []*Message, []*More, error) {
+	comments, posts, msgs, mores, listingErr := parseRawListing(blob)
 	if listingErr == nil {
-		return comments, posts, msgs, nil
+		return comments, posts, msgs, mores, nil
 	}
 
-	post, threadErr := parseThread(blob)
+	post, mores, threadErr := parseThread(blob)
 	if threadErr == nil {
-		return nil, []*Post{post}, nil, nil
+		return nil, []*Post{post}, nil, mores, nil
 	}
 
-	return nil, nil, nil, fmt.Errorf(
+	return nil, nil, nil, nil, fmt.Errorf(
 		"failed to parse as listing [%v] or thread [%v]",
 		listingErr, threadErr,
 	)
@@ -102,10 +103,10 @@ func (p *parserImpl) parse_submitted(blob json.RawMessage) (Submission, error) {
 // parseRawListing parses a listing json blob and returns the elements in it.
 func parseRawListing(
 	blob json.RawMessage,
-) ([]*Comment, []*Post, []*Message, error) {
+) ([]*Comment, []*Post, []*Message, []*More, error) {
 	var activityListing thing
 	if err := json.Unmarshal(blob, &activityListing); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	return parseListing(&activityListing)
@@ -115,44 +116,45 @@ func parseRawListing(
 //
 // Reddit structures this as two things in an array, the first thing being a
 // listing with only the post and the second thing being a listing of comments.
-func parseThread(blob json.RawMessage) (*Post, error) {
+func parseThread(blob json.RawMessage) (*Post, []*More, error) {
 	var listings [2]thing
 	if err := json.Unmarshal(blob, &listings); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	_, posts, _, err := parseListing(&listings[0])
+	_, posts, _, _, err := parseListing(&listings[0])
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(posts) != 1 {
-		return nil, fmt.Errorf("expected 1 post; found %d", len(posts))
+		return nil, nil, fmt.Errorf("expected 1 post; found %d", len(posts))
 	}
 
-	comments, _, _, err := parseListing(&listings[1])
+	comments, _, _, mores, err := parseListing(&listings[1])
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	posts[0].Replies = comments
-	return posts[0], nil
+	return posts[0], mores, nil
 }
 
 // parseListing parses a Reddit listing type and returns the elements inside it.
-func parseListing(t *thing) ([]*Comment, []*Post, []*Message, error) {
+func parseListing(t *thing) ([]*Comment, []*Post, []*Message, []*More, error) {
 	if t.Kind != listingKind {
-		return nil, nil, nil, fmt.Errorf("thing is not listing")
+		return nil, nil, nil, nil, fmt.Errorf("thing is not listing")
 	}
 
 	l := &listing{}
 	if err := mapstructure.Decode(t.Data, l); err != nil {
-		return nil, nil, nil, mapDecodeError(err, t.Data)
+		return nil, nil, nil, nil, mapDecodeError(err, t.Data)
 	}
 
 	comments := []*Comment{}
 	posts := []*Post{}
 	msgs := []*Message{}
+	mores := []*More{}
 	err := error(nil)
 
 	for _, c := range l.Children {
@@ -163,6 +165,7 @@ func parseListing(t *thing) ([]*Comment, []*Post, []*Message, error) {
 		var comment *Comment
 		var post *Post
 		var msg *Message
+		var more *More
 
 		// Reddit sets the "Kind" field of comments in the inbox, which
 		// have only Message and not Comment fields, to commentKind. The
@@ -178,10 +181,13 @@ func parseListing(t *thing) ([]*Comment, []*Post, []*Message, error) {
 		} else if c.Kind == postKind {
 			post, err = parsePost(&c)
 			posts = append(posts, post)
+		} else if c.Kind == moreKind {
+			more, err = parseMore(&c)
+			mores = append(mores, more)
 		}
 	}
 
-	return comments, posts, msgs, err
+	return comments, posts, msgs, mores, err
 }
 
 // parseComment parses a comment into the user facing Comment struct.
@@ -202,7 +208,7 @@ func parseComment(t *thing) (*Comment, error) {
 
 	var err error
 	if c.Replies.Kind == listingKind {
-		c.Comment.Replies, _, _, err = parseListing(&c.Replies)
+		c.Comment.Replies, _, _, _, err = parseListing(&c.Replies)
 	}
 
 	c.Comment.Deleted = c.Comment.Body == deletedKey
@@ -224,6 +230,16 @@ func parsePost(t *thing) (*Post, error) {
 func parseMessage(t *thing) (*Message, error) {
 	m := &Message{}
 	return m, mapstructure.Decode(t.Data, m)
+}
+
+// parseMore parses a more list into the user facing More struct.
+func parseMore(t *thing) (*More, error) {
+	m := &More{}
+	if err := mapstructure.Decode(t.Data, m); err != nil {
+		return nil, mapDecodeError(err, t.Data)
+	}
+
+	return m, nil
 }
 
 func mapDecodeError(err error, val interface{}) error {
