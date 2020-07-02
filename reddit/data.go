@@ -148,7 +148,7 @@ type Message struct {
 	WasComment bool   `mapstructure:"was_comment"`
 }
 
-// More represents a more list on Reddit
+// More represents a more comments list on Reddit
 // https://github.com/reddit-archive/reddit/wiki/JSON#more
 type More struct {
 	ID   string `mapstructure:"id"`
@@ -157,6 +157,8 @@ type More struct {
 	Count    int    `mapstructure:"count"`
 	Depth    int    `mapstructure:"depth"`
 	ParentID string `mapstructure:"parent_id"`
+
+	Children []string `mapstructure:"children"`
 }
 
 // Harvest is a set of all possible elements that Reddit could return in a
