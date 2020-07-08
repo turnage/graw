@@ -63,19 +63,19 @@ func (p *parserImpl) parse(
 		return comments, posts, msgs, mores, nil
 	}
 
-	post, mores, threadErr := parseThread(blob)
+	post, threadErr := parseThread(blob)
 	if threadErr == nil {
-		return nil, []*Post{post}, nil, mores, nil
+		return nil, []*Post{post}, nil, nil, nil
 	}
 
-	comments, posts, msgs, mores, moreErr := parseMoreChildren(blob)
+	comments, mores, moreErr := parseMoreChildren(blob)
 	if moreErr == nil {
-		return comments, posts, msgs, mores, nil
+		return comments, nil, nil, mores, nil
 	}
 
 	return nil, nil, nil, nil, fmt.Errorf(
 		"failed to parse as listing [%v], thread [%v], or more [%v]",
-		listingErr, threadErr,
+		listingErr, threadErr, moreErr,
 	)
 }
 
@@ -122,19 +122,19 @@ func parseRawListing(
 	return parseListing(&activityListing)
 }
 
-// parseMoreChildren parses the json blob from morechildren calls and returns the elements in it.
+// parseMoreChildren parses the json blob from /api/morechildren calls and returns the elements in it.
 func parseMoreChildren(
 	blob json.RawMessage,
-) ([]*Comment, []*Post, []*Message, []*More, error) {
+) ([]*Comment, []*More, error) {
 	var wrapped map[string]interface{}
 	err := json.Unmarshal(blob, &wrapped)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	wrapped = wrapped["json"].(map[string]interface{})
 	if len(wrapped["errors"].([]interface{})) != 0 {
-		return nil, nil, nil, nil, fmt.Errorf("API errors were returned: %v", wrapped["errors"])
+		return nil, nil, fmt.Errorf("API errors were returned: %v", wrapped["errors"])
 	}
 
 	data := wrapped["data"].(map[string]interface{})
@@ -145,47 +145,55 @@ func parseMoreChildren(
 		data["data"] = things
 		delete(data, "things")
 	} else {
-		return nil, nil, nil, nil, fmt.Errorf("No thing types returned")
+		return nil, nil, fmt.Errorf("No thing types returned")
 	}
 
 	var m more
 	err = mapstructure.Decode(data, &m)
 
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, err
 	} else if m.Errors != nil {
-		return nil, nil, nil, nil, fmt.Errorf("%v", m.Errors)
+		return nil, nil, fmt.Errorf("%v", m.Errors)
 	}
 
-	return parseChildren(m.Data)
+	comments, _, _, mores, err := parseChildren(m.Data)
+	return comments, mores, err
 }
 
 // parseThread parses a post from a thread json blob returned by Reddit.
 //
 // Reddit structures this as two things in an array, the first thing being a
 // listing with only the post and the second thing being a listing of comments.
-func parseThread(blob json.RawMessage) (*Post, []*More, error) {
+func parseThread(blob json.RawMessage) (*Post, error) {
 	var listings [2]thing
 	if err := json.Unmarshal(blob, &listings); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	_, posts, _, _, err := parseListing(&listings[0])
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if len(posts) != 1 {
-		return nil, nil, fmt.Errorf("expected 1 post; found %d", len(posts))
+		return nil, fmt.Errorf("expected 1 post; found %d", len(posts))
 	}
 
 	comments, _, _, mores, err := parseListing(&listings[1])
 	if err != nil {
-		return nil, nil, err
+		return nil, err
+	}
+
+	// a submission should only have one more object
+	if len(mores) == 1 {
+		posts[0].More = mores[0]
+	} else if len(mores) > 1 {
+		return nil, fmt.Errorf("expected 1 more; found %d", len(mores))
 	}
 
 	posts[0].Replies = comments
-	return posts[0], mores, nil
+	return posts[0], nil
 }
 
 // parseListing parses a Reddit listing type and returns the elements inside it.
@@ -229,11 +237,8 @@ func parseChildren(children []thing) ([]*Comment, []*Post, []*Message, []*More, 
 			msg, err = parseMessage(&c)
 			msgs = append(msgs, msg)
 		} else if c.Kind == commentKind {
-			comment, more, err = parseComment(&c)
+			comment, err = parseComment(&c)
 			comments = append(comments, comment)
-			if more != nil {
-				mores = append(mores, more)
-			}
 		} else if c.Kind == postKind {
 			post, err = parsePost(&c)
 			posts = append(posts, post)
@@ -247,7 +252,7 @@ func parseChildren(children []thing) ([]*Comment, []*Post, []*Message, []*More, 
 }
 
 // parseComment parses a comment into the user facing Comment struct.
-func parseComment(t *thing) (*Comment, *More, error) {
+func parseComment(t *thing) (*Comment, error) {
 	// Reddit makes the replies field a string if it is empty, just to make
 	// it harder for programmers who like static type systems.
 	value, present := t.Data["replies"]
@@ -259,21 +264,25 @@ func parseComment(t *thing) (*Comment, *More, error) {
 
 	c := &comment{}
 	if err := mapstructure.Decode(t.Data, c); err != nil {
-		return nil, nil, mapDecodeError(err, t.Data)
+		return nil, mapDecodeError(err, t.Data)
 	}
 
 	var err error
 	var mores []*More
 	if c.Replies.Kind == listingKind {
 		c.Comment.Replies, _, _, mores, err = parseListing(&c.Replies)
+		// a commment branch should only have one more object
+		if len(mores) == 1 {
+			c.Comment.More = mores[0]
+		} else if len(mores) > 1 {
+			return nil, fmt.Errorf("expected 1 more; found %d", len(mores))
+		}
 	}
 
 	c.Comment.Deleted = c.Comment.Body == deletedKey
-	// we should only evey have one more values per comment branch
-	if len(mores) == 1 {
-		return &c.Comment, mores[0], err
-	}
-	return &c.Comment, nil, err
+
+	return &c.Comment, err
+
 }
 
 // parsePost parses a post into the user facing Post struct.

@@ -32,6 +32,7 @@ type Comment struct {
 
 	ParentID string     `mapstructure:"parent_id"`
 	Replies  []*Comment `mapstructure:"reply_tree"`
+	More     *More
 
 	Gilded        int32  `mapstructure:"gilded"`
 	Distinguished string `mapstructure:"distinguished"`
@@ -105,6 +106,7 @@ type Post struct {
 	SelfTextHTML string `mapstructure:"selftext_html"`
 
 	Replies []*Comment `mapstructure:"reply_tree"`
+	More    *More
 
 	Hidden            bool   `mapstructure:"hidden"`
 	LinkFlairCSSClass string `mapstructure:"link_flair_css_class"`

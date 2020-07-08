@@ -21,6 +21,7 @@ func TestParse(t *testing.T) {
 		testdata.MustAsset("user.json"),
 		testdata.MustAsset("subreddit.json"),
 		testdata.MustAsset("inbox.json"),
+		testdata.MustAsset("more.json"),
 	} {
 		if _, _, _, _, err := p.parse(input); err != nil {
 			t.Errorf("failed to parse input %d: %v", i, err)
@@ -29,7 +30,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestParseThread(t *testing.T) {
-	post, _, err := parseThread(testdata.MustAsset("thread.json"))
+	post, err := parseThread(testdata.MustAsset("thread.json"))
 	if err != nil {
 		t.Fatalf("failed to parse: %v", err)
 	}
@@ -69,6 +70,27 @@ func TestParseThread(t *testing.T) {
 		t.Errorf(
 			"sub reply had incorrect author: %s",
 			post.Replies[0].Replies[0].Author,
+		)
+	}
+
+	if post.Replies[0].Replies[0].Replies[0].Replies[0].More.Name != "t1_c9hrw24" {
+		t.Errorf(
+			"sub reply had incorrect more: %s",
+			post.Replies[0].Replies[0].Replies[0].Replies[0].More.Name,
+		)
+	}
+
+	if post.More.Name != "t1_c9gzz0k" {
+		t.Errorf(
+			"post had incorrect more: %s",
+			post.More.Name,
+		)
+	}
+
+	if len(post.More.Children) != 649 {
+		t.Errorf(
+			"post more had incorrect number of children: %d",
+			len(post.More.Children),
 		)
 	}
 }
@@ -141,5 +163,20 @@ func TestParseInboxFeed(t *testing.T) {
 
 	if msgs[0].Name != "t1_cwup4dd" {
 		t.Errorf("first message had unexpected name: %s", msgs[0].Name)
+	}
+}
+
+func TestParseMoreChildren(t *testing.T) {
+	comments, mores, err := parseMoreChildren(testdata.MustAsset("more.json"))
+	if err != nil {
+		t.Fatalf("failed to parse more children: %v", err)
+	}
+
+	if len(comments) != 50 {
+		t.Fatalf("found unexpected number of comments: %v", len(comments))
+	}
+
+	if len(mores) != 11 {
+		t.Fatalf("found unexpected number of mores: %v", len(mores))
 	}
 }
