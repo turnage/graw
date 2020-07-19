@@ -76,11 +76,12 @@ func (r *reaperImpl) reap(path string, values map[string]string) (Harvest, error
 		return Harvest{}, err
 	}
 
-	comments, posts, messages, err := r.parser.parse(resp)
+	comments, posts, messages, mores, err := r.parser.parse(resp)
 	return Harvest{
 		Comments: comments,
 		Posts:    posts,
 		Messages: messages,
+		Mores:    mores,
 	}, err
 }
 

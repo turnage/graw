@@ -32,6 +32,7 @@ type Comment struct {
 
 	ParentID string     `mapstructure:"parent_id"`
 	Replies  []*Comment `mapstructure:"reply_tree"`
+	More     *More
 
 	Gilded        int32  `mapstructure:"gilded"`
 	Distinguished string `mapstructure:"distinguished"`
@@ -105,6 +106,7 @@ type Post struct {
 	SelfTextHTML string `mapstructure:"selftext_html"`
 
 	Replies []*Comment `mapstructure:"reply_tree"`
+	More    *More
 
 	Hidden            bool   `mapstructure:"hidden"`
 	LinkFlairCSSClass string `mapstructure:"link_flair_css_class"`
@@ -148,6 +150,19 @@ type Message struct {
 	WasComment bool   `mapstructure:"was_comment"`
 }
 
+// More represents a more comments list on Reddit
+// https://github.com/reddit-archive/reddit/wiki/JSON#more
+type More struct {
+	ID   string `mapstructure:"id"`
+	Name string `mapstructure:"name"`
+
+	Count    int    `mapstructure:"count"`
+	Depth    int    `mapstructure:"depth"`
+	ParentID string `mapstructure:"parent_id"`
+
+	Children []string `mapstructure:"children"`
+}
+
 // Harvest is a set of all possible elements that Reddit could return in a
 // listing.
 //
@@ -159,6 +174,7 @@ type Harvest struct {
 	Comments []*Comment
 	Posts    []*Post
 	Messages []*Message
+	Mores    []*More
 }
 
 type Submission struct {

@@ -8,13 +8,14 @@ type mockParser struct {
 	comments   []*Comment
 	posts      []*Post
 	messages   []*Message
+	mores      []*More
 	submission Submission
 }
 
 func (m *mockParser) parse(
 	blob json.RawMessage,
-) ([]*Comment, []*Post, []*Message, error) {
-	return m.comments, m.posts, m.messages, nil
+) ([]*Comment, []*Post, []*Message, []*More, error) {
+	return m.comments, m.posts, m.messages, m.mores, nil
 }
 
 func (m *mockParser) parse_submitted(
