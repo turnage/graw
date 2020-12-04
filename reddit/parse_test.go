@@ -62,6 +62,21 @@ func TestParseThread(t *testing.T) {
 		)
 	}
 
+	if post.Replies[0].Edited != 0 {
+		t.Errorf(
+			"first comment's edit state is incorrect: %d",
+			post.Replies[0].Edited,
+		)
+	}
+
+	if post.Replies[1].Replies[0].Replies[1].Edited != 1366216653 {
+		t.Errorf(
+			"comment %s edit timestamp is incorrect: %d",
+			post.Replies[1].Replies[0].Replies[1].ID,
+			post.Replies[1].Replies[0].Replies[1].Edited,
+		)
+	}
+
 	if len(post.Replies[0].Replies) < 1 {
 		t.Fatalf("bacon_cake should have replies but doesn't")
 	}

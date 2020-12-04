@@ -261,6 +261,14 @@ func parseComment(t *thing) (*Comment, error) {
 			delete(t.Data, "replies")
 		}
 	}
+	// Similarly, edited is false if a post hasn't been edited and a timestamp
+	// otherwise.
+	value, present = t.Data["edited"]
+	if present {
+		if _, ok := value.(bool); ok {
+			delete(t.Data, "edited")
+		}
+	}
 
 	c := &comment{}
 	if err := mapstructure.Decode(t.Data, c); err != nil {

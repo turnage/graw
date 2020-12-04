@@ -10,6 +10,7 @@ type Comment struct {
 	Permalink string `mapstructure:"permalink"`
 
 	CreatedUTC uint64 `mapstructure:"created_utc"`
+	Edited     uint64 `mapstructure:"edited"`
 	Deleted    bool   `mapstructure:"deleted"`
 
 	Ups   int32 `mapstructure:"ups"`
