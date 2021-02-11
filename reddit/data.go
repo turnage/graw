@@ -13,9 +13,10 @@ type Comment struct {
 	Edited     uint64 `mapstructure:"edited"`
 	Deleted    bool   `mapstructure:"deleted"`
 
-	Ups   int32 `mapstructure:"ups"`
-	Downs int32 `mapstructure:"downs"`
-	Likes bool  `mapstructure:"likes"`
+	Ups         int32   `mapstructure:"ups"`
+	Downs       int32   `mapstructure:"downs"`
+	Likes       bool    `mapstructure:"likes"`
+	UpvoteRatio float32 `mapstructure:"upvote_ratio"`
 
 	Author              string `mapstructure:"author"`
 	AuthorFlairCSSClass string `mapstructure:"author_flair_css_class"`
