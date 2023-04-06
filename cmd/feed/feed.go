@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/turnage/graw"
+	"github.com/mix/graw"
 
 	"github.com/mix/graw/reddit"
 )
