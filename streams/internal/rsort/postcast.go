@@ -4,7 +4,7 @@
 
 package rsort
 
-import "github.com/turnage/graw/reddit"
+import "github.com/mix/graw/reddit"
 
 type postsThingImpl struct {
 	e *reddit.Post

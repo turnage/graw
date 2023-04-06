@@ -2,9 +2,9 @@
 package monitor
 
 import (
-	"github.com/turnage/graw/reddit"
+	"github.com/mix/graw/reddit"
 
-	"github.com/turnage/graw/streams/internal/rsort"
+	"github.com/mix/graw/streams/internal/rsort"
 )
 
 const (
@@ -60,10 +60,10 @@ type monitor struct {
 // New provides a monitor for the listing endpoint.
 func New(c Config) (Monitor, error) {
 	m := &monitor{
-		tip:            []string{""},
-		path:           c.Path,
-		scanner:        c.Scanner,
-		sorter:         c.Sorter,
+		tip:     []string{""},
+		path:    c.Path,
+		scanner: c.Scanner,
+		sorter:  c.Sorter,
 	}
 
 	if err := m.sync(); err != nil {
