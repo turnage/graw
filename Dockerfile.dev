@@ -1,0 +1,15 @@
+FROM golang:1.19.6-alpine AS base
+
+RUN apk update && apk add make bash curl build-base
+
+WORKDIR /tmp
+RUN go install github.com/canthefason/go-watcher/cmd/watcher@latest && go install github.com/google/gops@latest && go install github.com/maruel/panicparse@latest\
+      && go install github.com/go-delve/delve/cmd/dlv@latest
+
+ENV GOFLAGS=-mod=vendor
+
+FROM golangci/golangci-lint:latest AS lint-base
+
+FROM base
+COPY --from=lint-base /usr/bin/golangci-lint /usr/bin/golangci-lint
+

@@ -1,0 +1,14 @@
+version: '2'
+
+services:
+  test_graw:
+    build:
+      context: ../
+      dockerfile: Dockerfile.dev
+    environment:
+      - TEST_RUN
+      - TEST_MODULES
+    volumes:
+      - ${PWD}:/app:delegated
+    working_dir: /app
+    command: make -e test-direct
