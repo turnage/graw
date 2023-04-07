@@ -7,8 +7,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/mix/graw"
+	"github.com/alecthomas/kingpin"
 
+	"github.com/mix/graw"
 	"github.com/mix/graw/reddit"
 )
 
