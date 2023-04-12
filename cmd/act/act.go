@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/alecthomas/kingpin"
+
 	"github.com/mix/graw/reddit"
 )
 

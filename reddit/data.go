@@ -124,6 +124,19 @@ type Post struct {
 	IsRedditMediaDomain bool  `mapstructure:"is_reddit_media_domain"`
 	Media               Media `mapstructure:"media"`
 	SecureMedia         Media `mapstructure:"secure_media"`
+
+	Preview PostPreview `mapstructure:"preview"`
+}
+type PostPreview struct {
+	Images []*PostPreviewImageSet `mapstructure:"images"`
+}
+type PostPreviewImageSet struct {
+	Source PostPreviewImageMedia `mapstructure:"source"`
+}
+type PostPreviewImageMedia struct {
+	URL    string `mapstructure:"url"`
+	Height int    `mapstructure:"height"`
+	Width  int    `mapstructure:"width"`
 }
 
 // Message represents messages on Reddit (Reddit type t4_).
