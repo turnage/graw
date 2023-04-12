@@ -47,7 +47,7 @@ event streams:
 * Replies to the bot's comments.
 * Mentions of the bot's username.
 
-Processing all of these events is as as simple as implementing a method to
+Processing all of these events is as simple as implementing a method to
 receive them!
 
 graw also provides two lower level packages for developers to tackle other

@@ -2,7 +2,7 @@ package graw
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"testing"
 	"time"
@@ -27,10 +27,16 @@ func (m *mockBot) TearDown() {
 
 func TestForemanControls(t *testing.T) {
 	b := &mockBot{}
-	result, stop := testForeman(b, nil, t)
+	errs := make(chan error)
+	kill := make(chan bool)
+	testLogger := log.New(io.Discard, "", 0)
+
+	stop, _, err := launch(b, kill, errs, testLogger)
+	if err != nil {
+		t.Fatalf("error launching the foreman: %v", err)
+	}
 
 	stop()
-	waitForForeman(result, nil, t)
 
 	if !b.setUpCalled {
 		t.Errorf("SetUp() was not called on bot")
@@ -43,7 +49,18 @@ func TestForemanControls(t *testing.T) {
 
 func TestForemanError(t *testing.T) {
 	errs := make(chan error)
-	result, _ := testForeman(nil, errs, t)
+
+	kill := make(chan bool)
+	result := make(chan error)
+	testLogger := log.New(io.Discard, "", 0)
+
+	_, wait, err := launch(nil, kill, errs, testLogger)
+	if err != nil {
+		t.Fatalf("error launching the foreman: %v", err)
+	}
+	go func() {
+		result <- wait()
+	}()
 
 	// send errors that should be ignored and then a unique error to make
 	// sure only the unique error killed the foreman (verified by checking
@@ -61,29 +78,6 @@ func TestForemanError(t *testing.T) {
 	}()
 	waitForForeman(result, uniqueError, t)
 
-}
-
-func testForeman(handler interface{}, errs chan error, t *testing.T) (
-	<-chan error,
-	func(),
-) {
-	kill := make(chan bool)
-	result := make(chan error)
-	logger := log.New(ioutil.Discard, "", 0)
-	if errs == nil {
-		errs = make(chan error)
-	}
-
-	stop, wait, err := launch(handler, kill, errs, logger)
-	if err != nil {
-		t.Fatalf("error launching the foreman: %v", err)
-	}
-
-	go func() {
-		result <- wait()
-	}()
-
-	return result, stop
 }
 
 func waitForForeman(result <-chan error, expected error, t *testing.T) {

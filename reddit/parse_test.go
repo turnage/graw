@@ -3,11 +3,11 @@
 // test isn't a full check because that would take a long time to write and I
 // don't think it is that worthwhile. Instead some things are poked where I
 // think there are likely to be issues.
-//
-// Find the result expecations in internal/test*.json
+// Find the result expectations in internal/test*.json
 package reddit
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -26,6 +26,9 @@ func TestParse(t *testing.T) {
 		if _, _, _, _, err := p.parse(input); err != nil {
 			t.Errorf("failed to parse input %d: %v", i, err)
 		}
+	}
+	if _, _, _, _, err := p.parse(json.RawMessage(ThreadWithPreview)); err != nil {
+		t.Errorf("failed to parse input ThreadWithPreview: %v", err)
 	}
 }
 
@@ -110,6 +113,44 @@ func TestParseThread(t *testing.T) {
 	}
 }
 
+func TestParseThreadWithPreview(t *testing.T) {
+	post, err := parseThread(json.RawMessage(ThreadWithPreview))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+	if post == nil {
+		t.Fatalf("post is nil")
+	}
+
+	if !strings.HasPrefix(post.Title, "🔥😆") {
+		t.Errorf("post title incorrect: %s", post.Title)
+	}
+
+	if post.Author != "low-vibe" {
+		t.Errorf("post author incorrect: %s", post.Author)
+	}
+	if post.Preview.Images == nil {
+		t.Errorf("post preview.images is nil")
+	}
+	if len(post.Preview.Images) != 1 {
+		t.Errorf("len(post.Preview.Images) != 1 : equals %d", len(post.Preview.Images))
+	}
+	if post.Preview.Images[0].Source.URL != "https://external-preview.redd.it/ZaH9VJhfj6gd_dwIyD3sWJRqlpu3c8zTEhhM1nS9ifo.png?auto=webp&amp;v=enabled&amp;s=8823e5882da7fe88a33ac849802fb2f97787346a" {
+		t.Errorf("post.Preview.Images[0].Source.URL"+
+			" https://external-preview.redd.it/ZaH9VJhfj6gd_dwIyD3sWJRqlpu3c8zTEhhM1nS9ifo.png?auto=webp&amp;v=enabled&amp;s=8823e5882da7fe88a33ac849802fb2f97787346a != %s",
+			post.Preview.Images[0].Source.URL)
+	}
+	if post.Preview.Images[0].Source.Width != 2160 {
+		t.Errorf("post.Preview.Images[0].Source.Width"+
+			" 2160 !=  %d",
+			post.Preview.Images[0].Source.Width)
+	}
+	if post.Preview.Images[0].Source.Height != 3840 {
+		t.Errorf("post.Preview.Images[0].Source.Width"+
+			" 3840 !=  %d",
+			post.Preview.Images[0].Source.Height)
+	}
+}
 func TestParseUserFeed(t *testing.T) {
 	comments, posts, _, _, err := parseRawListing(
 		testdata.MustAsset("user.json"),
