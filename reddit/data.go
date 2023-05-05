@@ -128,7 +128,8 @@ type Post struct {
 	Preview PostPreview `mapstructure:"preview"`
 }
 type PostPreview struct {
-	Images []*PostPreviewImageSet `mapstructure:"images"`
+	Images             []*PostPreviewImageSet         `mapstructure:"images"`
+	RedditVideoPreview *PostPreviewRedditVideoPreview `mapstructure:"reddit_video_preview"`
 }
 type PostPreviewImageSet struct {
 	Source PostPreviewImageMedia `mapstructure:"source"`
@@ -137,6 +138,18 @@ type PostPreviewImageMedia struct {
 	URL    string `mapstructure:"url"`
 	Height int    `mapstructure:"height"`
 	Width  int    `mapstructure:"width"`
+}
+type PostPreviewRedditVideoPreview struct {
+	BitrateKPBS       int    `mapstructure:"bitrate_kbps"`
+	FallbackURL       string `mapstructure:"fallback_url"`
+	Height            int    `mapstructure:"height"`
+	Width             int    `mapstructure:"width"`
+	ScrubberMediaURL  string `mapstructure:"scrubber_media_url"`
+	DashURL           string `mapstructure:"dash_url"`
+	Duration          int    `mapstructure:"duration"`
+	HLSURL            string `mapstructure:"hls_url"`
+	IsGIF             bool   `mapstructure:"is_gif"`
+	TranscodingStatus string `mapstructure:"transcoding_status"`
 }
 
 // Message represents messages on Reddit (Reddit type t4_).
