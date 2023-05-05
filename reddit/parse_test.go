@@ -30,6 +30,9 @@ func TestParse(t *testing.T) {
 	if _, _, _, _, err := p.parse(json.RawMessage(ThreadWithPreview)); err != nil {
 		t.Errorf("failed to parse input ThreadWithPreview: %v", err)
 	}
+	if _, _, _, _, err := p.parse(json.RawMessage(ThreadWithRedditVideoPreview)); err != nil {
+		t.Errorf("failed to parse input ThreadWithRedditVideoPreview: %v", err)
+	}
 }
 
 func TestParseThread(t *testing.T) {
@@ -146,11 +149,107 @@ func TestParseThreadWithPreview(t *testing.T) {
 			post.Preview.Images[0].Source.Width)
 	}
 	if post.Preview.Images[0].Source.Height != 3840 {
-		t.Errorf("post.Preview.Images[0].Source.Width"+
+		t.Errorf("post.Preview.Images[0].Source.Height"+
 			" 3840 !=  %d",
 			post.Preview.Images[0].Source.Height)
 	}
+	if post.Preview.RedditVideoPreview != nil {
+		t.Errorf("post preview.RedditVideoPreview is not nil")
+	}
 }
+
+func TestParseThreadWithRedditVideoPreview(t *testing.T) {
+	post, err := parseThread(json.RawMessage(ThreadWithRedditVideoPreview))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+	if post == nil {
+		t.Fatalf("post is nil")
+	}
+
+	if !strings.HasPrefix(post.Title, "Inside artificial horizon (or attitude indicator) that informs pilot of the aircraft orientation relative to Earth's horizon") {
+		t.Errorf("post title incorrect: %s", post.Title)
+	}
+
+	if post.Author != "toolgifs" {
+		t.Errorf("post author incorrect: %s", post.Author)
+	}
+	if post.Preview.Images == nil {
+		t.Errorf("post preview.images is nil")
+	}
+	if len(post.Preview.Images) != 1 {
+		t.Errorf("len(post.Preview.Images) != 1 : equals %d", len(post.Preview.Images))
+	}
+	if post.Preview.Images[0].Source.URL != "https://external-preview.redd.it/WqhRau_Lo2LJrtlZfv-iMXTwy4pq1Zkc4gMdREumfzI.jpg?auto=webp&amp;v=enabled&amp;s=2c6ae912de30addfbaf0a0b5566607f50fcbe2e5" {
+		t.Errorf("post.Preview.Images[0].Source.URL"+
+			" https://external-preview.redd.it/WqhRau_Lo2LJrtlZfv-iMXTwy4pq1Zkc4gMdREumfzI.jpg?auto=webp&amp;v=enabled&amp;s=2c6ae912de30addfbaf0a0b5566607f50fcbe2e5 != %s",
+			post.Preview.Images[0].Source.URL)
+	}
+	if post.Preview.Images[0].Source.Width != 960 {
+		t.Errorf("post.Preview.Images[0].Source.Width"+
+			" 960 !=  %d",
+			post.Preview.Images[0].Source.Width)
+	}
+	if post.Preview.Images[0].Source.Height != 540 {
+		t.Errorf("post.Preview.Images[0].Source.Height"+
+			" 540 !=  %d",
+			post.Preview.Images[0].Source.Height)
+	}
+	if post.Preview.RedditVideoPreview == nil {
+		t.Errorf("post preview.RedditVideoPreview is nil")
+	}
+	if post.Preview.RedditVideoPreview.BitrateKPBS != 1200 {
+		t.Errorf("post.Preview.RedditVideoPreview.BitrateKPBS"+
+			" 1200 !=  %d",
+			post.Preview.RedditVideoPreview.BitrateKPBS)
+	}
+	if post.Preview.RedditVideoPreview.FallbackURL != "https://v.redd.it/d9voiiq7e3e91/DASH_480.mp4" {
+		t.Errorf("post.Preview.RedditVideoPreview.FallbackURL"+
+			" https://v.redd.it/d9voiiq7e3e91/DASH_480.mp4 !=  %s",
+			post.Preview.RedditVideoPreview.FallbackURL)
+	}
+	if post.Preview.RedditVideoPreview.Width != 853 {
+		t.Errorf("post.Preview.RedditVideoPreview.Width"+
+			" 853 !=  %d",
+			post.Preview.RedditVideoPreview.Width)
+	}
+	if post.Preview.RedditVideoPreview.Height != 480 {
+		t.Errorf("post.Preview.RedditVideoPreview.Height"+
+			" 480 !=  %d",
+			post.Preview.RedditVideoPreview.Height)
+	}
+	if post.Preview.RedditVideoPreview.ScrubberMediaURL != "https://v.redd.it/d9voiiq7e3e91/DASH_96.mp4" {
+		t.Errorf("post.Preview.RedditVideoPreview.ScrubberMediaURL"+
+			"https://v.redd.it/d9voiiq7e3e91/DASH_96.mp4 !=  %s",
+			post.Preview.RedditVideoPreview.ScrubberMediaURL)
+	}
+	if post.Preview.RedditVideoPreview.DashURL != "https://v.redd.it/d9voiiq7e3e91/DASHPlaylist.mpd" {
+		t.Errorf("post.Preview.RedditVideoPreview.DashURL"+
+			"https://v.redd.it/d9voiiq7e3e91/DASHPlaylist.mpd !=  %s",
+			post.Preview.RedditVideoPreview.DashURL)
+	}
+	if post.Preview.RedditVideoPreview.Duration != 31 {
+		t.Errorf("post.Preview.RedditVideoPreview.Duration"+
+			" 31 !=  %d",
+			post.Preview.RedditVideoPreview.Duration)
+	}
+	if post.Preview.RedditVideoPreview.HLSURL != "https://v.redd.it/d9voiiq7e3e91/HLSPlaylist.m3u8" {
+		t.Errorf("post.Preview.RedditVideoPreview.HLSURL"+
+			"https://v.redd.it/d9voiiq7e3e91/HLSPlaylist.m3u8 !=  %s",
+			post.Preview.RedditVideoPreview.HLSURL)
+	}
+	if post.Preview.RedditVideoPreview.IsGIF != true {
+		t.Errorf("post.Preview.RedditVideoPreview.IsGIF"+
+			" true !=  %t",
+			post.Preview.RedditVideoPreview.IsGIF)
+	}
+	if post.Preview.RedditVideoPreview.TranscodingStatus != "completed" {
+		t.Errorf("post.Preview.RedditVideoPreview.HLSURL"+
+			"completed !=  %s",
+			post.Preview.RedditVideoPreview.TranscodingStatus)
+	}
+}
+
 func TestParseUserFeed(t *testing.T) {
 	comments, posts, _, _, err := parseRawListing(
 		testdata.MustAsset("user.json"),
