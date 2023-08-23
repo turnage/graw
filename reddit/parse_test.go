@@ -59,6 +59,9 @@ func TestParseThread(t *testing.T) {
 	if post.Author != "hglkgkjd" {
 		t.Errorf("post author incorrect: %s", post.Author)
 	}
+	if post.RemovedByCategory != "" {
+		t.Errorf("post removedByCategory incorrect: %s", post.RemovedByCategory)
+	}
 
 	if len(post.Replies) == 0 {
 		t.Fatal("post has no replies but it should")
@@ -135,6 +138,10 @@ func TestParseThreadWithPreview(t *testing.T) {
 	if post.Author != "low-vibe" {
 		t.Errorf("post author incorrect: %s", post.Author)
 	}
+	if post.RemovedByCategory != "" {
+		t.Errorf("post removedByCategory incorrect: %s", post.RemovedByCategory)
+	}
+
 	if post.Preview.Images == nil {
 		t.Errorf("post preview.images is nil")
 	}
@@ -177,6 +184,10 @@ func TestParseThreadWithRedditVideoPreview(t *testing.T) {
 	if post.Author != "toolgifs" {
 		t.Errorf("post author incorrect: %s", post.Author)
 	}
+	if post.RemovedByCategory != "" {
+		t.Errorf("post removedByCategory incorrect: %s", post.RemovedByCategory)
+	}
+
 	if post.Preview.Images == nil {
 		t.Errorf("post preview.images is nil")
 	}
