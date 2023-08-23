@@ -112,6 +112,7 @@ type Post struct {
 	Hidden            bool   `mapstructure:"hidden"`
 	LinkFlairCSSClass string `mapstructure:"link_flair_css_class"`
 	LinkFlairText     string `mapstructure:"link_flair_text"`
+	RemovedByCategory string `mapstructure:"removed_by_category"`
 
 	NumComments int32  `mapstructure:"num_comments"`
 	Locked      bool   `mapstructure:"locked"`
