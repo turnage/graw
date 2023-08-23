@@ -62,7 +62,7 @@ func (p *parserImpl) parse(
 	if listingErr == nil {
 		return comments, posts, msgs, mores, nil
 	}
-
+	
 	post, threadErr := parseThread(blob)
 	if threadErr == nil {
 		return nil, []*Post{post}, nil, nil, nil

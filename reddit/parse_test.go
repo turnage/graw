@@ -284,6 +284,27 @@ func TestParseThreadRemovedByModerator(t *testing.T) {
 		t.Errorf("post removedByCategory incorrect: %s", post.RemovedByCategory)
 	}
 }
+func TestParserParseRemovedByModerator(t *testing.T) {
+	p := newParser()
+	_, posts, _, _, err := p.parse([]byte(ThreadRemovedByCategoryModerator))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+	if posts[0] == nil {
+		t.Fatalf("posts[0] is nil")
+	}
+
+	if !strings.HasPrefix(posts[0].Title, "Bronze casting in a sand mold") {
+		t.Errorf("posts[0] title incorrect: %s", posts[0].Title)
+	}
+
+	if posts[0].Author != "neonroli47" {
+		t.Errorf("posts[0] author incorrect: %s", posts[0].Author)
+	}
+	if posts[0].RemovedByCategory != "moderator" {
+		t.Errorf("posts[0] removedByCategory incorrect: %s", posts[0].RemovedByCategory)
+	}
+}
 
 func TestParseUserFeed(t *testing.T) {
 	comments, posts, _, _, err := parseRawListing(
