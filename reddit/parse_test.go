@@ -33,6 +33,9 @@ func TestParse(t *testing.T) {
 	if _, _, _, _, err := p.parse(json.RawMessage(ThreadWithRedditVideoPreview)); err != nil {
 		t.Errorf("failed to parse input ThreadWithRedditVideoPreview: %v", err)
 	}
+	if _, _, _, _, err := p.parse(json.RawMessage(ThreadRemovedByCategoryModerator)); err != nil {
+		t.Errorf("failed to parse input ThreadRemovedByCategoryModerator: %v", err)
+	}
 }
 
 func TestParseThread(t *testing.T) {
@@ -55,6 +58,9 @@ func TestParseThread(t *testing.T) {
 
 	if post.Author != "hglkgkjd" {
 		t.Errorf("post author incorrect: %s", post.Author)
+	}
+	if post.RemovedByCategory != "" {
+		t.Errorf("post removedByCategory incorrect: %s", post.RemovedByCategory)
 	}
 
 	if len(post.Replies) == 0 {
@@ -132,6 +138,10 @@ func TestParseThreadWithPreview(t *testing.T) {
 	if post.Author != "low-vibe" {
 		t.Errorf("post author incorrect: %s", post.Author)
 	}
+	if post.RemovedByCategory != "" {
+		t.Errorf("post removedByCategory incorrect: %s", post.RemovedByCategory)
+	}
+
 	if post.Preview.Images == nil {
 		t.Errorf("post preview.images is nil")
 	}
@@ -174,6 +184,10 @@ func TestParseThreadWithRedditVideoPreview(t *testing.T) {
 	if post.Author != "toolgifs" {
 		t.Errorf("post author incorrect: %s", post.Author)
 	}
+	if post.RemovedByCategory != "" {
+		t.Errorf("post removedByCategory incorrect: %s", post.RemovedByCategory)
+	}
+
 	if post.Preview.Images == nil {
 		t.Errorf("post preview.images is nil")
 	}
@@ -247,6 +261,27 @@ func TestParseThreadWithRedditVideoPreview(t *testing.T) {
 		t.Errorf("post.Preview.RedditVideoPreview.HLSURL"+
 			"completed !=  %s",
 			post.Preview.RedditVideoPreview.TranscodingStatus)
+	}
+}
+
+func TestParseThreadRemovedByModerator(t *testing.T) {
+	post, err := parseThread(json.RawMessage(ThreadRemovedByCategoryModerator))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+	if post == nil {
+		t.Fatalf("post is nil")
+	}
+
+	if !strings.HasPrefix(post.Title, "Bronze casting in a sand mold") {
+		t.Errorf("post title incorrect: %s", post.Title)
+	}
+
+	if post.Author != "neonroli47" {
+		t.Errorf("post author incorrect: %s", post.Author)
+	}
+	if post.RemovedByCategory != "moderator" {
+		t.Errorf("post removedByCategory incorrect: %s", post.RemovedByCategory)
 	}
 }
 
