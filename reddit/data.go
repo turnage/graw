@@ -127,6 +127,10 @@ type Post struct {
 	SecureMedia         Media `mapstructure:"secure_media"`
 
 	Preview PostPreview `mapstructure:"preview"`
+
+	GalleryData PostGallery `mapstructure:"gallery_data"`
+
+	MediaMetadata map[string]MediaMetadata `mapstructure:"media_metadata"`
 }
 type PostPreview struct {
 	Images             []*PostPreviewImageSet         `mapstructure:"images"`
@@ -151,6 +155,22 @@ type PostPreviewRedditVideoPreview struct {
 	HLSURL            string `mapstructure:"hls_url"`
 	IsGIF             bool   `mapstructure:"is_gif"`
 	TranscodingStatus string `mapstructure:"transcoding_status"`
+}
+
+type PostGallery struct {
+	Items []*GalleryItem `mapstructure:"items"`
+}
+
+type GalleryItem struct {
+	ID      int    `mapstructure:"id"`
+	MediaId string `mapstructure:"media_id"`
+}
+
+type MediaMetadata struct {
+	Status string `mapstructure:"status"`
+	E      string `mapstructure:"e"`
+	M      string `mapstructure:"m"`  // mimetype like 'image/jpg'
+	ID     string `mapstructure:"id"` //id should make MediaId in GalleryItem
 }
 
 // Message represents messages on Reddit (Reddit type t4_).
