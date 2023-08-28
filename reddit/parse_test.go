@@ -306,6 +306,40 @@ func TestParserParseRemovedByModerator(t *testing.T) {
 	}
 }
 
+func TestParserParseThreadGallery(t *testing.T) {
+	p := newParser()
+	_, posts, _, _, err := p.parse([]byte(ThreadImageGallery))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+	if posts[0] == nil {
+		t.Fatalf("posts[0] is nil")
+	}
+
+	if !strings.HasPrefix(posts[0].Title, "An outfit I made for my Mata Hari cosplay: top and pants, belt, headdress and necklaces") {
+		t.Errorf("posts[0] title incorrect: %s", posts[0].Title)
+	}
+
+	if posts[0].Author != "fel0ra" {
+		t.Errorf("posts[0] author incorrect: %s", posts[0].Author)
+	}
+	if len(posts[0].MediaMetadata) != 5 {
+		t.Errorf("posts[0] len(posts[0].MediaMetadata) incorrect: %d", len(posts[0].MediaMetadata))
+	}
+	if len(posts[0].GalleryData.Items) != 5 {
+		t.Errorf("posts[0] len(posts[0].GalleryData) incorrect: %d", len(posts[0].GalleryData.Items))
+	}
+	if posts[0].GalleryData.Items[0].ID != 278264474 {
+		t.Errorf("posts[0] GalleryData.Items[0].ID incorrect: %d", posts[0].GalleryData.Items[0].ID)
+	}
+	if posts[0].GalleryData.Items[0].MediaId != "cyxb8fawmd1b1" {
+		t.Errorf("posts[0] GalleryData.Items[0].MediaId incorrect: %s", posts[0].GalleryData.Items[0].MediaId)
+	}
+	if posts[0].MediaMetadata["cyxb8fawmd1b1"].ID != "cyxb8fawmd1b1" {
+		t.Errorf("posts[0] MediaMetadata[\"cyxb8fawmd1b1\"].ID incorrect: %s", posts[0].MediaMetadata["cyxb8fawmd1b1"].ID)
+	}
+}
+
 func TestParseUserFeed(t *testing.T) {
 	comments, posts, _, _, err := parseRawListing(
 		testdata.MustAsset("user.json"),
