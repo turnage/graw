@@ -316,7 +316,7 @@ func TestParserParseThreadGallery(t *testing.T) {
 		t.Fatalf("posts[0] is nil")
 	}
 
-	if !strings.HasPrefix(posts[0].Title, "An outfit I made for my Mata Hari cosplay: top and pants, belt, headdress and necklaces") {
+	if posts[0].Title != "An outfit I made for my Mata Hari cosplay: top and pants, belt, headdress and necklaces" {
 		t.Errorf("posts[0] title incorrect: %s", posts[0].Title)
 	}
 
@@ -337,6 +337,86 @@ func TestParserParseThreadGallery(t *testing.T) {
 	}
 	if posts[0].MediaMetadata["cyxb8fawmd1b1"].ID != "cyxb8fawmd1b1" {
 		t.Errorf("posts[0] MediaMetadata[\"cyxb8fawmd1b1\"].ID incorrect: %s", posts[0].MediaMetadata["cyxb8fawmd1b1"].ID)
+	}
+}
+
+func TestParserParseThreadCrossPostParentDeleted(t *testing.T) {
+	p := newParser()
+	_, posts, _, _, err := p.parse([]byte(ThreadCrossPostParentDeleted))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+	if posts[0] == nil {
+		t.Fatalf("posts[0] is nil")
+	}
+
+	if posts[0].Title != "Error 404" {
+		t.Errorf("posts[0] title incorrect: %s", posts[0].Title)
+	}
+
+	if posts[0].Author != "smokysmokyjj" {
+		t.Errorf("posts[0] author incorrect: %s", posts[0].Author)
+	}
+	if len(posts[0].MediaMetadata) != 0 {
+		t.Errorf("posts[0] len(posts[0].MediaMetadata) incorrect: %d", len(posts[0].MediaMetadata))
+	}
+	if len(posts[0].GalleryData.Items) != 0 {
+		t.Errorf("posts[0] len(posts[0].GalleryData) incorrect: %d", len(posts[0].GalleryData.Items))
+	}
+	if len(posts[0].CrosspostParentList) != 1 {
+		t.Errorf("posts[0] len(posts[0].GalleryData) incorrect: %d", len(posts[0].CrosspostParentList))
+	}
+	if posts[0].CrosspostParentList[0].RemovedByCategory != "deleted" {
+		t.Errorf("posts[0].CrosspostParentList[0].RemovedByCategory incorrect: %s", posts[0].CrosspostParentList[0].RemovedByCategory)
+	}
+	if posts[0].CrosspostParentList[0].SelfText != "[deleted]" {
+		t.Errorf("posts[0].CrosspostParentList[0].SelfText incorrect: %s", posts[0].CrosspostParentList[0].SelfText)
+	}
+}
+
+func TestParserParseThreadCrossPostParentHasGallery(t *testing.T) {
+	p := newParser()
+	_, posts, _, _, err := p.parse([]byte(ThreadCrossPostParentHasGallery))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+	if posts[0] == nil {
+		t.Fatalf("posts[0] is nil")
+	}
+
+	if posts[0].Title != "Switzerland to Kyrgyzstan Roadtrip 2/3" {
+		t.Errorf("posts[0] title incorrect: %s", posts[0].Title)
+	}
+
+	if posts[0].Author != "nimble_broccoli" {
+		t.Errorf("posts[0] author incorrect: %s", posts[0].Author)
+	}
+	if len(posts[0].MediaMetadata) != 0 {
+		t.Errorf("posts[0] len(posts[0].MediaMetadata) incorrect: %d", len(posts[0].MediaMetadata))
+	}
+	if len(posts[0].GalleryData.Items) != 0 {
+		t.Errorf("posts[0] len(posts[0].GalleryData) incorrect: %d", len(posts[0].GalleryData.Items))
+	}
+	if len(posts[0].CrosspostParentList) != 1 {
+		t.Errorf("posts[0] len(posts[0].GalleryData) incorrect: %d", len(posts[0].CrosspostParentList))
+	}
+	if posts[0].CrosspostParentList[0].RemovedByCategory != "" {
+		t.Errorf("posts[0].CrosspostParentList[0].RemovedByCategory incorrect: %s", posts[0].CrosspostParentList[0].RemovedByCategory)
+	}
+	if posts[0].CrosspostParentList[0].SelfText != "" {
+		t.Errorf("posts[0].CrosspostParentList[0].SelfText incorrect: %s", posts[0].CrosspostParentList[0].SelfText)
+	}
+	if len(posts[0].CrosspostParentList[0].GalleryData.Items) != 20 {
+		t.Errorf("len(posts[0].CrosspostParentList[0].GalleryData.Items) incorrect: %d", len(posts[0].CrosspostParentList[0].GalleryData.Items))
+	}
+	if posts[0].CrosspostParentList[0].GalleryData.Items[0].ID != 232214065 {
+		t.Errorf("posts[0].CrosspostParentList[0].GalleryData.Items[0].ID incorrect: %d", posts[0].CrosspostParentList[0].GalleryData.Items[0].ID)
+	}
+	if posts[0].CrosspostParentList[0].GalleryData.Items[0].MediaId != "xbx835ucchda1" {
+		t.Errorf("posts[0].CrosspostParentList[0].GalleryData.Items[0].MediaId incorrect: %s", posts[0].CrosspostParentList[0].GalleryData.Items[0].MediaId)
+	}
+	if posts[0].CrosspostParentList[0].MediaMetadata["xbx835ucchda1"].ID != "xbx835ucchda1" {
+		t.Errorf("posts[0].CrosspostParentList[0].MediaMetadata[\"xbx835ucchda1\"].ID incorrect: %s", posts[0].CrosspostParentList[0].MediaMetadata["xbx835ucchda1"].ID)
 	}
 }
 

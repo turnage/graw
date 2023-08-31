@@ -131,6 +131,8 @@ type Post struct {
 	GalleryData PostGallery `mapstructure:"gallery_data"`
 
 	MediaMetadata map[string]MediaMetadata `mapstructure:"media_metadata"`
+
+	CrosspostParentList []Post `mapstructure:"crosspost_parent_list"`
 }
 type PostPreview struct {
 	Images             []*PostPreviewImageSet         `mapstructure:"images"`
