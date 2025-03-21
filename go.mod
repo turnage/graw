@@ -3,6 +3,7 @@ module github.com/turnage/graw
 go 1.13
 
 require (
+	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/golang/protobuf v1.3.2
 	github.com/kylelemons/godebug v1.1.0
 	github.com/mitchellh/mapstructure v1.1.2

@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/turnage/graw/reddit"
-	"gopkg.in/alecthomas/kingpin.v2"
+	"github.com/alecthomas/kingpin/v2"
 )
 
 var (
